@@ -23,6 +23,10 @@ export default function WorkstreamCard({ workstream, index }: { workstream: Work
   const [tasks, setTasks] = useState<Task[]>(workstream.tasks);
   const [expanded, setExpanded] = useState(false);
   const [saving, setSaving] = useState<string | null>(null);
+  const [editingNote, setEditingNote] = useState<string | null>(null);
+  const [noteValues, setNoteValues] = useState<Record<string, string>>(
+    Object.fromEntries(workstream.tasks.map((t) => [t.id, t.notes]))
+  );
 
   const total = tasks.length;
   const complete = tasks.filter((t) => t.status === "Complete").length;
@@ -158,8 +162,32 @@ export default function WorkstreamCard({ workstream, index }: { workstream: Work
                       <span className="text-stone-300">·</span>
                       <span className="text-xs text-stone-400">{task.owner}</span>
                     </div>
-                    {task.notes && (
-                      <p className="text-xs text-stone-400 mt-1.5 italic leading-relaxed">{task.notes}</p>
+                    {/* Editable notes */}
+                    {editingNote === task.id ? (
+                      <textarea
+                        autoFocus
+                        value={noteValues[task.id]}
+                        onChange={(e) => setNoteValues((prev) => ({ ...prev, [task.id]: e.target.value }))}
+                        onBlur={() => {
+                          setTasks((prev) => prev.map((t) => t.id === task.id ? { ...t, notes: noteValues[task.id] } : t));
+                          setEditingNote(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Escape") setEditingNote(null);
+                        }}
+                        rows={2}
+                        placeholder="Add a note..."
+                        className="mt-1.5 w-full text-xs text-stone-600 leading-relaxed rounded px-2 py-1.5 resize-none focus:outline-none focus:ring-1"
+                        style={{ border: "1px solid #d1cfc9", backgroundColor: "#fafaf8", focusRingColor: "#1a5c3a" }}
+                      />
+                    ) : (
+                      <p
+                        className="text-xs mt-1.5 italic leading-relaxed cursor-pointer rounded px-1 -mx-1 hover:bg-stone-100 transition-colors"
+                        style={{ color: noteValues[task.id] ? "#78716c" : "#c0bdb8" }}
+                        onClick={() => setEditingNote(task.id)}
+                      >
+                        {noteValues[task.id] || "Add a note…"}
+                      </p>
                     )}
                   </div>
 
