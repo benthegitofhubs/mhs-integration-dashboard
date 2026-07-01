@@ -28,7 +28,15 @@ export default function WorkstreamCard({ workstream, index }: { workstream: Work
   const complete = tasks.filter((t) => t.status === "Complete").length;
   const inProgress = tasks.filter((t) => t.status === "In Progress").length;
   const blocked = tasks.filter((t) => t.status === "Blocked").length;
+  const notStarted = tasks.filter((t) => t.status === "Not Started").length;
   const pct = total > 0 ? Math.round((complete / total) * 100) : 0;
+
+  const segments = [
+    { status: "Complete",    count: complete,   color: "#15803d", label: "Complete" },
+    { status: "In Progress", count: inProgress, color: "#1d4ed8", label: "In Progress" },
+    { status: "Blocked",     count: blocked,    color: "#b91c1c", label: "Blocked" },
+    { status: "Not Started", count: notStarted, color: "#d1d5db", label: "Not Started" },
+  ].filter((s) => s.count > 0);
 
   const handleStatusChange = async (taskId: string, newStatus: Status) => {
     setSaving(taskId);
@@ -85,16 +93,28 @@ export default function WorkstreamCard({ workstream, index }: { workstream: Work
               <span className="text-stone-400">{total} total</span>
             </div>
 
-            {/* Progress */}
-            <div className="w-20">
+            {/* Segmented progress bar */}
+            <div className="w-40">
               <div className="flex justify-between text-xs text-stone-400 mb-1">
-                <span>{pct}%</span>
+                <span>{pct}% complete</span>
               </div>
-              <div className="h-1 rounded-full overflow-hidden" style={{ backgroundColor: "#e5e3de" }}>
-                <div
-                  className="h-full rounded-full transition-all"
-                  style={{ width: `${pct}%`, backgroundColor: pct === 100 ? "#15803d" : "#1a5c3a" }}
-                />
+              <div className="h-2 rounded-full overflow-hidden flex" style={{ backgroundColor: "#e5e3de" }}>
+                {segments.map((seg) => (
+                  <div
+                    key={seg.status}
+                    className="h-full transition-all"
+                    style={{ width: `${(seg.count / total) * 100}%`, backgroundColor: seg.color }}
+                    title={`${seg.label}: ${seg.count} (${Math.round((seg.count / total) * 100)}%)`}
+                  />
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-x-3 mt-1.5">
+                {segments.map((seg) => (
+                  <span key={seg.status} className="text-xs flex items-center gap-1" style={{ color: seg.color === "#d1d5db" ? "#9ca3af" : seg.color }}>
+                    <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ backgroundColor: seg.color }} />
+                    {Math.round((seg.count / total) * 100)}% {seg.label}
+                  </span>
+                ))}
               </div>
             </div>
 
