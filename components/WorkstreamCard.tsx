@@ -3,18 +3,25 @@
 import { useState } from "react";
 import { Workstream, Task, Status, Priority } from "@/lib/workstreams";
 
-const STATUS_STYLES: Record<Status, { bg: string; text: string; border: string }> = {
-  "Not Started": { bg: "white",    text: "#6b7280", border: "#d1d5db" },
-  "In Progress": { bg: "#dbeafe",  text: "#1d4ed8", border: "#93c5fd" },
-  "Blocked":     { bg: "#fee2e2",  text: "#b91c1c", border: "#fca5a5" },
-  "Complete":    { bg: "#dcfce7",  text: "#15803d", border: "#86efac" },
+const STATUS_COLOR: Record<Status, string> = {
+  "Not Started": "#9ca3af",
+  "In Progress": "#1d4ed8",
+  "Blocked":     "#b91c1c",
+  "Complete":    "#1a5c3a",
+};
+
+const STATUS_BG: Record<Status, string> = {
+  "Not Started": "#f3f4f6",
+  "In Progress": "#dbeafe",
+  "Blocked":     "#fee2e2",
+  "Complete":    "#dcfce7",
 };
 
 const PRIORITY_COLORS: Record<Priority, string> = {
   CRITICAL: "#b91c1c",
   HIGH:     "#c2410c",
   MEDIUM:   "#a16207",
-  LOW:      "#6b7280",
+  LOW:      "#9ca3af",
 };
 
 const STATUSES: Status[] = ["Not Started", "In Progress", "Blocked", "Complete"];
@@ -34,13 +41,6 @@ export default function WorkstreamCard({ workstream, index }: { workstream: Work
   const blocked = tasks.filter((t) => t.status === "Blocked").length;
   const notStarted = tasks.filter((t) => t.status === "Not Started").length;
   const pct = total > 0 ? Math.round((complete / total) * 100) : 0;
-
-  const segments = [
-    { status: "Complete",    count: complete,   color: "#15803d", label: "Complete" },
-    { status: "In Progress", count: inProgress, color: "#1d4ed8", label: "In Progress" },
-    { status: "Blocked",     count: blocked,    color: "#b91c1c", label: "Blocked" },
-    { status: "Not Started", count: notStarted, color: "#d1d5db", label: "Not Started" },
-  ].filter((s) => s.count > 0);
 
   const handleStatusChange = async (taskId: string, newStatus: Status) => {
     setSaving(taskId);
@@ -65,64 +65,76 @@ export default function WorkstreamCard({ workstream, index }: { workstream: Work
   }, {});
 
   return (
-    <div className="bg-white rounded-lg overflow-hidden" style={{ border: "1px solid #e5e3de" }}>
-      {/* Header */}
+    <div style={{ backgroundColor: "white", border: "1px solid #e5e3de", borderRadius: "6px", overflow: "hidden" }}>
+
+      {/* Header row */}
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full text-left px-6 py-5 transition-colors"
-        style={{ backgroundColor: expanded ? "#fafaf8" : "white" }}
+        className="w-full text-left transition-colors"
+        style={{
+          padding: "16px 24px",
+          backgroundColor: expanded ? "#fafaf8" : "white",
+        }}
       >
-        <div className="flex items-center justify-between gap-6">
+        <div className="flex items-start justify-between gap-6">
+
+          {/* Left: index + name + objective */}
           <div className="flex-1 min-w-0">
-            {/* Number + name */}
-            <div className="flex items-baseline gap-3">
-              <span className="text-lg font-bold" style={{ color: "#1a5c3a" }}>{index}</span>
-              <span className="text-stone-300 font-light">·</span>
-              <h2 className="text-base font-bold text-stone-900">{workstream.name}</h2>
-              <span className="text-xs text-stone-400 hidden sm:inline">{workstream.monthTarget}</span>
+            <div className="flex items-baseline gap-2 mb-1">
+              <span className="text-xs font-bold" style={{ color: "#1a5c3a", fontFamily: "var(--font-geist-mono)", minWidth: "16px" }}>
+                {index}
+              </span>
+              <span style={{ color: "#d1cfc9" }}>·</span>
+              <h2 className="text-sm font-bold" style={{ color: "#111" }}>{workstream.name}</h2>
+              <span style={{ color: "#d1cfc9" }}>·</span>
+              <span className="text-xs" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+                {workstream.monthTarget}
+              </span>
               {blocked > 0 && (
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: "#fee2e2", color: "#b91c1c" }}>
-                  {blocked} blocked
+                <span className="text-xs font-semibold" style={{ color: "#b91c1c", fontFamily: "var(--font-geist-mono)" }}>
+                  · {blocked} BLOCKED
                 </span>
               )}
             </div>
-            <p className="text-xs text-stone-400 mt-1 leading-relaxed pr-8">{workstream.objective}</p>
+            <p className="text-xs leading-relaxed" style={{ color: "#78716c", paddingLeft: "22px" }}>
+              {workstream.objective}
+            </p>
           </div>
 
-          <div className="flex items-center gap-6 shrink-0">
-            {/* Mini stats */}
-            <div className="hidden sm:flex items-center gap-5 text-xs">
-              <span style={{ color: "#15803d" }} className="font-medium">{complete} done</span>
-              <span style={{ color: "#1d4ed8" }}>{inProgress} active</span>
-              <span className="text-stone-400">{total} total</span>
+          {/* Right: stats + segmented bar */}
+          <div className="flex items-center gap-8 shrink-0">
+
+            {/* Mini counts */}
+            <div className="hidden sm:flex items-center gap-5 text-xs" style={{ fontFamily: "var(--font-geist-mono)" }}>
+              <span style={{ color: "#1a5c3a" }}>{complete}<span style={{ color: "#9ca3af" }}> done</span></span>
+              <span style={{ color: "#1d4ed8" }}>{inProgress}<span style={{ color: "#9ca3af" }}> active</span></span>
+              {blocked > 0 && <span style={{ color: "#b91c1c" }}>{blocked}<span style={{ color: "#9ca3af" }}> blocked</span></span>}
             </div>
 
-            {/* Segmented progress bar */}
-            <div className="w-40">
-              <div className="flex justify-between text-xs text-stone-400 mb-1">
-                <span>{pct}% complete</span>
+            {/* Segmented bar */}
+            <div style={{ width: "140px" }}>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+                  {pct}%
+                </span>
               </div>
-              <div className="h-2 rounded-full overflow-hidden flex" style={{ backgroundColor: "#e5e3de" }}>
-                {segments.map((seg) => (
-                  <div
-                    key={seg.status}
-                    className="h-full transition-all"
-                    style={{ width: `${(seg.count / total) * 100}%`, backgroundColor: seg.color }}
-                    title={`${seg.label}: ${seg.count} (${Math.round((seg.count / total) * 100)}%)`}
-                  />
-                ))}
-              </div>
-              <div className="flex flex-wrap gap-x-3 mt-1.5">
-                {segments.map((seg) => (
-                  <span key={seg.status} className="text-xs flex items-center gap-1" style={{ color: seg.color === "#d1d5db" ? "#9ca3af" : seg.color }}>
-                    <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ backgroundColor: seg.color }} />
-                    {Math.round((seg.count / total) * 100)}% {seg.label}
-                  </span>
-                ))}
+              <div className="flex overflow-hidden" style={{ height: "4px", borderRadius: "2px", backgroundColor: "#e5e3de" }}>
+                {complete > 0 && (
+                  <div style={{ width: `${(complete / total) * 100}%`, backgroundColor: "#1a5c3a" }} />
+                )}
+                {inProgress > 0 && (
+                  <div style={{ width: `${(inProgress / total) * 100}%`, backgroundColor: "#1d4ed8" }} />
+                )}
+                {blocked > 0 && (
+                  <div style={{ width: `${(blocked / total) * 100}%`, backgroundColor: "#b91c1c" }} />
+                )}
+                {notStarted > 0 && (
+                  <div style={{ width: `${(notStarted / total) * 100}%`, backgroundColor: "#d1d5db" }} />
+                )}
               </div>
             </div>
 
-            <span className="text-stone-300 text-xs">{expanded ? "▲" : "▼"}</span>
+            <span className="text-xs" style={{ color: "#c8c5be" }}>{expanded ? "▲" : "▼"}</span>
           </div>
         </div>
       </button>
@@ -130,39 +142,57 @@ export default function WorkstreamCard({ workstream, index }: { workstream: Work
       {/* Task table */}
       {expanded && (
         <div style={{ borderTop: "1px solid #e5e3de" }}>
+
+          {/* Column headers */}
+          <div
+            className="grid text-xs uppercase tracking-widest font-semibold px-6 py-2.5"
+            style={{
+              gridTemplateColumns: "1fr 80px 100px 120px",
+              backgroundColor: "#f7f6f3",
+              color: "#9ca3af",
+              fontFamily: "var(--font-geist-mono)",
+              borderBottom: "1px solid #e5e3de",
+            }}
+          >
+            <span>Task</span>
+            <span>Priority</span>
+            <span>Owner</span>
+            <span>Status</span>
+          </div>
+
           {Object.entries(groupedTasks).map(([phase, phaseTasks]) => (
             <div key={phase}>
-              {/* Phase header */}
+              {/* Phase label */}
               <div
-                className="px-6 py-2"
-                style={{ backgroundColor: "#f7f6f3", borderBottom: "1px solid #e5e3de" }}
+                className="px-6 py-1.5 text-xs uppercase tracking-widest"
+                style={{
+                  color: "#b8b5ae",
+                  fontFamily: "var(--font-geist-mono)",
+                  backgroundColor: "#fafaf8",
+                  borderBottom: "1px solid #f0efe9",
+                }}
               >
-                <span className="text-xs font-semibold uppercase tracking-widest text-stone-400 font-mono">
-                  {phase}
-                </span>
+                {phase}
               </div>
 
-              {phaseTasks.map((task) => (
+              {phaseTasks.map((task, idx) => (
                 <div
                   key={task.id}
-                  className="px-6 py-4 flex items-start gap-4 hover:bg-stone-50 transition-colors"
-                  style={{ borderBottom: "1px solid #f0efe9" }}
+                  className="grid px-6 py-4 hover:bg-stone-50 transition-colors"
+                  style={{
+                    gridTemplateColumns: "1fr 80px 100px 120px",
+                    borderBottom: idx < phaseTasks.length - 1 ? "1px solid #f0efe9" : "1px solid #e5e3de",
+                    alignItems: "start",
+                    gap: "12px",
+                  }}
                 >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-stone-700 leading-relaxed">{task.description}</p>
-                    <div className="flex items-center gap-3 mt-2 flex-wrap">
-                      <span
-                        className="text-xs font-semibold uppercase tracking-wide"
-                        style={{ color: PRIORITY_COLORS[task.priority] }}
-                      >
-                        {task.priority}
-                      </span>
-                      <span className="text-stone-300">·</span>
-                      <span className="text-xs text-stone-400">{task.monthTarget}</span>
-                      <span className="text-stone-300">·</span>
-                      <span className="text-xs text-stone-400">{task.owner}</span>
-                    </div>
-                    {/* Editable notes */}
+                  {/* Description + notes */}
+                  <div>
+                    <p className="text-sm leading-relaxed" style={{ color: "#1a1a1a" }}>{task.description}</p>
+                    <p className="text-xs mt-0.5" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+                      {task.monthTarget}
+                    </p>
+                    {/* Editable note */}
                     {editingNote === task.id ? (
                       <textarea
                         autoFocus
@@ -172,18 +202,23 @@ export default function WorkstreamCard({ workstream, index }: { workstream: Work
                           setTasks((prev) => prev.map((t) => t.id === task.id ? { ...t, notes: noteValues[task.id] } : t));
                           setEditingNote(null);
                         }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Escape") setEditingNote(null);
-                        }}
+                        onKeyDown={(e) => { if (e.key === "Escape") setEditingNote(null); }}
                         rows={2}
                         placeholder="Add a note..."
-                        className="mt-1.5 w-full text-xs text-stone-600 leading-relaxed rounded px-2 py-1.5 resize-none focus:outline-none focus:ring-1"
-                        style={{ border: "1px solid #d1cfc9", backgroundColor: "#fafaf8", focusRingColor: "#1a5c3a" }}
+                        className="mt-2 w-full text-xs leading-relaxed rounded px-2 py-1.5 resize-none focus:outline-none"
+                        style={{
+                          border: "1px solid #d1cfc9",
+                          backgroundColor: "#fafaf8",
+                          color: "#57534e",
+                        }}
                       />
                     ) : (
                       <p
-                        className="text-xs mt-1.5 italic leading-relaxed cursor-pointer rounded px-1 -mx-1 hover:bg-stone-100 transition-colors"
-                        style={{ color: noteValues[task.id] ? "#78716c" : "#c0bdb8" }}
+                        className="text-xs mt-2 leading-relaxed cursor-pointer rounded px-1 -mx-1 hover:bg-stone-100 transition-colors"
+                        style={{
+                          color: noteValues[task.id] ? "#78716c" : "#c0bdb8",
+                          fontStyle: "italic",
+                        }}
                         onClick={() => setEditingNote(task.id)}
                       >
                         {noteValues[task.id] || "Add a note…"}
@@ -191,17 +226,34 @@ export default function WorkstreamCard({ workstream, index }: { workstream: Work
                     )}
                   </div>
 
-                  {/* Status pill selector */}
-                  <div className="shrink-0 mt-0.5">
+                  {/* Priority */}
+                  <div className="pt-0.5">
+                    <span
+                      className="text-xs font-semibold uppercase tracking-wide"
+                      style={{ color: PRIORITY_COLORS[task.priority], fontFamily: "var(--font-geist-mono)" }}
+                    >
+                      {task.priority}
+                    </span>
+                  </div>
+
+                  {/* Owner */}
+                  <div className="pt-0.5">
+                    <span className="text-xs" style={{ color: "#78716c" }}>{task.owner}</span>
+                  </div>
+
+                  {/* Status selector */}
+                  <div className="pt-0.5">
                     <select
                       value={task.status}
                       onChange={(e) => handleStatusChange(task.id, e.target.value as Status)}
                       disabled={saving === task.id}
-                      className="text-xs px-3 py-1 rounded-full cursor-pointer focus:outline-none font-medium"
+                      className="text-xs font-semibold cursor-pointer focus:outline-none rounded px-2 py-1"
                       style={{
-                        backgroundColor: STATUS_STYLES[task.status].bg,
-                        color: STATUS_STYLES[task.status].text,
-                        border: `1px solid ${STATUS_STYLES[task.status].border}`,
+                        backgroundColor: STATUS_BG[task.status],
+                        color: STATUS_COLOR[task.status],
+                        border: "none",
+                        fontFamily: "var(--font-geist-mono)",
+                        letterSpacing: "0.03em",
                       }}
                     >
                       {STATUSES.map((s) => (

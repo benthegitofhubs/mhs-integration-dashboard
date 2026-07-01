@@ -15,6 +15,7 @@ export default function Home() {
     (acc, ws) => acc + ws.tasks.filter((t) => t.status === "Blocked").length,
     0
   );
+  const notStartedTasks = totalTasks - completedTasks - inProgressTasks - blockedTasks;
 
   const overallPct = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
@@ -22,50 +23,73 @@ export default function Home() {
     <main className="min-h-screen" style={{ backgroundColor: "#f7f6f3", color: "#1a1a1a" }}>
 
       {/* Top bar */}
-      <div className="border-b border-stone-200 bg-white px-8 py-3 flex items-center justify-between">
-        <div>
-          <span className="text-base font-bold tracking-tight">Radial</span>
-          <span className="text-stone-400 text-sm ml-3">MHS Integration Tracker · for Ben + integration leads</span>
+      <div style={{ borderBottom: "1px solid #e5e3de", backgroundColor: "white" }}
+        className="px-8 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-bold tracking-tight">Radial</span>
+          <span style={{ color: "#c8c5be" }}>·</span>
+          <span className="text-sm" style={{ color: "#9ca3af" }}>MHS Integration Tracker</span>
         </div>
-        <span className="text-xs text-stone-400">Close date: TBD · 21 locations · CA / TX / WA</span>
+        <div className="flex items-center gap-6 text-xs" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+          <span>21 LOCATIONS</span>
+          <span style={{ color: "#c8c5be" }}>·</span>
+          <span>CA / TX / WA</span>
+          <span style={{ color: "#c8c5be" }}>·</span>
+          <span>6-MONTH PLAN</span>
+        </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-8 pt-10 pb-4">
+      <div className="max-w-6xl mx-auto px-8 pt-12 pb-8">
+
         {/* Eyebrow */}
-        <p className="text-xs font-semibold uppercase tracking-widest text-stone-400 mb-3">
-          Mindful Health Solutions · 6-month integration plan
+        <p className="text-xs font-semibold uppercase tracking-widest mb-2"
+          style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+          Mindful Health Solutions · Integration Plan
         </p>
 
         {/* Headline */}
-        <h1 className="text-4xl font-bold leading-tight mb-4" style={{ letterSpacing: "-0.02em" }}>
-          Track integration progress across all 8 workstreams.
+        <h1 className="text-3xl font-bold leading-snug mb-10" style={{ letterSpacing: "-0.02em", color: "#111" }}>
+          Integration progress across 8 workstreams.
         </h1>
 
-        {/* Stats row */}
-        <div className="flex items-center gap-8 mt-6 mb-2">
-          <Stat label="Total tasks" value={totalTasks} />
-          <div className="w-px h-8 bg-stone-200" />
-          <Stat label="Complete" value={completedTasks} green />
-          <Stat label="In progress" value={inProgressTasks} blue />
-          <Stat label="Blocked" value={blockedTasks} red />
-          <div className="flex-1" />
-          <div className="text-right">
-            <p className="text-xs text-stone-400 uppercase tracking-widest mb-1">Overall</p>
-            <p className="text-2xl font-bold">{overallPct}%</p>
-          </div>
+        {/* Stats row — large numbers like the WBR dashboard */}
+        <div className="grid grid-cols-4 gap-0 mb-2" style={{ borderTop: "1px solid #e5e3de" }}>
+          <StatCell value={completedTasks} label="Complete" color="#1a5c3a" />
+          <StatCell value={inProgressTasks} label="In Progress" color="#1d4ed8" />
+          <StatCell value={blockedTasks} label="Blocked" color="#b91c1c" />
+          <StatCell value={notStartedTasks} label="Not Started" color="#6b7280" />
         </div>
 
-        {/* Progress bar */}
-        <div className="h-1.5 rounded-full overflow-hidden mt-3 mb-10" style={{ backgroundColor: "#e5e3de" }}>
-          <div
-            className="h-full rounded-full transition-all"
-            style={{ width: `${overallPct}%`, backgroundColor: "#1a5c3a" }}
-          />
+        {/* Segmented progress bar */}
+        <div className="h-1 overflow-hidden flex mb-1" style={{ backgroundColor: "#e5e3de" }}>
+          {completedTasks > 0 && (
+            <div style={{ width: `${(completedTasks / totalTasks) * 100}%`, backgroundColor: "#1a5c3a" }} />
+          )}
+          {inProgressTasks > 0 && (
+            <div style={{ width: `${(inProgressTasks / totalTasks) * 100}%`, backgroundColor: "#1d4ed8" }} />
+          )}
+          {blockedTasks > 0 && (
+            <div style={{ width: `${(blockedTasks / totalTasks) * 100}%`, backgroundColor: "#b91c1c" }} />
+          )}
+          {notStartedTasks > 0 && (
+            <div style={{ width: `${(notStartedTasks / totalTasks) * 100}%`, backgroundColor: "#d1d5db" }} />
+          )}
         </div>
+        <div className="flex items-center justify-between mb-12">
+          <p className="text-xs" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+            {overallPct}% COMPLETE · {totalTasks} TOTAL TASKS
+          </p>
+        </div>
+
+        {/* Section label */}
+        <p className="text-xs font-semibold uppercase tracking-widest mb-4"
+          style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)", borderBottom: "1px solid #e5e3de", paddingBottom: "8px" }}>
+          Workstreams
+        </p>
       </div>
 
       {/* Workstream list */}
-      <div className="max-w-6xl mx-auto px-8 pb-16 space-y-3">
+      <div className="max-w-6xl mx-auto px-8 pb-20 space-y-2">
         {WORKSTREAMS.map((ws, i) => (
           <WorkstreamCard key={ws.id} workstream={ws} index={i + 1} />
         ))}
@@ -74,12 +98,13 @@ export default function Home() {
   );
 }
 
-function Stat({ label, value, green, blue, red }: { label: string; value: number; green?: boolean; blue?: boolean; red?: boolean }) {
-  const color = green ? "#1a5c3a" : blue ? "#1d4ed8" : red ? "#b91c1c" : "#1a1a1a";
+function StatCell({ value, label, color }: { value: number; label: string; color: string }) {
   return (
-    <div>
-      <p className="text-xs text-stone-400 uppercase tracking-widest mb-0.5">{label}</p>
-      <p className="text-2xl font-bold" style={{ color }}>{value}</p>
+    <div className="pt-6 pb-5 pr-8" style={{ borderBottom: "1px solid #e5e3de" }}>
+      <p className="text-4xl font-bold mb-1" style={{ color, letterSpacing: "-0.03em" }}>{value}</p>
+      <p className="text-xs uppercase tracking-widest" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+        {label}
+      </p>
     </div>
   );
 }
