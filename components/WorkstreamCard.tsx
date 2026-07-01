@@ -74,6 +74,7 @@ export default function WorkstreamCard({ workstream, index }: { workstream: Work
         style={{
           padding: "16px 24px",
           backgroundColor: expanded ? "#fafaf8" : "white",
+          outline: "none",
         }}
       >
         <div className="flex items-start justify-between gap-6">
