@@ -25,7 +25,7 @@ export const WORKSTREAMS: Workstream[] = [
   {
     id: "rcm",
     name: "Operations / RCM",
-    objective: "Audit network RCM/billing model, evaluate options (continue outsource, re-bid, or insource), and execute the chosen path",
+    objective: "Audit network RCM/billing model, evaluate options (continue outsource, re-bid, or insource), and execute the chosen path including payment options (CareCredit, payment plans, etc.) unify sliding scale/financial hardship plan",
     owner: "Ops/RCM Lead",
     monthTarget: "Month 1–6",
     tasks: [
@@ -48,7 +48,7 @@ export const WORKSTREAMS: Workstream[] = [
   {
     id: "ops",
     name: "Operations",
-    objective: "Audit and unify Care Navigation (inbound calls through ongoing patient management) and Practice Manager/Technician structure across all locations",
+    objective: "Audit and unify Care Navigation (inbound calls through ongoing patient management) and Practice Manager/Technician structure across all locations, align with HR on staffing model and recruitment",
     owner: "Ops Lead",
     monthTarget: "Month 1–6",
     tasks: [
@@ -80,7 +80,7 @@ export const WORKSTREAMS: Workstream[] = [
   {
     id: "clinical",
     name: "Clinical Expansion",
-    objective: "Review MHS TMS protocols (2x/day, accelerated); evaluate roll out PRISM network-wide; protect Spravato continuity",
+    objective: "Review MHS TMS protocols (i.e. 2x/day, accelerated); protect Spravato continuity, set timeline for new modality introductions (i.e. prism, prolive, 2027 COMP360, etc)",
     owner: "ClinOps Lead",
     monthTarget: "Month 1–6",
     tasks: [
@@ -152,7 +152,7 @@ export const WORKSTREAMS: Workstream[] = [
   {
     id: "growth",
     name: "Growth & Marketing",
-    objective: "Audit and rebuild MHS digital presence, launch UGC engine, and establish field marketing and referral networks across all markets",
+    objective: "Audit and rebuild MHS digital presence, update Radial's digital footprint, launch UGC engine, establish field marketing/local playbook and referral networks across all markets",
     owner: "Growth Lead",
     monthTarget: "Month 1–6",
     tasks: [
@@ -181,7 +181,7 @@ export const WORKSTREAMS: Workstream[] = [
   {
     id: "hr",
     name: "HR & People Ops",
-    objective: "Migrate all MHS/Radial staff into a single Rippling account, formalize reviews and org charts, protect key talent, and align benefits and policies to Radial standards",
+    objective: "Migrate all MHS/Radial staff into a single Rippling account, execute recruitment plan, formalize reviews and org charts, protect key talent, manage retention targets, and align benefits and policies to Radial standards",
     owner: "HR Lead",
     monthTarget: "Month 1–5",
     tasks: [
@@ -200,7 +200,7 @@ export const WORKSTREAMS: Workstream[] = [
   {
     id: "px",
     name: "Patient Experience",
-    objective: "Establish NPS baseline, deploy Radial hospitality standards, execute clinic upgrades, and define community channel strategy across all MHS sites",
+    objective: "Establish NPS baseline, audit MHS locations, deploy Radial hospitality standards, prioritize and execute clinic upgrades, and define community channel strategy across all MHS sites",
     owner: "PX Lead",
     monthTarget: "Month 1–6",
     tasks: [
