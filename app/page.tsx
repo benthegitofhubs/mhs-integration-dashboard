@@ -22,23 +22,6 @@ export default function Home() {
   return (
     <main className="min-h-screen" style={{ backgroundColor: "#f7f6f3", color: "#1a1a1a" }}>
 
-      {/* Top bar */}
-      <div style={{ borderBottom: "1px solid #e5e3de", backgroundColor: "white" }}
-        className="px-8 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-bold tracking-tight">Radial</span>
-          <span style={{ color: "#c8c5be" }}>·</span>
-          <span className="text-sm" style={{ color: "#9ca3af" }}>MHS Integration Tracker</span>
-        </div>
-        <div className="flex items-center gap-6 text-xs" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
-          <span>21 LOCATIONS</span>
-          <span style={{ color: "#c8c5be" }}>·</span>
-          <span>CA / TX / WA</span>
-          <span style={{ color: "#c8c5be" }}>·</span>
-          <span>6-MONTH PLAN</span>
-        </div>
-      </div>
-
       <div className="max-w-6xl mx-auto px-8 pt-12 pb-8">
 
         {/* Eyebrow */}
