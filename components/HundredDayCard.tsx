@@ -51,12 +51,13 @@ export default function HundredDayCard({ workstream, index, rag, ragNote, onRagC
   const notStarted = tasks.filter((t) => t.status === "Not Started").length;
   const pct        = total > 0 ? Math.round((complete / total) * 100) : 0;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const yesterday = new Date();
+  yesterday.setHours(0, 0, 0, 0);
+  yesterday.setDate(yesterday.getDate() - 1);
   const isOverdue = (t: Task100) => {
     if (t.status === "Complete") return false;
     const d = new Date(t.dueDate);
-    return !isNaN(d.getTime()) && d < today;
+    return !isNaN(d.getTime()) && d < yesterday;
   };
   const overdueCount = tasks.filter(isOverdue).length;
   const stuckCount   = tasks.filter((t) => t.status === "Blocked" || t.status === "At Risk").length;
