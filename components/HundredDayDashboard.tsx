@@ -167,10 +167,14 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
           })}
         </div>
 
-        <p className="text-xs font-semibold uppercase tracking-widest mb-4"
-          style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)", borderBottom: "1px solid #e5e3de", paddingBottom: "8px" }}>
-          Workstreams
-        </p>
+        <div className="mt-14 mb-6 flex items-center gap-4">
+          <div className="flex-1" style={{ height: "1px", backgroundColor: "#d1cfc9" }} />
+          <p className="text-xs font-semibold uppercase tracking-widest shrink-0"
+            style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)" }}>
+            Workstream Tasks
+          </p>
+          <div className="flex-1" style={{ height: "1px", backgroundColor: "#d1cfc9" }} />
+        </div>
       </div>
 
       {/* Workstream cards */}
@@ -256,10 +260,10 @@ function OverviewRow({
       }}>
       <div>
         <p className="text-xs font-semibold" style={{ color: "#1a1a1a" }}>{ws.name}</p>
-        <p className="text-xs" style={{ color: "#9ca3af" }}>{ws.leader}</p>
+        <p className="text-xs" style={{ color: "#6b7280" }}>{ws.leader}</p>
       </div>
 
-      <p className="text-xs leading-relaxed" style={{ color: "#78716c" }}>{ws.goal}</p>
+      <p className="text-xs leading-relaxed" style={{ color: "#374151" }}>{ws.goal}</p>
 
       {/* RAG toggle */}
       <div className="flex items-center gap-1 pt-0.5">
