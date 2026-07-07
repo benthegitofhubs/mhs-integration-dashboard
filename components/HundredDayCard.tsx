@@ -51,6 +51,16 @@ export default function HundredDayCard({ workstream, index, rag, ragNote, onRagC
   const notStarted = tasks.filter((t) => t.status === "Not Started").length;
   const pct        = total > 0 ? Math.round((complete / total) * 100) : 0;
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const isOverdue = (t: Task100) => {
+    if (t.status === "Complete") return false;
+    const d = new Date(t.dueDate);
+    return !isNaN(d.getTime()) && d < today;
+  };
+  const overdueCount = tasks.filter(isOverdue).length;
+  const stuckCount   = tasks.filter((t) => t.status === "Blocked" || t.status === "At Risk").length;
+
   const ragMeta = RAG_META[rag];
 
   const handleStatusChange = async (taskId: string, newStatus: Status100) => {
@@ -88,6 +98,22 @@ export default function HundredDayCard({ workstream, index, rag, ragNote, onRagC
               <h2 className="text-sm font-bold" style={{ color: "#111" }}>{workstream.name}</h2>
               <span style={{ color: "#d1cfc9" }}>·</span>
               <span className="text-xs" style={{ color: "#9ca3af" }}>{workstream.leader}</span>
+
+              {/* Warning badges */}
+              {overdueCount > 0 && (
+                <span className="text-xs font-semibold px-2 py-0.5 rounded"
+                  style={{ backgroundColor: "#fee2e2", color: "#b91c1c", fontFamily: "var(--font-geist-mono)" }}
+                  title="Tasks past due date">
+                  {overdueCount} overdue
+                </span>
+              )}
+              {stuckCount > 0 && (
+                <span className="text-xs font-semibold px-2 py-0.5 rounded"
+                  style={{ backgroundColor: "#ffedd5", color: "#c2410c", fontFamily: "var(--font-geist-mono)" }}
+                  title="Blocked or at-risk tasks">
+                  {stuckCount} stuck
+                </span>
+              )}
 
               {/* RAG toggle — stop propagation so clicking doesn't collapse card */}
               <span style={{ color: "#d1cfc9" }}>·</span>
@@ -228,7 +254,7 @@ export default function HundredDayCard({ workstream, index, rag, ragNote, onRagC
               </div>
 
               <div className="pt-0.5">
-                <span className="text-xs" style={{ color: task.dueDate ? "#57534e" : "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>
+                <span className="text-xs" style={{ color: isOverdue(task) ? "#b91c1c" : task.dueDate ? "#57534e" : "#c0bdb8", fontFamily: "var(--font-geist-mono)", fontWeight: isOverdue(task) ? 600 : undefined }}>
                   {task.dueDate || "—"}
                 </span>
               </div>
