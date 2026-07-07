@@ -20,12 +20,12 @@ export interface Workstream100 {
 
 export const KEY_DATES = [
   { label: "Transaction Close", date: "Jun 23, 2026" },
-  { label: "Day 14", date: "Jul 7, 2026" },
-  { label: "Day 30", date: "Jul 23, 2026" },
-  { label: "Q2 Board Meeting", date: "Aug 7, 2026" },
-  { label: "Day 60", date: "Aug 22, 2026" },
-  { label: "Day 90", date: "Sep 21, 2026" },
-  { label: "Day 100", date: "Oct 1, 2026" },
+  { label: "Day 14",            date: "Jul 7, 2026" },
+  { label: "Day 30",            date: "Jul 23, 2026" },
+  { label: "Q2 Board Meeting",  date: "Aug 7, 2026" },
+  { label: "Day 60",            date: "Aug 22, 2026" },
+  { label: "Day 90",            date: "Sep 21, 2026" },
+  { label: "Day 100",           date: "Oct 1, 2026" },
 ];
 
 export const FLAGSHIP_GOALS = [
@@ -33,9 +33,11 @@ export const FLAGSHIP_GOALS = [
   { id: "one-team",  label: "2 · One Team" },
   { id: "remission", label: "3 · Remission" },
   { id: "category",  label: "4 · Category Leadership" },
+  { id: "other",     label: "5 · Other" },
 ];
 
 export const WORKSTREAMS_100: Workstream100[] = [
+  // ── 1. GROWTH ────────────────────────────────────────────────────────────
   {
     id: "dtc",
     name: "Growth — DTC",
@@ -43,14 +45,21 @@ export const WORKSTREAMS_100: Workstream100[] = [
     flagshipGoal: "1 · Growth",
     goal: "The combined network is driving aggressive new customer growth (<$450 CAC, >3:1 LTV:CAC) with interventional mix above 70% across all new customer cohorts as rapidly as possible.",
     tasks: [
-      { id: "dtc-1", description: "Evaluate Mindful's existing D2C paid growth engine and discovery call / intake process", dueDate: "", owner: "", status: "Not Started", notes: "" },
-      { id: "dtc-2", description: "Transition D2C paid media management to Radial's Matchnode engagement", dueDate: "", owner: "", status: "Not Started", notes: "" },
-      { id: "dtc-3", description: "Deploy Radial signup flow and supporting infrastructure (benefits verification, AI customer agent) to MHS clinic network", dueDate: "", owner: "", status: "Not Started", notes: "Joint workstream with Product, Data & Clinical Innovation." },
-      { id: "dtc-4", description: "Evaluate low-hanging-fruit opportunities in existing MHS panel (e.g. SAINT deployment, SWIFT protocol scaling in WA/CA, 2x/day TMS)", dueDate: "", owner: "", status: "Not Started", notes: "" },
-      { id: "dtc-5", description: "Develop prioritized new intervention roadmap (PRISM, Proliv-Rx, SAINT, COMP360, MDMA) targeting outcome and interventional-mix improvement", dueDate: "", owner: "", status: "Not Started", notes: "" },
-      { id: "dtc-6", description: "Define and begin tracking CAC, LTV:CAC, and interventional-mix KPIs by clinic, customer, and channel cohort", dueDate: "", owner: "", status: "Not Started", notes: "" },
-      { id: "dtc-7", description: "Evaluate existing BD team & align on a plan for integration", dueDate: "", owner: "", status: "Not Started", notes: "" },
-      { id: "dtc-8", description: "Evaluate existing care navigation team & align on a plan for integration", dueDate: "", owner: "", status: "Not Started", notes: "" },
+      { id: "dtc-1",  description: "Complete evaluation of MHS growth-engine and deliver written diagnosis", dueDate: "Jul 10, 2026", owner: "Derek", status: "In Progress", notes: "DF: Substantially done, sharing soon." },
+      { id: "dtc-2",  description: "Fix SMS/email opt-in capture across all MHS forms & intake", dueDate: "ASAP", owner: "Jen / Sydney", status: "In Progress", notes: "" },
+      { id: "dtc-3",  description: "Exit Strategy Collective (after account ownership verified, continuity re: LegitScript + Ours Privacy, etc.) and transition to Matchnode for one unified approach", dueDate: "Aug 15, 2026", owner: "Derek / Emery", status: "In Progress", notes: "DF: Meeting w/ Matchnode tomorrow to understand ramp up options + will need to give notice to Strategy Collective by July 15th (30-day notice)." },
+      { id: "dtc-4",  description: "Ramp Matchnode spend and optimize for correct endpoint (interventional appointment if possible, consult completed if not — NOT just 'lead')", dueDate: "Aug 15, 2026", owner: "Derek / Emery", status: "Not Started", notes: "" },
+      { id: "dtc-5",  description: "Deploy Radial signup & booking flow including supporting infrastructure (benefits verification, AI customer agent) to MHS clinic network — especially booking discovery calls vs. direct calls/follow-ups", dueDate: "TBD", owner: "Carlene / Derek", status: "Not Started", notes: "DF: This likely needs to be piloted first." },
+      { id: "dtc-6",  description: "Once NPS measurement is in place (dependency), get review engine going across all clinics", dueDate: "Aug 15, 2026", owner: "Jen / Carlene", status: "Not Started", notes: "" },
+      { id: "dtc-7",  description: "Standardize CAC, LTV:CAC, and interventional-mix KPIs by clinic, customer, and channel cohort", dueDate: "Aug 15, 2026", owner: "Mackensie", status: "Not Started", notes: "" },
+      { id: "dtc-8",  description: "Create one big trusted dashboard spanning both networks", dueDate: "Aug 15, 2026", owner: "Mackensie", status: "Not Started", notes: "" },
+      { id: "dtc-9",  description: "Create and track clinic-by-clinic capacity across all clinics, and increasingly tie that information back automatically into paid spend", dueDate: "Sep 15, 2026", owner: "Mackensie", status: "Not Started", notes: "DF: Could split this one in two." },
+      { id: "dtc-10", description: "Resolve HubSpot / Customer.io LCM plans and integration", dueDate: "Sep 15, 2026", owner: "Jen / Mackensie", status: "Not Started", notes: "" },
+      { id: "dtc-11", description: "Pending brand decision: update/improve MHS website (also social media)", dueDate: "Sep 15, 2026", owner: "Derek / Jen", status: "Not Started", notes: "" },
+      { id: "dtc-12", description: "Pending brand decision: decide on content & SEO/GEO plan for MHS", dueDate: "Sep 15, 2026", owner: "Derek / Emery", status: "Not Started", notes: "" },
+      { id: "dtc-13", description: "Pending brand decision: launch MHS lifecycle v1", dueDate: "TBD", owner: "Derek / Mackensie", status: "Not Started", notes: "" },
+      { id: "dtc-14", description: "Evaluate low-hanging-fruit opportunities in existing MHS panel (e.g. SAINT deployment, SWIFT protocol scaling in WA/CA, 2x/day TMS)", dueDate: "TBD", owner: "", status: "Not Started", notes: "" },
+      { id: "dtc-15", description: "Develop prioritized new intervention roadmap (PRISM, Proliv-Rx, SAINT, COMP360, MDMA) targeting outcome and interventional-mix improvement", dueDate: "TBD", owner: "", status: "Not Started", notes: "" },
     ],
   },
   {
@@ -68,7 +77,7 @@ export const WORKSTREAMS_100: Workstream100[] = [
     name: "Growth — Lead to Consult Conversion",
     leader: "Dulce",
     flagshipGoal: "1 · Growth",
-    goal: "The combined network is driving aggressive new customer growth (<$450 CAC, >3:1 LTV:CAC) with interventional mix above 70% across all new customer cohorts as rapidly as possible.",
+    goal: "Lead to scheduled consult conversion rate of 50%+ · Scheduled to kept consult conversion rate of 85%+ · Kept consult to interventional start conversion rate of 80%+ · 70%+ of first appointments are interventional consults",
     tasks: [],
   },
   {
@@ -100,6 +109,8 @@ export const WORKSTREAMS_100: Workstream100[] = [
       { id: "pd-5", description: "Map clinic-level P&L / utilization dashboard requirements into the RadialOS analytics roadmap", dueDate: "", owner: "Mark / Carlene", status: "Not Started", notes: "Joint item with Operations & Shared Services workstream." },
     ],
   },
+
+  // ── 2. ONE TEAM ──────────────────────────────────────────────────────────
   {
     id: "governance",
     name: "Governance & Cadence",
@@ -176,15 +187,15 @@ export const WORKSTREAMS_100: Workstream100[] = [
     flagshipGoal: "2 · One Team",
     goal: "Every identified diligence issue has an assigned owner, a remediation plan, a cost estimate, and a target resolution date. Some items (employment litigation, data privacy, tax) will still be in process at Day 90.",
     tasks: [
-      { id: "leg-1", description: "Build master diligence-issue tracker (owner, plan, cost estimate, target date) across tax / labor / privacy / regulatory findings", dueDate: "", owner: "Dan", status: "In Progress", notes: "This workbook should feed directly into that tracker." },
-      { id: "leg-2", description: "Audit and remediate PC/MSO agreement structure (friendly-PC / CPOM model across CA, TX, WA professional corporations)", dueDate: "", owner: "Dan / Betsey", status: "Not Started", notes: "MSAs prohibit the PC from contracting with other management companies and don't provide a no-cause termination right for the PC — worth revisiting post-close." },
-      { id: "leg-3", description: "Complete billing/claims audit follow-up: claims-level reconciliation of Arietis-identified errors; confirm overpayment refund/recoupment disposition", dueDate: "", owner: "Dan / Sean", status: "Not Started", notes: "Coding error rates ran 1.8%–7.2% across reviewed months. Exposure exists under the ACA 60-day overpayment-return rule and False Claims Act." },
-      { id: "leg-4", description: "Clarify incident-to billing practices and confirm CPT/HCPCS compliance for supervised technician/RN services", dueDate: "", owner: "Dan", status: "Not Started", notes: "Company's stated understanding of 'incident-to' billing appears incomplete." },
-      { id: "leg-5", description: "Investigate and remediate the open ketamine theft / controlled-substance handling matter; reinforce two-person loading/waste protocols", dueDate: "", owner: "Dan / Toby", status: "Not Started", notes: "Flagged as an open item in the Mindful 90-Day Goals doc." },
-      { id: "leg-6", description: "Rebuild a formal healthcare regulatory compliance program with a named owner and recurring review cadence", dueDate: "", owner: "Dan", status: "Not Started", notes: "Company acknowledged it does not have 6 years of audit records and that past reviews were 'not standardized.'" },
-      { id: "leg-7", description: "Document a written PDMP / controlled-substance prescribing policy (currently informal/verbal only)", dueDate: "", owner: "Dan / Toby", status: "Not Started", notes: "" },
-      { id: "leg-8", description: "Resolve CCPA compliance gaps and HIPAA documentation deficiencies (missing BAAs, no written de-identification policy)", dueDate: "", owner: "Dan / Jordan", status: "Not Started", notes: "Joint item with IT & Security and Product, Data & Clinical Innovation workstreams." },
-      { id: "leg-9", description: "Engage RSM and outside counsel for targeted tax and regulatory remediation support", dueDate: "", owner: "Dan / Sean", status: "In Progress", notes: "" },
+      { id: "leg-1",  description: "Build master diligence-issue tracker (owner, plan, cost estimate, target date) across tax / labor / privacy / regulatory findings", dueDate: "", owner: "Dan", status: "In Progress", notes: "This workbook should feed directly into that tracker." },
+      { id: "leg-2",  description: "Audit and remediate PC/MSO agreement structure (friendly-PC / CPOM model across CA, TX, WA professional corporations)", dueDate: "", owner: "Dan / Betsey", status: "Not Started", notes: "MSAs prohibit the PC from contracting with other management companies and don't provide a no-cause termination right for the PC — worth revisiting post-close." },
+      { id: "leg-3",  description: "Complete billing/claims audit follow-up: claims-level reconciliation of Arietis-identified errors; confirm overpayment refund/recoupment disposition", dueDate: "", owner: "Dan / Sean", status: "Not Started", notes: "Coding error rates ran 1.8%–7.2% across reviewed months. Exposure exists under the ACA 60-day overpayment-return rule and False Claims Act." },
+      { id: "leg-4",  description: "Clarify incident-to billing practices and confirm CPT/HCPCS compliance for supervised technician/RN services", dueDate: "", owner: "Dan", status: "Not Started", notes: "Company's stated understanding of 'incident-to' billing appears incomplete." },
+      { id: "leg-5",  description: "Investigate and remediate the open ketamine theft / controlled-substance handling matter; reinforce two-person loading/waste protocols", dueDate: "", owner: "Dan / Toby", status: "Not Started", notes: "Flagged as an open item in the Mindful 90-Day Goals doc." },
+      { id: "leg-6",  description: "Rebuild a formal healthcare regulatory compliance program with a named owner and recurring review cadence", dueDate: "", owner: "Dan", status: "Not Started", notes: "Company acknowledged it does not have 6 years of audit records and that past reviews were 'not standardized.'" },
+      { id: "leg-7",  description: "Document a written PDMP / controlled-substance prescribing policy (currently informal/verbal only)", dueDate: "", owner: "Dan / Toby", status: "Not Started", notes: "" },
+      { id: "leg-8",  description: "Resolve CCPA compliance gaps and HIPAA documentation deficiencies (missing BAAs, no written de-identification policy)", dueDate: "", owner: "Dan / Jordan", status: "Not Started", notes: "Joint item with IT & Security and Product, Data & Clinical Innovation workstreams." },
+      { id: "leg-9",  description: "Engage RSM and outside counsel for targeted tax and regulatory remediation support", dueDate: "", owner: "Dan / Sean", status: "In Progress", notes: "" },
       { id: "leg-10", description: "Confirm legacy litigation insurance coverage (D&O/EPLI policies) for pending and settled wage-hour and discrimination claims", dueDate: "", owner: "Dan / Betsey", status: "Not Started", notes: "Company has not provided evidence of policy coverage for the period the 2023 claim was filed." },
     ],
   },
@@ -216,6 +227,8 @@ export const WORKSTREAMS_100: Workstream100[] = [
       { id: "pay-5", description: "Obtain missing payor contracts not provided in diligence to confirm reimbursement methodology and change-of-control triggers", dueDate: "", owner: "", status: "Not Started", notes: "" },
     ],
   },
+
+  // ── 3. REMISSION ─────────────────────────────────────────────────────────
   {
     id: "clinical-perf",
     name: "Clinician Performance Management",
@@ -223,18 +236,20 @@ export const WORKSTREAMS_100: Workstream100[] = [
     flagshipGoal: "3 · Remission",
     goal: "Toby is running all clinical ops network-wide with zero clinician churn and has an operating model for scale in hand, including current utilization/capacity view and an updated hiring plan through EOY '26.",
     tasks: [
-      { id: "cp-1", description: "Build and execute clinical team transition plan from Owen to Toby (org chart, RACI, comms timeline)", dueDate: "", owner: "Toby / Owen", status: "In Progress", notes: "Coordinate messaging with Communications workstream's clinician-specific roadshow sessions." },
-      { id: "cp-2", description: "Build network-wide clinician capacity plan (coverage and ramp assumptions through EOY '26)", dueDate: "", owner: "Toby / Leah", status: "In Progress", notes: "" },
-      { id: "cp-3", description: "Evaluate existing performance management and credentialing frameworks across the combined clinical team", dueDate: "", owner: "Toby / Carlene", status: "Not Started", notes: "Credentialing team was reduced from 3 to 1 FTE in Apr '26 and is fully outsourcing to an India-based vendor in May '26 — flag continuity risk during transition." },
-      { id: "cp-4", description: "Establish network-wide clinical quality & safety SLAs (questionnaire completion, outcome tracking, safety event reporting)", dueDate: "", owner: "Toby / Leah", status: "Not Started", notes: "" },
-      { id: "cp-5", description: "Establish network-wide operational SLAs (clinician utilization, no-show rates, scheduling turnaround)", dueDate: "", owner: "Toby", status: "Not Started", notes: "" },
-      { id: "cp-6", description: "Build centralized clinical analytics & reporting roadmap (measurement-informed care, real-time outcomes, clinician-level performance)", dueDate: "", owner: "Carlene / Toby", status: "Not Started", notes: "Coordinate with Product, Data & Clinical Innovation workstream." },
-      { id: "cp-7", description: "Remediate absence of formal TMS clinical protocols/SOPs — no overarching clinical policy exists today; providers using individual judgment", dueDate: "", owner: "Toby / Owen", status: "Not Started", notes: "Moderate risk given TMS is billed to federal payors as an interventional procedure." },
-      { id: "cp-8", description: "Confirm esketamine REMS post-dose observation protocol is consistent across SOPs (Driving Restriction Policy states 1.5–2 hrs; REMS requires 2 hrs)", dueDate: "", owner: "Toby", status: "Not Started", notes: "" },
-      { id: "cp-9", description: "Implement formal occupational health & safety program (written IIPP, Cal/OSHA training, bloodborne pathogen training) for interventional procedures", dueDate: "", owner: "Toby / Abbe", status: "Not Started", notes: "4 open workers' comp claims (Sep'24–Mar'26); no OSHA 300 logs or prior inspection records were provided in diligence." },
+      { id: "cp-1",  description: "Build and execute clinical team transition plan from Owen to Toby (org chart, RACI, comms timeline)", dueDate: "", owner: "Toby / Owen", status: "In Progress", notes: "Coordinate messaging with Communications workstream's clinician-specific roadshow sessions." },
+      { id: "cp-2",  description: "Build network-wide clinician capacity plan (coverage and ramp assumptions through EOY '26)", dueDate: "", owner: "Toby / Leah", status: "In Progress", notes: "" },
+      { id: "cp-3",  description: "Evaluate existing performance management and credentialing frameworks across the combined clinical team", dueDate: "", owner: "Toby / Carlene", status: "Not Started", notes: "Credentialing team was reduced from 3 to 1 FTE in Apr '26 and is fully outsourcing to an India-based vendor in May '26 — flag continuity risk during transition." },
+      { id: "cp-4",  description: "Establish network-wide clinical quality & safety SLAs (questionnaire completion, outcome tracking, safety event reporting)", dueDate: "", owner: "Toby / Leah", status: "Not Started", notes: "" },
+      { id: "cp-5",  description: "Establish network-wide operational SLAs (clinician utilization, no-show rates, scheduling turnaround)", dueDate: "", owner: "Toby", status: "Not Started", notes: "" },
+      { id: "cp-6",  description: "Build centralized clinical analytics & reporting roadmap (measurement-informed care, real-time outcomes, clinician-level performance)", dueDate: "", owner: "Carlene / Toby", status: "Not Started", notes: "Coordinate with Product, Data & Clinical Innovation workstream." },
+      { id: "cp-7",  description: "Remediate absence of formal TMS clinical protocols/SOPs — no overarching clinical policy exists today; providers using individual judgment", dueDate: "", owner: "Toby / Owen", status: "Not Started", notes: "Moderate risk given TMS is billed to federal payors as an interventional procedure." },
+      { id: "cp-8",  description: "Confirm esketamine REMS post-dose observation protocol is consistent across SOPs (Driving Restriction Policy states 1.5–2 hrs; REMS requires 2 hrs)", dueDate: "", owner: "Toby", status: "Not Started", notes: "" },
+      { id: "cp-9",  description: "Implement formal occupational health & safety program (written IIPP, Cal/OSHA training, bloodborne pathogen training) for interventional procedures", dueDate: "", owner: "Toby / Abbe", status: "Not Started", notes: "4 open workers' comp claims (Sep'24–Mar'26); no OSHA 300 logs or prior inspection records were provided in diligence." },
       { id: "cp-10", description: "Document and standardize technician training/supervision protocols for TMS and ketamine/esketamine administration", dueDate: "", owner: "Toby", status: "Not Started", notes: "No training documentation currently exists for these procedures." },
     ],
   },
+
+  // ── 4. CATEGORY LEADERSHIP ───────────────────────────────────────────────
   {
     id: "brain-medicine",
     name: "Brain Medicine Brand & Research",
@@ -242,12 +257,32 @@ export const WORKSTREAMS_100: Workstream100[] = [
     flagshipGoal: "4 · Category Leadership",
     goal: "Owen has a clear mandate and operating model for the external Brain Medicine brand and research agenda, with a defined scope and roadmap.",
     tasks: [
-      { id: "bm-1", description: "Formalize Owen's role as the external face of Brain Medicine (speaking, publishing, payer/partner relationships)", dueDate: "", owner: "Owen / John", status: "Not Started", notes: "" },
-      { id: "bm-2", description: "Define research roadmap and operating model across the combined network", dueDate: "", owner: "Owen", status: "Not Started", notes: "" },
-      { id: "bm-3", description: "Align on resources and budget required to execute the research roadmap", dueDate: "", owner: "Owen / Sean", status: "Not Started", notes: "" },
-      { id: "bm-4", description: "Resolve brand architecture decision dependency (Mindful vs. Radial brand) — unlocks external announcement and accelerates this entire workstream", dueDate: "", owner: "Derek / Owen", status: "Not Started", notes: "Cross-linked to Governance & Cadence item." },
-      { id: "bm-5", description: "Build external communications plan for the Brain Medicine narrative (Tier 1 press, AI-transformation narrative) jointly with Communications", dueDate: "", owner: "Derek / Owen", status: "Not Started", notes: "" },
-      { id: "bm-6", description: "Build plan to deploy SAINT to ≥3 existing Mindful Health Solutions clinics", dueDate: "", owner: "Owen / Toby", status: "Not Started", notes: "" },
+      { id: "bm-1",  description: "Formalize Owen's role as the external face of Brain Medicine (speaking, publishing, payer/partner relationships)", dueDate: "", owner: "Owen / John", status: "Not Started", notes: "" },
+      { id: "bm-2",  description: "Define research roadmap and operating model across the combined network", dueDate: "Jul 10, 2026", owner: "Owen", status: "In Progress", notes: "Owen + Ahmed had kickoff meeting today." },
+      { id: "bm-3",  description: "Align on resources and budget required to execute the research roadmap", dueDate: "", owner: "Owen / Sean", status: "Not Started", notes: "" },
+      { id: "bm-4",  description: "Resolve brand architecture decision dependency (Mindful vs. Radial brand) — unlocks external announcement and accelerates this entire workstream", dueDate: "", owner: "Derek / Elliot / John", status: "Not Started", notes: "Cross-linked to Governance & Cadence item." },
+      { id: "bm-5",  description: "Finalize external communications plan for the Brain Medicine narrative (Tier 1 press, AI-transformation narrative) jointly with Communications", dueDate: "", owner: "Derek / Owen", status: "In Progress", notes: "DF: Plan mostly in place." },
+      { id: "bm-6",  description: "Get acquisition announced publicly and secure top-tier coverage", dueDate: "", owner: "Derek / Emery", status: "In Progress", notes: "DF: Press release draft getting feedback right now." },
+      { id: "bm-7",  description: "Use acquisition announcement to propel sustained coverage — not just a one-off", dueDate: "", owner: "Derek / Emery", status: "Not Started", notes: "" },
+      { id: "bm-8",  description: "Launch new Research Hub", dueDate: "", owner: "Derek / Emery", status: "In Progress", notes: "" },
+      { id: "bm-9",  description: "Launch success stories from patients and providers on our site", dueDate: "", owner: "Derek / Emery", status: "In Progress", notes: "" },
+      { id: "bm-10", description: "Launch insurance coverage checker", dueDate: "", owner: "Derek / Emery", status: "Not Started", notes: "" },
+      { id: "bm-11", description: "Build plan to deploy SAINT to ≥3 existing Mindful Health Solutions clinics", dueDate: "", owner: "Owen / Toby", status: "Not Started", notes: "" },
+    ],
+  },
+
+  // ── 5. OTHER ─────────────────────────────────────────────────────────────
+  {
+    id: "misc",
+    name: "Miscellaneous",
+    leader: "TBD",
+    flagshipGoal: "5 · Other",
+    goal: "TBD",
+    tasks: [
+      { id: "misc-1", description: "Align financial hardship policy across the network", dueDate: "", owner: "", status: "Not Started", notes: "" },
+      { id: "misc-2", description: "Culture & change management: identify site-level culture champions, communicate corporate values, create baseline employee sentiment, mitigate resistance, recognize behavior, develop consistent visibility plan", dueDate: "", owner: "", status: "Not Started", notes: "" },
+      { id: "misc-3", description: "Audit and unify Care Navigation (inbound calls through ongoing patient management) and Practice Manager/Technician structure across all locations; align with HR on staffing model and recruitment", dueDate: "", owner: "", status: "Not Started", notes: "" },
+      { id: "misc-4", description: "Conduct in-person clinic aesthetic assessment and audit full customer journey at all 21 MHS locations; score each site on cleanliness, signage, furniture condition, brand alignment, and patient-facing environment quality; develop improvement plan/budget if necessary", dueDate: "", owner: "", status: "Not Started", notes: "" },
     ],
   },
 ];
