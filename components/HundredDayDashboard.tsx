@@ -70,10 +70,44 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
           ))}
         </div>
 
-        {/* Task stats + RAG summary side by side */}
-        <div className="grid grid-cols-2 gap-6 mb-10">
+        {/* TL;DR summary */}
+        <TldrSummary
+          workstreams={workstreams}
+          ragMap={ragMap}
+          complete={complete}
+          inProgress={inProgress}
+          blocked={blocked}
+          atRisk={atRisk}
+          total={total}
+          ragCounts={ragCounts}
+        />
 
-          {/* Task progress */}
+        {/* Workstream Health + Task Progress — stacked */}
+        <div className="space-y-6 mb-10">
+
+          {/* Workstream Health — first */}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest mb-3"
+              style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)", borderBottom: "1px solid #e5e3de", paddingBottom: "8px" }}>
+              Workstream Health
+            </p>
+            <div className="grid grid-cols-3 gap-0" style={{ borderTop: "1px solid #e5e3de" }}>
+              <StatCell value={ragCounts.Green} label="On Track"  color="#15803d" />
+              <StatCell value={ragCounts.Amber} label="At Risk"   color="#b45309" />
+              <StatCell value={ragCounts.Red}   label="Off Track" color="#b91c1c" />
+            </div>
+            <div className="h-1 overflow-hidden flex mt-3" style={{ backgroundColor: "#e5e3de" }}>
+              {ragCounts.Green > 0 && <div style={{ width: `${(ragCounts.Green / workstreams.length) * 100}%`, backgroundColor: "#15803d" }} />}
+              {ragCounts.Amber > 0 && <div style={{ width: `${(ragCounts.Amber / workstreams.length) * 100}%`, backgroundColor: "#f59e0b" }} />}
+              {ragCounts.Red > 0   && <div style={{ width: `${(ragCounts.Red / workstreams.length) * 100}%`,   backgroundColor: "#b91c1c" }} />}
+              <div style={{ width: `${((workstreams.length - ragCounts.Green - ragCounts.Amber - ragCounts.Red) / workstreams.length) * 100}%`, backgroundColor: "#d1d5db" }} />
+            </div>
+            <p className="text-xs mt-1" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+              {workstreams.length - ragCounts.Green - ragCounts.Amber - ragCounts.Red} OF {workstreams.length} WORKSTREAMS AWAITING STATUS
+            </p>
+          </div>
+
+          {/* Task Progress — second */}
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest mb-3"
               style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)", borderBottom: "1px solid #e5e3de", paddingBottom: "8px" }}>
@@ -93,28 +127,6 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
             </div>
             <p className="text-xs mt-1" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
               {overallPct}% COMPLETE · {total} TOTAL TASKS
-            </p>
-          </div>
-
-          {/* RAG health */}
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-widest mb-3"
-              style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)", borderBottom: "1px solid #e5e3de", paddingBottom: "8px" }}>
-              Workstream Health
-            </p>
-            <div className="grid grid-cols-3 gap-0" style={{ borderTop: "1px solid #e5e3de" }}>
-              <StatCell value={ragCounts.Green} label="On Track"  color="#15803d" />
-              <StatCell value={ragCounts.Amber} label="At Risk"   color="#b45309" />
-              <StatCell value={ragCounts.Red}   label="Off Track" color="#b91c1c" />
-            </div>
-            <div className="h-1 overflow-hidden flex mt-3" style={{ backgroundColor: "#e5e3de" }}>
-              {ragCounts.Green > 0 && <div style={{ width: `${(ragCounts.Green / workstreams.length) * 100}%`, backgroundColor: "#15803d" }} />}
-              {ragCounts.Amber > 0 && <div style={{ width: `${(ragCounts.Amber / workstreams.length) * 100}%`, backgroundColor: "#f59e0b" }} />}
-              {ragCounts.Red > 0   && <div style={{ width: `${(ragCounts.Red / workstreams.length) * 100}%`,   backgroundColor: "#b91c1c" }} />}
-              <div style={{ width: `${((workstreams.length - ragCounts.Green - ragCounts.Amber - ragCounts.Red) / workstreams.length) * 100}%`, backgroundColor: "#d1d5db" }} />
-            </div>
-            <p className="text-xs mt-1" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
-              {workstreams.length - ragCounts.Green - ragCounts.Amber - ragCounts.Red} WORKSTREAMS AWAITING STATUS
             </p>
           </div>
         </div>
@@ -302,6 +314,60 @@ function OverviewRow({
       <p className="text-xs font-semibold text-right pt-0.5"
         style={{ color: pct > 0 ? "#1a5c3a" : "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
         {pct}%
+      </p>
+    </div>
+  );
+}
+
+function TldrSummary({
+  workstreams, ragMap, complete, inProgress, blocked, atRisk, total, ragCounts,
+}: {
+  workstreams: Workstream100[];
+  ragMap: RagMap;
+  complete: number;
+  inProgress: number;
+  blocked: number;
+  atRisk: number;
+  total: number;
+  ragCounts: { Green: number; Amber: number; Red: number };
+}) {
+  const noStatus = workstreams.length - ragCounts.Green - ragCounts.Amber - ragCounts.Red;
+  const active = inProgress + atRisk;
+
+  // Build sentence 1: workstream health
+  let healthLine = "";
+  if (noStatus === workstreams.length) {
+    healthLine = `${workstreams.length} workstreams tracked — no health status set yet.`;
+  } else if (ragCounts.Red > 0) {
+    healthLine = `${ragCounts.Red} workstream${ragCounts.Red > 1 ? "s are" : " is"} off track${ragCounts.Amber > 0 ? `, ${ragCounts.Amber} at risk` : ""}${ragCounts.Green > 0 ? `, ${ragCounts.Green} on track` : ""}.`;
+  } else if (ragCounts.Amber > 0) {
+    healthLine = `${ragCounts.Amber} workstream${ragCounts.Amber > 1 ? "s are" : " is"} at risk${ragCounts.Green > 0 ? `, ${ragCounts.Green} on track` : ""}${noStatus > 0 ? `, ${noStatus} awaiting status` : ""}.`;
+  } else {
+    healthLine = `All ${ragCounts.Green} rated workstream${ragCounts.Green > 1 ? "s are" : " is"} on track${noStatus > 0 ? ` — ${noStatus} still awaiting status` : ""}.`;
+  }
+
+  // Build sentence 2: task momentum
+  let taskLine = "";
+  if (complete === 0 && active === 0) {
+    taskLine = `${total} tasks defined across all workstreams — none started yet.`;
+  } else {
+    const parts = [];
+    if (complete > 0) parts.push(`${complete} complete`);
+    if (active > 0)   parts.push(`${active} active`);
+    if (blocked > 0)  parts.push(`${blocked} blocked`);
+    taskLine = `${parts.join(", ")} out of ${total} total tasks.`;
+    if (blocked > 0) taskLine += " Blocked items need attention.";
+  }
+
+  return (
+    <div className="mb-8 px-5 py-4 rounded-lg" style={{ backgroundColor: "white", border: "1px solid #e5e3de" }}>
+      <p className="text-xs font-semibold uppercase tracking-widest mb-2"
+        style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+        TL;DR
+      </p>
+      <p className="text-sm leading-relaxed" style={{ color: "#1a1a1a" }}>
+        {healthLine}{" "}
+        <span style={{ color: "#78716c" }}>{taskLine}</span>
       </p>
     </div>
   );
