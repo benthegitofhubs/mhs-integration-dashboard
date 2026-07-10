@@ -20,19 +20,27 @@ function saveIMNotes(workstreamId: string, notes: IMNote[]) {
 }
 
 const STATUS_COLOR: Record<Status100, string> = {
-  "Not Started": "#9ca3af",
+  "Not Started": "#111111",
   "In Progress": "#1d4ed8",
-  "At Risk":     "#c2410c",
+  "At Risk":     "#854d0e",
   "Blocked":     "#b91c1c",
-  "Complete":    "#1a5c3a",
+  "Complete":    "#15803d",
 };
 
 const STATUS_BG: Record<Status100, string> = {
   "Not Started": "#f3f4f6",
   "In Progress": "#dbeafe",
-  "At Risk":     "#ffedd5",
+  "At Risk":     "#fef9c3",
   "Blocked":     "#fee2e2",
   "Complete":    "#dcfce7",
+};
+
+const STATUS_DOT: Record<Status100, string> = {
+  "Not Started": "#374151",
+  "In Progress": "#1d4ed8",
+  "At Risk":     "#eab308",
+  "Blocked":     "#b91c1c",
+  "Complete":    "#15803d",
 };
 
 const STATUSES: Status100[] = ["Not Started", "In Progress", "At Risk", "Blocked", "Complete"];
@@ -140,7 +148,7 @@ export default function HundredDayCard({ workstream, index, ryg, rygNote, onRygC
               )}
               {stuckCount > 0 && (
                 <span className="text-xs font-semibold px-2 py-0.5 rounded"
-                  style={{ backgroundColor: "#ffedd5", color: "#c2410c", fontFamily: "var(--font-geist-mono)" }}
+                  style={{ backgroundColor: "#fef9c3", color: "#854d0e", fontFamily: "var(--font-geist-mono)" }}
                   title="Blocked or at-risk tasks">
                   {stuckCount} stuck
                 </span>
@@ -218,11 +226,11 @@ export default function HundredDayCard({ workstream, index, ryg, rygNote, onRygC
                 <span className="text-xs" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>{pct}%</span>
               </div>
               <div className="flex overflow-hidden" style={{ height: "4px", borderRadius: "2px", backgroundColor: "#e5e3de" }}>
-                {complete > 0   && <div style={{ width: `${(complete / total) * 100}%`,   backgroundColor: "#1a5c3a" }} />}
-                {inProgress > 0 && <div style={{ width: `${(inProgress / total) * 100}%`, backgroundColor: "#1d4ed8" }} />}
-                {atRisk > 0     && <div style={{ width: `${(atRisk / total) * 100}%`,     backgroundColor: "#c2410c" }} />}
-                {blocked > 0    && <div style={{ width: `${(blocked / total) * 100}%`,    backgroundColor: "#b91c1c" }} />}
-                {notStarted > 0 && <div style={{ width: `${(notStarted / total) * 100}%`, backgroundColor: "#d1d5db" }} />}
+                {complete > 0   && <div style={{ width: `${(complete / total) * 100}%`,   backgroundColor: STATUS_DOT["Complete"] }} />}
+                {inProgress > 0 && <div style={{ width: `${(inProgress / total) * 100}%`, backgroundColor: STATUS_DOT["In Progress"] }} />}
+                {atRisk > 0     && <div style={{ width: `${(atRisk / total) * 100}%`,     backgroundColor: STATUS_DOT["At Risk"] }} />}
+                {blocked > 0    && <div style={{ width: `${(blocked / total) * 100}%`,    backgroundColor: STATUS_DOT["Blocked"] }} />}
+                {notStarted > 0 && <div style={{ width: `${(notStarted / total) * 100}%`, backgroundColor: STATUS_DOT["Not Started"] }} />}
               </div>
             </div>
 
