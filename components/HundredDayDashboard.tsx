@@ -271,6 +271,30 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
           <div className="flex-1" style={{ height: "2px", backgroundColor: "#e5e3de" }} />
         </div>
 
+        {/* Task Health legend */}
+        <div className="mb-6 rounded-lg overflow-hidden" style={{ border: "1px solid #e5e3de" }}>
+          <div className="px-5 py-3" style={{ backgroundColor: "#f7f6f3", borderBottom: "1px solid #e5e3de" }}>
+            <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+              Health Legend — How Task Health Is Calculated
+            </p>
+          </div>
+          <div style={{ backgroundColor: "white" }}>
+            {([
+              { label: "On Track", dot: "#15803d", bg: "#dcfce7", color: "#15803d", desc: "Due date has not passed, or task is complete." },
+              { label: "Off Track", dot: "#b91c1c", bg: "#fee2e2", color: "#b91c1c", desc: "Due date has passed and the task is not yet complete." },
+            ]).map((row, i, arr) => (
+              <div key={row.label} className="grid px-5 py-3 items-center gap-4"
+                style={{ gridTemplateColumns: "110px 1fr", borderBottom: i < arr.length - 1 ? "1px solid #f0efe9" : "none" }}>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded"
+                  style={{ backgroundColor: row.bg, color: row.color, fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap", display: "inline-block" }}>
+                  {row.label}
+                </span>
+                <p className="text-xs leading-relaxed" style={{ color: "#6b7280" }}>{row.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
 
       {/* Workstream cards */}
