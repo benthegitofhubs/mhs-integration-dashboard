@@ -323,9 +323,8 @@ export const WORKSTREAMS_100: Workstream100[] = [
     flagshipGoal: "5 · Category Leadership",
     goal: "TBD",
     tasks: [
-      { id: "misc-1", description: "Align financial hardship policy across the network", dueDate: "TBD", owner: "", status: "Not Started", notes: "" },
-      { id: "misc-2", description: "Culture & change management: identify site-level culture champions, communicate corporate values, create baseline employee sentiment, mitigate resistance, recognize behavior, develop consistent visibility plan", dueDate: "TBD", owner: "", status: "Not Started", notes: "" },
-      { id: "misc-3", description: "Conduct in-person clinic aesthetic assessment and audit full customer journey at all 21 MHS locations; score each site on cleanliness, signage, furniture condition, brand alignment, and patient-facing environment quality; develop improvement plan/budget if necessary", dueDate: "TBD", owner: "", status: "Not Started", notes: "" },
+      { id: "misc-1", description: "Align financial hardship policy across the network", dueDate: "TBD", owner: "", status: "Not Started", notes: "Discussions to be scheduled." },
+      { id: "misc-2", description: "Conduct in-person clinic aesthetic assessment and audit full customer journey at all 21 MHS locations; score each site on cleanliness, signage, furniture condition, brand alignment, and patient-facing environment quality; develop improvement plan/budget if necessary", dueDate: "TBD", owner: "", status: "Not Started", notes: "" },
     ],
   },
 ];
