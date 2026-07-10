@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { Workstream100, Task100, Status100 } from "@/lib/hundredday";
 import { STATUS_BG, STATUS_COLOR } from "./HundredDayDashboard";
-import { calcTaskHealth, HEALTH_META } from "@/lib/taskHealth";
 
 interface IMNote {
   timestamp: string;
@@ -182,7 +181,7 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
         <div style={{ borderTop: "1px solid #e5e3de" }}>
           <div className="grid text-xs uppercase tracking-widest font-semibold px-6 py-2.5"
             style={{
-              gridTemplateColumns: "1fr 110px 110px 90px 120px",
+              gridTemplateColumns: "1fr 110px 110px 120px",
               backgroundColor: "#f7f6f3",
               color: "#9ca3af",
               fontFamily: "var(--font-geist-mono)",
@@ -191,17 +190,14 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
             <span>Task</span>
             <span>Due Date</span>
             <span>Owner</span>
-            <span>Health</span>
             <span>Status</span>
           </div>
 
           {tasks.map((task, idx) => {
-            const health = calcTaskHealth(task);
-            const hMeta  = HEALTH_META[health.status];
             return (
             <div key={task.id} className="grid px-6 py-4 hover:bg-stone-50 transition-colors"
               style={{
-                gridTemplateColumns: "1fr 110px 110px 90px 120px",
+                gridTemplateColumns: "1fr 110px 110px 120px",
                 borderBottom: idx < tasks.length - 1 ? "1px solid #f0efe9" : "none",
                 alignItems: "start",
                 gap: "12px",
@@ -243,17 +239,6 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
               <div className="pt-0.5">
                 <span className="text-xs" style={{ color: task.owner ? "#78716c" : "#c0bdb8" }}>
                   {task.owner || "—"}
-                </span>
-              </div>
-
-              {/* Auto-calculated health */}
-              <div className="pt-0.5">
-                <span
-                  className="text-xs font-semibold px-2 py-0.5 rounded"
-                  style={{ backgroundColor: hMeta.bg, color: hMeta.color, fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap" }}
-                  title={health.reason}
-                >
-                  {health.status}
                 </span>
               </div>
 
