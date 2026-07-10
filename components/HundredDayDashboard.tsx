@@ -101,8 +101,23 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
                 </div>
               </div>
               <div className="relative w-full" style={{ height: "4px", backgroundColor: "#e5e3de", borderRadius: "2px" }}>
+                {/* Filled progress */}
                 <div style={{ width: `${pct}%`, height: "100%", backgroundColor: "#1a5c3a", borderRadius: "2px" }} />
+                {/* 100 day tick marks */}
+                {Array.from({ length: 99 }, (_, i) => (
+                  <div key={i} className="absolute" style={{
+                    left: `${((i + 1) / 100) * 100}%`,
+                    top: "-3px",
+                    width: "1px",
+                    height: "10px",
+                    backgroundColor: (i + 1) / 100 * 100 <= pct ? "#0f4f2e" : "#c8c5be",
+                    opacity: 0.5,
+                  }} />
+                ))}
+                {/* Today marker */}
                 <div className="absolute" style={{ left: `${pct}%`, top: "50%", transform: "translate(-50%, -50%)", width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#1a5c3a", border: "2px solid white", boxShadow: "0 0 0 1px #1a5c3a" }} />
+                {/* Finish line */}
+                <div className="absolute" style={{ right: 0, top: "-6px", width: "2px", height: "16px", backgroundColor: "#9ca3af" }} />
               </div>
             </div>
           );
