@@ -158,14 +158,6 @@ export const WORKSTREAMS_100: Workstream100[] = [
 
   // ── 2. ONE TEAM ──────────────────────────────────────────────────────────
   {
-    id: "governance",
-    name: "Governance & Cadence",
-    leader: "Integration Lead (TBD)",
-    flagshipGoal: "2 · One Team",
-    goal: "A single, empowered integration lead is running a structured process with clear owners and dates across every workstream by end of Week 3.",
-    tasks: [],
-  },
-  {
     id: "finance",
     name: "Finance & Accounting",
     leader: "Mark / Chris / John",
