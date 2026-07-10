@@ -33,6 +33,7 @@ function deriveWorkstreamStatus(ws: Workstream100): Status100 | null {
 }
 
 export default function HundredDayDashboard({ workstreams }: { workstreams: Workstream100[] }) {
+  const [activeTab, setActiveTab] = useState<"workstreams" | "by-owner">("workstreams");
   const allTasks   = workstreams.flatMap((ws) => ws.tasks);
   const total      = allTasks.length;
   const complete   = allTasks.filter((t) => t.status === "Complete").length;
@@ -166,6 +167,32 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
           </p>
         </div>
 
+        {/* Tab switcher */}
+        <div className="flex gap-1 mb-8" style={{ borderBottom: "2px solid #e5e3de" }}>
+          {(["workstreams", "by-owner"] as const).map((tab) => (
+            <button key={tab} onClick={() => setActiveTab(tab)}
+              className="text-xs font-semibold uppercase tracking-widest px-4 py-2 transition-colors"
+              style={{
+                fontFamily: "var(--font-geist-mono)",
+                color: activeTab === tab ? "#1a5c3a" : "#9ca3af",
+                borderBottom: activeTab === tab ? "2px solid #1a5c3a" : "2px solid transparent",
+                marginBottom: "-2px",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                paddingBottom: "8px",
+              }}>
+              {tab === "workstreams" ? "Workstreams" : "By Owner"}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === "by-owner" && (
+          <ByOwnerView workstreams={workstreams} />
+        )}
+
+        {activeTab === "workstreams" && (
+        <>
         {/* Workstream Health */}
         <div className="mb-10">
           <div className="flex items-center gap-4 mb-6">
@@ -310,19 +337,23 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
           </div>
         </div>
 
+        </>
+        )}
       </div>
 
-      {/* Workstream cards */}
-      <div className="max-w-6xl mx-auto px-8 pb-20 space-y-2">
-        {workstreams.map((ws, i) => (
-          <HundredDayCard
-            key={ws.id}
-            workstream={ws}
-            index={i + 1}
-            derivedStatus={wsDerived[ws.id]}
-          />
-        ))}
-      </div>
+      {/* Workstream cards — only on workstreams tab */}
+      {activeTab === "workstreams" && (
+        <div className="max-w-6xl mx-auto px-8 pb-20 space-y-2">
+          {workstreams.map((ws, i) => (
+            <HundredDayCard
+              key={ws.id}
+              workstream={ws}
+              index={i + 1}
+              derivedStatus={wsDerived[ws.id]}
+            />
+          ))}
+        </div>
+      )}
     </main>
   );
 }
@@ -426,6 +457,74 @@ function BoardMeetingCell({ defaultDate }: { defaultDate: string }) {
           {value}
         </span>
       )}
+    </div>
+  );
+}
+
+function ByOwnerView({ workstreams }: { workstreams: Workstream100[] }) {
+  type OwnerTask = { owner: string; workstream: string; description: string; dueDate: string; status: Status100 };
+
+  const rows: OwnerTask[] = workstreams.flatMap((ws) =>
+    ws.tasks.flatMap((t) => {
+      const owners = t.owner ? t.owner.split(/[/,]/).map((o) => o.trim()).filter(Boolean) : ["—"];
+      return owners.map((owner) => ({
+        owner,
+        workstream: ws.name,
+        description: t.description,
+        dueDate: t.dueDate || "—",
+        status: t.status,
+      }));
+    })
+  );
+
+  const grouped = rows.reduce<Record<string, OwnerTask[]>>((acc, row) => {
+    if (!acc[row.owner]) acc[row.owner] = [];
+    acc[row.owner].push(row);
+    return acc;
+  }, {});
+
+  const sortedOwners = Object.keys(grouped).sort((a, b) => {
+    if (a === "—") return 1;
+    if (b === "—") return -1;
+    return a.localeCompare(b);
+  });
+
+  return (
+    <div className="pb-20 space-y-6">
+      {sortedOwners.map((owner) => (
+        <div key={owner} style={{ border: "1px solid #e5e3de", borderRadius: "6px", overflow: "hidden", backgroundColor: "white" }}>
+          <div className="px-5 py-3" style={{ backgroundColor: "#f7f6f3", borderBottom: "1px solid #e5e3de" }}>
+            <span className="text-sm font-semibold" style={{ color: "#111" }}>{owner}</span>
+            <span className="ml-2 text-xs" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+              {grouped[owner].length} item{grouped[owner].length !== 1 ? "s" : ""}
+            </span>
+          </div>
+          <div className="grid text-xs uppercase tracking-widest font-semibold px-5 py-2"
+            style={{ gridTemplateColumns: "1fr 180px 110px 100px", color: "#9ca3af", fontFamily: "var(--font-geist-mono)", borderBottom: "1px solid #e5e3de" }}>
+            <span>Work Item</span>
+            <span>Workstream</span>
+            <span>Due Date</span>
+            <span>Status</span>
+          </div>
+          {grouped[owner].map((row, i) => (
+            <div key={i} className="grid px-5 py-3 hover:bg-stone-50 transition-colors"
+              style={{
+                gridTemplateColumns: "1fr 180px 110px 100px",
+                borderBottom: i < grouped[owner].length - 1 ? "1px solid #f0efe9" : "none",
+                alignItems: "start",
+                gap: "12px",
+              }}>
+              <p className="text-xs leading-relaxed" style={{ color: "#1a1a1a" }}>{row.description}</p>
+              <span className="text-xs" style={{ color: "#6b7280", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{row.workstream}</span>
+              <span className="text-xs" style={{ color: "#57534e", fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap" }}>{row.dueDate}</span>
+              <span className="text-xs font-semibold px-2 py-0.5 rounded"
+                style={{ backgroundColor: STATUS_BG[row.status], color: STATUS_COLOR[row.status], fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap", display: "inline-block" }}>
+                {row.status}
+              </span>
+            </div>
+          ))}
+        </div>
+      ))}
     </div>
   );
 }
