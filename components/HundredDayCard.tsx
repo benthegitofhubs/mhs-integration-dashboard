@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Workstream100, Task100, Status100 } from "@/lib/hundredday";
-import { RYG, RYG_META } from "./HundredDayDashboard";
+import { STATUS_BG, STATUS_COLOR } from "./HundredDayDashboard";
 import { calcTaskHealth, HEALTH_META } from "@/lib/taskHealth";
 
 interface IMNote {
@@ -20,22 +20,6 @@ function saveIMNotes(workstreamId: string, notes: IMNote[]) {
   localStorage.setItem(`im-notes-${workstreamId}`, JSON.stringify(notes));
 }
 
-const STATUS_COLOR: Record<Status100, string> = {
-  "Not Started": "#111111",
-  "In Progress": "#1d4ed8",
-  "At Risk":     "#854d0e",
-  "Blocked":     "#b91c1c",
-  "Complete":    "#15803d",
-};
-
-const STATUS_BG: Record<Status100, string> = {
-  "Not Started": "#f3f4f6",
-  "In Progress": "#dbeafe",
-  "At Risk":     "#fef9c3",
-  "Blocked":     "#fee2e2",
-  "Complete":    "#dcfce7",
-};
-
 const STATUS_DOT: Record<Status100, string> = {
   "Not Started": "#374151",
   "In Progress": "#1d4ed8",
@@ -49,13 +33,10 @@ const STATUSES: Status100[] = ["Not Started", "In Progress", "At Risk", "Blocked
 interface Props {
   workstream: Workstream100;
   index: number;
-  ryg: RYG;
-  rygNote: string;
-  onRygChange: (ryg: RYG) => void;
-  onRygNoteChange: (note: string) => void;
+  derivedStatus: Status100 | null;
 }
 
-export default function HundredDayCard({ workstream, index, ryg, rygNote, onRygChange, onRygNoteChange }: Props) {
+export default function HundredDayCard({ workstream, index, derivedStatus }: Props) {
   const [tasks, setTasks] = useState<Task100[]>(workstream.tasks);
   const [expanded, setExpanded] = useState(false);
   const [saving, setSaving] = useState<string | null>(null);
@@ -63,8 +44,6 @@ export default function HundredDayCard({ workstream, index, ryg, rygNote, onRygC
   const [noteValues, setNoteValues] = useState<Record<string, string>>(
     Object.fromEntries(workstream.tasks.map((t) => [t.id, t.notes]))
   );
-  const [editingRygNote, setEditingRygNote] = useState(false);
-  const [rygNoteDraft, setRygNoteDraft] = useState(rygNote);
   const [imNotes, setImNotes] = useState<IMNote[]>([]);
   const [imDraft, setImDraft] = useState("");
   const [imHistoryOpen, setImHistoryOpen] = useState(false);
@@ -100,7 +79,6 @@ export default function HundredDayCard({ workstream, index, ryg, rygNote, onRygC
   const overdueCount = tasks.filter(isOverdue).length;
   const stuckCount   = tasks.filter((t) => t.status === "Blocked" || t.status === "At Risk").length;
 
-  const rygMeta = ryg ? RYG_META[ryg as Status100] : null;
 
   const handleStatusChange = async (taskId: string, newStatus: Status100) => {
     setSaving(taskId);
@@ -154,54 +132,22 @@ export default function HundredDayCard({ workstream, index, ryg, rygNote, onRygC
                 </span>
               )}
 
-              {/* Workstream status select */}
-              <span style={{ color: "#d1cfc9" }}>·</span>
-              <div onClick={(e) => e.stopPropagation()}>
-                <select
-                  value={ryg}
-                  onChange={(e) => onRygChange(e.target.value as RYG)}
-                  className="text-xs font-semibold cursor-pointer focus:outline-none rounded px-2 py-0.5"
-                  style={{
-                    backgroundColor: rygMeta ? rygMeta.bg : "#f3f4f6",
-                    color: rygMeta ? rygMeta.color : "#9ca3af",
-                    border: "none",
-                    fontFamily: "var(--font-geist-mono)",
-                  }}
-                >
-                  <option value="">— Status</option>
-                  {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
+              {/* Derived status badge */}
+              {derivedStatus && (
+                <>
+                  <span style={{ color: "#d1cfc9" }}>·</span>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded"
+                    style={{ backgroundColor: STATUS_BG[derivedStatus], color: STATUS_COLOR[derivedStatus], fontFamily: "var(--font-geist-mono)" }}>
+                    {derivedStatus}
+                  </span>
+                </>
+              )}
             </div>
 
             <p className="text-xs leading-relaxed" style={{ color: "#78716c", paddingLeft: "22px" }}>
               {workstream.goal}
             </p>
 
-            {/* Weekly RYG note */}
-            <div className="mt-1.5" style={{ paddingLeft: "22px" }} onClick={(e) => e.stopPropagation()}>
-              {editingRygNote ? (
-                <textarea
-                  autoFocus
-                  value={rygNoteDraft}
-                  onChange={(e) => setRygNoteDraft(e.target.value)}
-                  onBlur={() => { onRygNoteChange(rygNoteDraft); setEditingRygNote(false); }}
-                  onKeyDown={(e) => { if (e.key === "Escape") setEditingRygNote(false); }}
-                  rows={2}
-                  placeholder="Add weekly status note…"
-                  className="w-full text-xs leading-relaxed rounded px-2 py-1.5 resize-none focus:outline-none"
-                  style={{ border: "1px solid #d1cfc9", backgroundColor: "#fafaf8", color: "#57534e", maxWidth: "480px" }}
-                />
-              ) : (
-                <p
-                  className="text-xs leading-relaxed cursor-pointer inline-block rounded px-1 -mx-1 hover:bg-stone-100 transition-colors"
-                  style={{ color: rygNote ? "#57534e" : "#c0bdb8", fontStyle: rygNote ? "normal" : "italic" }}
-                  onClick={() => { setRygNoteDraft(rygNote); setEditingRygNote(true); }}
-                >
-                  {rygNote || "Add weekly status note…"}
-                </p>
-              )}
-            </div>
           </div>
 
           {/* Right: mini counts + segmented bar */}
