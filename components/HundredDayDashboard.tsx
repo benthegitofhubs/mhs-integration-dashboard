@@ -261,19 +261,27 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
         </div>
 
         {/* Status color legend */}
-        <div className="flex items-center gap-5 mb-6">
-          {([
-            ["Not Started", "#374151"],
-            ["In Progress", "#1d4ed8"],
-            ["At Risk",     "#eab308"],
-            ["Blocked",     "#b91c1c"],
-            ["Complete",    "#15803d"],
-          ] as [string, string][]).map(([label, color]) => (
-            <div key={label} className="flex items-center gap-1.5">
-              <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: color, flexShrink: 0 }} />
-              <span className="text-xs" style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)" }}>{label}</span>
-            </div>
-          ))}
+        <div className="mb-6 rounded-lg overflow-hidden" style={{ border: "1px solid #e5e3de" }}>
+          <div className="px-5 py-3" style={{ backgroundColor: "#f7f6f3", borderBottom: "1px solid #e5e3de" }}>
+            <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+              Status Legend — Task Status Key
+            </p>
+          </div>
+          <div style={{ backgroundColor: "white" }}>
+            {([
+              ["Not Started", "#374151"],
+              ["In Progress", "#1d4ed8"],
+              ["At Risk",     "#eab308"],
+              ["Blocked",     "#b91c1c"],
+              ["Complete",    "#15803d"],
+            ] as [string, string][]).map(([label, color], i, arr) => (
+              <div key={label} className="flex items-center gap-3 px-5 py-3"
+                style={{ borderBottom: i < arr.length - 1 ? "1px solid #f0efe9" : "none" }}>
+                <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: color, flexShrink: 0 }} />
+                <span className="text-xs font-semibold" style={{ color: "#1a1a1a", fontFamily: "var(--font-geist-mono)" }}>{label}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
