@@ -157,7 +157,7 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
           <div className="overflow-hidden" style={{ border: "1px solid #e5e3de", borderRadius: "6px", backgroundColor: "white" }}>
             <div className="grid text-xs uppercase tracking-widest font-semibold px-5 py-2.5"
               style={{
-                gridTemplateColumns: "28px 1fr 130px 160px 100px 90px 110px 44px",
+                gridTemplateColumns: "28px 1fr 130px 160px 100px 110px 80px 44px",
                 backgroundColor: "#f7f6f3",
                 color: "#9ca3af",
                 fontFamily: "var(--font-geist-mono)",
@@ -176,7 +176,6 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
             {workstreams.map((ws, i) => {
               const t   = ws.tasks.length;
               const c   = ws.tasks.filter((x) => x.status === "Complete").length;
-              const ip  = ws.tasks.filter((x) => x.status === "In Progress").length;
               const pct = t > 0 ? Math.round((c / t) * 100) : 0;
               const st  = wsDerived[ws.id];
               const ah  = autoHealth[ws.id];
@@ -185,7 +184,7 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
               return (
                 <div key={ws.id} className="grid px-5 py-2.5 hover:bg-stone-50 transition-colors"
                   style={{
-                    gridTemplateColumns: "28px 1fr 130px 160px 100px 90px 110px 44px",
+                    gridTemplateColumns: "28px 1fr 130px 160px 100px 110px 80px 44px",
                     borderBottom: i < workstreams.length - 1 ? "1px solid #f0efe9" : "none",
                     alignItems: "center",
                     gap: "8px",
@@ -217,7 +216,7 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
                     )}
                   </div>
                   <span className="text-xs" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
-                    {c}/{t} done{ip > 0 ? ` · ${ip} active` : ""}
+                    {c}/{t} done
                   </span>
                   <span className="text-xs font-semibold text-right"
                     style={{ color: pct > 0 ? "#1a5c3a" : "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
