@@ -105,7 +105,7 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
                   <div style={{ width: `${pct}%`, height: "100%", backgroundColor: "#1a5c3a", borderRadius: "2px" }} />
                   <div className="absolute" style={{ left: `${pct}%`, top: "50%", transform: "translate(-50%, -50%)", width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#1a5c3a", border: "2px solid white", boxShadow: "0 0 0 1px #1a5c3a" }} />
                 </div>
-                <img src="/RadialMHS.png" alt="Radial × MHS" style={{ height: "112px", width: "auto", flexShrink: 0, opacity: 0.85 }} />
+                <img src="/RadialMHS.png" alt="Radial × MHS" style={{ height: "224px", width: "auto", flexShrink: 0, opacity: 0.85 }} />
               </div>
             </div>
           );
