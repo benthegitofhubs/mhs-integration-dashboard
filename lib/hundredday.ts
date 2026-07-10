@@ -43,6 +43,21 @@ export const FLAGSHIP_GOALS = [
 export const WORKSTREAMS_100: Workstream100[] = [
   // ── 1. GROWTH ────────────────────────────────────────────────────────────
   {
+    id: "ai-brain-medicine",
+    name: "AI-native Brain Medicine Operating Model",
+    leader: "Carlene / Steph / John / Leah",
+    flagshipGoal: "1 · Growth",
+    goal: "We have become an AI-native Brain Medicine platform — centralizing data, defining deployment safeguards, and deploying our first cohort of ≥3 production AI agents to drive improvement across named KPIs.",
+    tasks: [
+      { id: "ai-1", description: "Centralize 100% of clinical/operational data into a single data store to establish context for AI transformation", dueDate: "Aug 15, 2026", owner: "", status: "Not Started", notes: "" },
+      { id: "ai-2", description: "Develop clinical and operational safeguards/process for secure, safe AI deployment (data access controls, clinical oversight, escalation paths)", dueDate: "TBD", owner: "", status: "Not Started", notes: "" },
+      { id: "ai-3", description: "Identify 5 functional leaders to own ongoing testing and deployment of AI infrastructure/tooling", dueDate: "TBD", owner: "", status: "Not Started", notes: "" },
+      { id: "ai-4", description: "Define 5 AI agents across those functional areas, each with explicit success KPIs", dueDate: "TBD", owner: "", status: "Not Started", notes: "" },
+      { id: "ai-5", description: "Deploy the 5 agents into production and begin measuring against defined KPIs", dueDate: "TBD", owner: "", status: "Not Started", notes: "" },
+      { id: "ai-6", description: "Build a culture/change-management plan for how teams engage with the AI toolkit, so adoption scales beyond the initial 5 agents", dueDate: "TBD", owner: "", status: "Not Started", notes: "" },
+    ],
+  },
+  {
     id: "dtc",
     name: "Growth — DTC",
     leader: "Derek",
