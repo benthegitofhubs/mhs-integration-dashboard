@@ -1,8 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Workstream100, Task100, Status100 } from "@/lib/hundredday";
 import { RAG, RAG_META } from "./HundredDayDashboard";
+
+interface IMNote {
+  timestamp: string;
+  note: string;
+}
+
+function loadIMNotes(workstreamId: string): IMNote[] {
+  try {
+    return JSON.parse(localStorage.getItem(`im-notes-${workstreamId}`) ?? "[]");
+  } catch { return []; }
+}
+
+function saveIMNotes(workstreamId: string, notes: IMNote[]) {
+  localStorage.setItem(`im-notes-${workstreamId}`, JSON.stringify(notes));
+}
 
 const STATUS_COLOR: Record<Status100, string> = {
   "Not Started": "#9ca3af",
@@ -42,6 +57,21 @@ export default function HundredDayCard({ workstream, index, rag, ragNote, onRagC
   );
   const [editingRagNote, setEditingRagNote] = useState(false);
   const [ragNoteDraft, setRagNoteDraft] = useState(ragNote);
+  const [imNotes, setImNotes] = useState<IMNote[]>([]);
+  const [imDraft, setImDraft] = useState("");
+  const [imHistoryOpen, setImHistoryOpen] = useState(false);
+
+  useEffect(() => {
+    setImNotes(loadIMNotes(workstream.id));
+  }, [workstream.id]);
+
+  const saveImNote = () => {
+    if (!imDraft.trim()) return;
+    const updated = [...imNotes, { timestamp: new Date().toISOString(), note: imDraft.trim() }];
+    setImNotes(updated);
+    saveIMNotes(workstream.id, updated);
+    setImDraft("");
+  };
 
   const total      = tasks.length;
   const complete   = tasks.filter((t) => t.status === "Complete").length;
@@ -291,6 +321,76 @@ export default function HundredDayCard({ workstream, index, rag, ragNote, onRagC
       {expanded && tasks.length === 0 && (
         <div style={{ borderTop: "1px solid #e5e3de", padding: "24px", color: "#c0bdb8", fontSize: "13px", fontStyle: "italic" }}>
           Tasks to be added.
+        </div>
+      )}
+
+      {/* IM Notes log — always visible when expanded */}
+      {expanded && (
+        <div style={{ borderTop: "1px solid #e5e3de", backgroundColor: "#fafaf8", padding: "16px 24px" }}>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)" }}>
+              Integration Manager Notes
+            </span>
+            {imNotes.length > 1 && (
+              <button
+                onClick={() => setImHistoryOpen(!imHistoryOpen)}
+                className="text-xs underline"
+                style={{ color: "#9ca3af" }}
+              >
+                {imHistoryOpen ? "hide history" : `view history (${imNotes.length - 1})`}
+              </button>
+            )}
+          </div>
+
+          {/* Latest note */}
+          {imNotes.length > 0 && (
+            <div className="mb-3 text-xs leading-relaxed" style={{ color: "#374151" }}>
+              <span style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)", marginRight: "8px" }}>
+                {new Date(imNotes[imNotes.length - 1].timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+              </span>
+              {imNotes[imNotes.length - 1].note}
+            </div>
+          )}
+
+          {/* History */}
+          {imHistoryOpen && imNotes.length > 1 && (
+            <div className="mb-3 space-y-2" style={{ borderLeft: "2px solid #e5e3de", paddingLeft: "12px" }}>
+              {[...imNotes].slice(0, -1).reverse().map((n, i) => (
+                <div key={i} className="text-xs leading-relaxed" style={{ color: "#6b7280" }}>
+                  <span style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)", marginRight: "8px" }}>
+                    {new Date(n.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                  </span>
+                  {n.note}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* New note input */}
+          <div className="flex gap-2 items-end">
+            <textarea
+              value={imDraft}
+              onChange={(e) => setImDraft(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) saveImNote(); }}
+              rows={2}
+              placeholder="Add a note… (⌘↵ to save)"
+              className="flex-1 text-xs leading-relaxed rounded px-3 py-2 resize-none focus:outline-none"
+              style={{ border: "1px solid #d1cfc9", backgroundColor: "white", color: "#374151" }}
+            />
+            <button
+              onClick={saveImNote}
+              disabled={!imDraft.trim()}
+              className="text-xs font-semibold px-3 py-2 rounded transition-colors"
+              style={{
+                backgroundColor: imDraft.trim() ? "#1a5c3a" : "#e5e3de",
+                color: imDraft.trim() ? "white" : "#9ca3af",
+                fontFamily: "var(--font-geist-mono)",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Save
+            </button>
+          </div>
         </div>
       )}
     </div>
