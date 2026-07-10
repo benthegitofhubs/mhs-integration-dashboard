@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Workstream100, FLAGSHIP_GOALS, KEY_DATES, Status100 } from "@/lib/hundredday";
+import { Workstream100, KEY_DATES, Status100 } from "@/lib/hundredday";
 import HundredDayCard from "./HundredDayCard";
 import { calcTaskHealth, rollupWorkstreamHealth, HEALTH_META, TaskHealth } from "@/lib/taskHealth";
 
@@ -243,46 +243,8 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
           <HealthLegend />
         </div>
 
-        {/* Workstream Work Items */}
-        <div className="mt-10 mb-6 flex items-center gap-4">
-          <div className="flex-1" style={{ height: "2px", backgroundColor: "#e5e3de" }} />
-          <p className="text-sm font-semibold uppercase tracking-widest shrink-0"
-            style={{ color: "#111111", fontFamily: "var(--font-geist-mono)" }}>
-            Workstream Work Items
-          </p>
-          <div className="flex-1" style={{ height: "2px", backgroundColor: "#e5e3de" }} />
-        </div>
-        <div className="mb-12 overflow-hidden" style={{ border: "1px solid #e5e3de", borderRadius: "6px", backgroundColor: "white" }}>
-          <div className="grid text-xs uppercase tracking-widest font-semibold px-6 py-2.5"
-            style={{
-              gridTemplateColumns: "180px 1fr 110px 160px 70px",
-              backgroundColor: "#f7f6f3",
-              color: "#9ca3af",
-              fontFamily: "var(--font-geist-mono)",
-              borderBottom: "1px solid #e5e3de",
-            }}>
-            <span>Workstream</span>
-            <span>Success Metric</span>
-            <span>Status</span>
-            <span>Weekly Note</span>
-            <span className="text-right">% Done</span>
-          </div>
-
-          {FLAGSHIP_GOALS.map((fg) => {
-            const wss = workstreams.filter((w) => w.flagshipGoal === fg.label);
-            return (
-              <FlagshipGroup
-                key={fg.id}
-                label={fg.label}
-                workstreams={wss}
-                wsDerived={wsDerived}
-              />
-            );
-          })}
-        </div>
-
         {/* Status color legend */}
-        <div className="flex items-center gap-5 mb-4 mt-10">
+        <div className="flex items-center gap-5 mb-4 mt-8">
           {([
             ["Not Started", "#374151"],
             ["In Progress", "#1d4ed8"],
@@ -299,8 +261,8 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
 
         <div className="mb-6 flex items-center gap-4">
           <div className="flex-1" style={{ height: "2px", backgroundColor: "#e5e3de" }} />
-          <p className="text-xs font-semibold uppercase tracking-widest shrink-0"
-            style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)" }}>
+          <p className="text-sm font-semibold uppercase tracking-widest shrink-0"
+            style={{ color: "#111111", fontFamily: "var(--font-geist-mono)" }}>
             Workstream Tasks
           </p>
           <div className="flex-1" style={{ height: "2px", backgroundColor: "#e5e3de" }} />
@@ -322,105 +284,6 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
   );
 }
 
-function FlagshipGroup({
-  label, workstreams, wsDerived,
-}: {
-  label: string;
-  workstreams: Workstream100[];
-  wsDerived: Record<string, Status100 | null>;
-}) {
-  return (
-    <>
-      <div className="px-6 py-1.5 text-xs uppercase tracking-widest"
-        style={{ color: "#1a5c3a", fontFamily: "var(--font-geist-mono)", fontWeight: 600, backgroundColor: "#f7faf8", borderBottom: "1px solid #f0efe9" }}>
-        {label}
-      </div>
-      {workstreams.map((ws) => {
-        const t   = ws.tasks.length;
-        const c   = ws.tasks.filter((x) => x.status === "Complete").length;
-        const pct = t > 0 ? Math.round((c / t) * 100) : 0;
-        const st  = wsDerived[ws.id];
-        return (
-          <OverviewRow key={ws.id} ws={ws} status={st} pct={pct} />
-        );
-      })}
-    </>
-  );
-}
-
-function OverviewRow({ ws, status, pct }: { ws: Workstream100; status: Status100 | null; pct: number }) {
-  const [editingNote, setEditingNote] = useState(false);
-  const [note, setNote] = useState(() => {
-    if (typeof window === "undefined") return "";
-    return localStorage.getItem(`ws-note-${ws.id}`) ?? "";
-  });
-  const [draft, setDraft] = useState(note);
-
-  const saveNote = (val: string) => {
-    setNote(val);
-    localStorage.setItem(`ws-note-${ws.id}`, val);
-    setEditingNote(false);
-  };
-
-  return (
-    <div className="grid px-6 py-3 hover:bg-stone-50 transition-colors"
-      style={{
-        gridTemplateColumns: "180px 1fr 110px 160px 70px",
-        borderBottom: "1px solid #f0efe9",
-        alignItems: "start",
-        gap: "12px",
-      }}>
-      <div>
-        <p className="text-xs font-semibold" style={{ color: "#1a1a1a" }}>{ws.name}</p>
-        <p className="text-xs" style={{ color: "#6b7280" }}>{ws.leader}</p>
-      </div>
-
-      <p className="text-xs leading-relaxed" style={{ color: "#374151" }}>{ws.goal}</p>
-
-      {/* Derived status badge */}
-      <div className="pt-0.5">
-        {status ? (
-          <span className="text-xs font-semibold px-2 py-0.5 rounded"
-            style={{ backgroundColor: STATUS_BG[status], color: STATUS_COLOR[status], fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap" }}>
-            {status}
-          </span>
-        ) : (
-          <span className="text-xs" style={{ color: "#d1d5db", fontFamily: "var(--font-geist-mono)" }}>—</span>
-        )}
-      </div>
-
-      {/* Weekly note (localStorage) */}
-      <div>
-        {editingNote ? (
-          <textarea
-            autoFocus
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={() => saveNote(draft)}
-            onKeyDown={(e) => { if (e.key === "Escape") { setDraft(note); setEditingNote(false); } }}
-            rows={2}
-            placeholder="Add weekly note…"
-            className="w-full text-xs leading-relaxed rounded px-2 py-1 resize-none focus:outline-none"
-            style={{ border: "1px solid #d1cfc9", backgroundColor: "#fafaf8", color: "#57534e" }}
-          />
-        ) : (
-          <p
-            className="text-xs leading-relaxed cursor-pointer rounded px-1 -mx-1 hover:bg-stone-100 transition-colors"
-            style={{ color: note ? "#57534e" : "#c0bdb8", fontStyle: note ? "normal" : "italic" }}
-            onClick={() => { setDraft(note); setEditingNote(true); }}
-          >
-            {note || "Add note…"}
-          </p>
-        )}
-      </div>
-
-      <p className="text-xs font-semibold text-right pt-0.5"
-        style={{ color: pct > 0 ? "#1a5c3a" : "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
-        {pct}%
-      </p>
-    </div>
-  );
-}
 
 function TldrSummary({
   workstreams, wsCounts, complete, inProgress, blocked, atRisk, total,
