@@ -100,9 +100,30 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
                   </svg>
                 </div>
               </div>
-              <div className="relative w-full" style={{ height: "4px", backgroundColor: "#e5e3de", borderRadius: "2px" }}>
-                <div style={{ width: `${pct}%`, height: "100%", backgroundColor: "#1a5c3a", borderRadius: "2px" }} />
-                <div className="absolute" style={{ left: `${pct}%`, top: "50%", transform: "translate(-50%, -50%)", width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#1a5c3a", border: "2px solid white", boxShadow: "0 0 0 1px #1a5c3a" }} />
+              <div className="relative w-full flex items-center gap-2">
+                <div className="relative flex-1" style={{ height: "4px", backgroundColor: "#e5e3de", borderRadius: "2px" }}>
+                  <div style={{ width: `${pct}%`, height: "100%", backgroundColor: "#1a5c3a", borderRadius: "2px" }} />
+                  <div className="absolute" style={{ left: `${pct}%`, top: "50%", transform: "translate(-50%, -50%)", width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#1a5c3a", border: "2px solid white", boxShadow: "0 0 0 1px #1a5c3a" }} />
+                </div>
+                {/* Finish line */}
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}>
+                  <rect x="0" y="0" width="5" height="5" fill="#1a1a1a" />
+                  <rect x="5" y="0" width="5" height="5" fill="#e5e3de" />
+                  <rect x="10" y="0" width="5" height="5" fill="#1a1a1a" />
+                  <rect x="15" y="0" width="5" height="5" fill="#e5e3de" />
+                  <rect x="0" y="5" width="5" height="5" fill="#e5e3de" />
+                  <rect x="5" y="5" width="5" height="5" fill="#1a1a1a" />
+                  <rect x="10" y="5" width="5" height="5" fill="#e5e3de" />
+                  <rect x="15" y="5" width="5" height="5" fill="#1a1a1a" />
+                  <rect x="0" y="10" width="5" height="5" fill="#1a1a1a" />
+                  <rect x="5" y="10" width="5" height="5" fill="#e5e3de" />
+                  <rect x="10" y="10" width="5" height="5" fill="#1a1a1a" />
+                  <rect x="15" y="10" width="5" height="5" fill="#e5e3de" />
+                  <rect x="0" y="15" width="5" height="5" fill="#e5e3de" />
+                  <rect x="5" y="15" width="5" height="5" fill="#1a1a1a" />
+                  <rect x="10" y="15" width="5" height="5" fill="#e5e3de" />
+                  <rect x="15" y="15" width="5" height="5" fill="#1a1a1a" />
+                </svg>
               </div>
             </div>
           );
