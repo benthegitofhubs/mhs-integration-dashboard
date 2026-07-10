@@ -126,6 +126,14 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
           total={total}
         />
 
+        {/* Disclaimer */}
+        <div className="mb-6 px-4 py-3 rounded" style={{ backgroundColor: "#fefce8", border: "1px solid #fde68a" }}>
+          <p className="text-xs leading-relaxed" style={{ color: "#78716c", fontFamily: "var(--font-geist-mono)" }}>
+            <span className="font-semibold" style={{ color: "#57534e" }}>Source of record: the Google Sheet.</span>{" "}
+            This dashboard reflects the latest manual sync — edits made here are session-only and will not persist. All data updates must be made in the source file.
+          </p>
+        </div>
+
         {/* Workstream Health */}
         <div className="mb-10">
           <div className="flex items-center gap-4 mb-6">
