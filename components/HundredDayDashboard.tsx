@@ -56,6 +56,35 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
           100 days to one team, one mission.
         </h1>
 
+        {/* Progress timeline */}
+        {(() => {
+          const start = new Date("Jun 23, 2026").getTime();
+          const end   = new Date("Oct 1, 2026").getTime();
+          const now   = new Date().getTime();
+          const pct   = Math.min(100, Math.max(0, ((now - start) / (end - start)) * 100));
+          const daysLeft = Math.max(0, Math.ceil((end - now) / 86400000));
+          return (
+            <div className="mb-2">
+              <div className="relative" style={{ height: "28px" }}>
+                {/* Arrow marker */}
+                <div className="absolute flex flex-col items-center" style={{ left: `${pct}%`, transform: "translateX(-50%)", top: 0 }}>
+                  <span className="text-xs font-semibold" style={{ color: "#1a5c3a", fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap" }}>
+                    Today · {daysLeft}d left
+                  </span>
+                  <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                    <path d="M5 8L0 0H10L5 8Z" fill="#1a5c3a" />
+                  </svg>
+                </div>
+              </div>
+              {/* Track */}
+              <div className="relative w-full" style={{ height: "4px", backgroundColor: "#e5e3de", borderRadius: "2px" }}>
+                <div style={{ width: `${pct}%`, height: "100%", backgroundColor: "#1a5c3a", borderRadius: "2px" }} />
+                <div className="absolute" style={{ left: `${pct}%`, top: "50%", transform: "translate(-50%, -50%)", width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#1a5c3a", border: "2px solid white", boxShadow: "0 0 0 1px #1a5c3a" }} />
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Key dates */}
         <div className="flex flex-wrap items-center mb-10 overflow-hidden"
           style={{ border: "1px solid #e5e3de", borderRadius: "6px", backgroundColor: "white" }}>
