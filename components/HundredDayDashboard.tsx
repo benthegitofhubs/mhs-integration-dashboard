@@ -191,11 +191,15 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
           </div>
         </div>
 
-        {/* Workstream Overview table */}
-        <p className="text-xs font-semibold uppercase tracking-widest mb-3"
-          style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)", borderBottom: "1px solid #e5e3de", paddingBottom: "8px" }}>
-          Workstream Overview
-        </p>
+        {/* Workstream Work Items table */}
+        <div className="mt-10 mb-6 flex items-center gap-4">
+          <div className="flex-1" style={{ height: "2px", backgroundColor: "#e5e3de" }} />
+          <p className="text-xs font-semibold uppercase tracking-widest shrink-0"
+            style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)" }}>
+            Workstream Work Items
+          </p>
+          <div className="flex-1" style={{ height: "2px", backgroundColor: "#e5e3de" }} />
+        </div>
         <div className="mb-12 overflow-hidden" style={{ border: "1px solid #e5e3de", borderRadius: "6px", backgroundColor: "white" }}>
           <div className="grid text-xs uppercase tracking-widest font-semibold px-6 py-2.5"
             style={{
@@ -227,13 +231,29 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
           })}
         </div>
 
-        <div className="mt-14 mb-6 flex items-center gap-4">
-          <div className="flex-1" style={{ height: "1px", backgroundColor: "#d1cfc9" }} />
+        {/* Status color legend */}
+        <div className="flex items-center gap-5 mb-4 mt-10">
+          {([
+            ["Not Started", "#374151"],
+            ["In Progress", "#1d4ed8"],
+            ["At Risk",     "#eab308"],
+            ["Blocked",     "#b91c1c"],
+            ["Complete",    "#15803d"],
+          ] as [string, string][]).map(([label, color]) => (
+            <div key={label} className="flex items-center gap-1.5">
+              <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: color, flexShrink: 0 }} />
+              <span className="text-xs" style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)" }}>{label}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="mb-6 flex items-center gap-4">
+          <div className="flex-1" style={{ height: "2px", backgroundColor: "#e5e3de" }} />
           <p className="text-xs font-semibold uppercase tracking-widest shrink-0"
             style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)" }}>
             Workstream Tasks
           </p>
-          <div className="flex-1" style={{ height: "1px", backgroundColor: "#d1cfc9" }} />
+          <div className="flex-1" style={{ height: "2px", backgroundColor: "#e5e3de" }} />
         </div>
       </div>
 
