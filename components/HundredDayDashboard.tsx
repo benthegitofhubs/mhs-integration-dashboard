@@ -108,6 +108,11 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
           );
         })()}
 
+        {/* Logo */}
+        <div className="flex justify-center mb-6 mt-4">
+          <img src="/RadialMHS.png" alt="Radial × MHS" style={{ height: "120px", width: "auto", opacity: 0.85 }} />
+        </div>
+
         {/* Key dates */}
         <div className="flex flex-wrap items-center mb-10 overflow-hidden"
           style={{ border: "1px solid #e5e3de", borderRadius: "6px", backgroundColor: "white" }}>
@@ -137,10 +142,6 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
               )}
             </>
           ))}
-          {/* Logo cell */}
-          <div className="flex items-center justify-center px-4 py-3">
-            <img src="/RadialMHS.png" alt="Radial × MHS" style={{ height: "100px", width: "auto", opacity: 0.85 }} />
-          </div>
         </div>
 
         {/* Disclaimer */}
