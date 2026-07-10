@@ -4,43 +4,40 @@ import { useState } from "react";
 import { Workstream100, FLAGSHIP_GOALS, KEY_DATES } from "@/lib/hundredday";
 import HundredDayCard from "./HundredDayCard";
 
-export type RAG = "Green" | "Amber" | "Red" | "";
+export type RYG = "Green" | "Yellow" | "Red" | "";
 
-export const RAG_META: Record<RAG, { bg: string; color: string; label: string; dot: string }> = {
-  Green: { bg: "#dcfce7", color: "#15803d", label: "On Track",  dot: "#15803d" },
-  Amber: { bg: "#fef3c7", color: "#b45309", label: "At Risk",   dot: "#f59e0b" },
-  Red:   { bg: "#fee2e2", color: "#b91c1c", label: "Off Track", dot: "#b91c1c" },
-  "":    { bg: "#f3f4f6", color: "#9ca3af", label: "No Status", dot: "#d1d5db" },
+export const RYG_META: Record<RYG, { bg: string; color: string; label: string; dot: string }> = {
+  Green:  { bg: "#dcfce7", color: "#15803d", label: "On Track",  dot: "#15803d" },
+  Yellow: { bg: "#fef9c3", color: "#854d0e", label: "At Risk",   dot: "#eab308" },
+  Red:    { bg: "#fee2e2", color: "#b91c1c", label: "Off Track", dot: "#b91c1c" },
+  "":     { bg: "#f3f4f6", color: "#9ca3af", label: "No Status", dot: "#d1d5db" },
 };
 
-type RagMap = Record<string, { rag: RAG; note: string }>;
+type RygMap = Record<string, { ryg: RYG; note: string }>;
 
-function initRagMap(workstreams: Workstream100[]): RagMap {
-  return Object.fromEntries(workstreams.map((ws) => [ws.id, { rag: "" as RAG, note: "" }]));
+function initRygMap(workstreams: Workstream100[]): RygMap {
+  return Object.fromEntries(workstreams.map((ws) => [ws.id, { ryg: "" as RYG, note: "" }]));
 }
 
 export default function HundredDayDashboard({ workstreams }: { workstreams: Workstream100[] }) {
-  const [ragMap, setRagMap] = useState<RagMap>(() => initRagMap(workstreams));
+  const [rygMap, setRygMap] = useState<RygMap>(() => initRygMap(workstreams));
 
-  const updateRag = (id: string, rag: RAG) =>
-    setRagMap((prev) => ({ ...prev, [id]: { ...prev[id], rag } }));
-
+  const updateRyg  = (id: string, ryg: RYG) =>
+    setRygMap((prev) => ({ ...prev, [id]: { ...prev[id], ryg } }));
   const updateNote = (id: string, note: string) =>
-    setRagMap((prev) => ({ ...prev, [id]: { ...prev[id], note } }));
+    setRygMap((prev) => ({ ...prev, [id]: { ...prev[id], note } }));
 
-  const allTasks    = workstreams.flatMap((ws) => ws.tasks);
-  const total       = allTasks.length;
-  const complete    = allTasks.filter((t) => t.status === "Complete").length;
-  const inProgress  = allTasks.filter((t) => t.status === "In Progress").length;
-  const atRisk      = allTasks.filter((t) => t.status === "At Risk").length;
-  const blocked     = allTasks.filter((t) => t.status === "Blocked").length;
-  const notStarted  = allTasks.filter((t) => t.status === "Not Started").length;
-  const overallPct  = total > 0 ? Math.round((complete / total) * 100) : 0;
+  const allTasks   = workstreams.flatMap((ws) => ws.tasks);
+  const total      = allTasks.length;
+  const complete   = allTasks.filter((t) => t.status === "Complete").length;
+  const inProgress = allTasks.filter((t) => t.status === "In Progress").length;
+  const atRisk     = allTasks.filter((t) => t.status === "At Risk").length;
+  const blocked    = allTasks.filter((t) => t.status === "Blocked").length;
 
-  const ragCounts = {
-    Green: workstreams.filter((ws) => ragMap[ws.id]?.rag === "Green").length,
-    Amber: workstreams.filter((ws) => ragMap[ws.id]?.rag === "Amber").length,
-    Red:   workstreams.filter((ws) => ragMap[ws.id]?.rag === "Red").length,
+  const rygCounts = {
+    Green:  workstreams.filter((ws) => rygMap[ws.id]?.ryg === "Green").length,
+    Yellow: workstreams.filter((ws) => rygMap[ws.id]?.ryg === "Yellow").length,
+    Red:    workstreams.filter((ws) => rygMap[ws.id]?.ryg === "Red").length,
   };
 
   return (
@@ -58,15 +55,14 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
 
         {/* Progress timeline */}
         {(() => {
-          const start = new Date("Jun 23, 2026").getTime();
-          const end   = new Date("Oct 1, 2026").getTime();
-          const now   = new Date().getTime();
-          const pct   = Math.min(100, Math.max(0, ((now - start) / (end - start)) * 100));
+          const start    = new Date("Jun 23, 2026").getTime();
+          const end      = new Date("Oct 1, 2026").getTime();
+          const now      = new Date().getTime();
+          const pct      = Math.min(100, Math.max(0, ((now - start) / (end - start)) * 100));
           const daysLeft = Math.max(0, Math.ceil((end - now) / 86400000));
           return (
             <div className="mb-2">
               <div className="relative" style={{ height: "28px" }}>
-                {/* Arrow marker */}
                 <div className="absolute flex flex-col items-center" style={{ left: `${pct}%`, transform: "translateX(-50%)", top: 0 }}>
                   <span className="text-xs font-semibold" style={{ color: "#1a5c3a", fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap" }}>
                     Today · {daysLeft}d left
@@ -76,7 +72,6 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
                   </svg>
                 </div>
               </div>
-              {/* Track */}
               <div className="relative w-full" style={{ height: "4px", backgroundColor: "#e5e3de", borderRadius: "2px" }}>
                 <div style={{ width: `${pct}%`, height: "100%", backgroundColor: "#1a5c3a", borderRadius: "2px" }} />
                 <div className="absolute" style={{ left: `${pct}%`, top: "50%", transform: "translate(-50%, -50%)", width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#1a5c3a", border: "2px solid white", boxShadow: "0 0 0 1px #1a5c3a" }} />
@@ -102,65 +97,101 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
         {/* TL;DR summary */}
         <TldrSummary
           workstreams={workstreams}
-          ragMap={ragMap}
+          rygMap={rygMap}
           complete={complete}
           inProgress={inProgress}
           blocked={blocked}
           atRisk={atRisk}
           total={total}
-          ragCounts={ragCounts}
+          rygCounts={rygCounts}
         />
 
-        {/* Workstream Health + Task Progress — stacked */}
-        <div className="space-y-6 mb-10">
+        {/* Workstream Health */}
+        <div className="mb-10">
+          <p className="text-xs font-semibold uppercase tracking-widest mb-3"
+            style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)", borderBottom: "1px solid #e5e3de", paddingBottom: "8px" }}>
+            Workstream Health
+          </p>
 
-          {/* Workstream Health — first */}
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-widest mb-3"
-              style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)", borderBottom: "1px solid #e5e3de", paddingBottom: "8px" }}>
-              Workstream Health
-            </p>
-            <div className="grid grid-cols-3 gap-0" style={{ borderTop: "1px solid #e5e3de" }}>
-              <StatCell value={ragCounts.Green} label="On Track"  color="#15803d" />
-              <StatCell value={ragCounts.Amber} label="At Risk"   color="#b45309" />
-              <StatCell value={ragCounts.Red}   label="Off Track" color="#b91c1c" />
-            </div>
-            <div className="h-1 overflow-hidden flex mt-3" style={{ backgroundColor: "#e5e3de" }}>
-              {ragCounts.Green > 0 && <div style={{ width: `${(ragCounts.Green / workstreams.length) * 100}%`, backgroundColor: "#15803d" }} />}
-              {ragCounts.Amber > 0 && <div style={{ width: `${(ragCounts.Amber / workstreams.length) * 100}%`, backgroundColor: "#f59e0b" }} />}
-              {ragCounts.Red > 0   && <div style={{ width: `${(ragCounts.Red / workstreams.length) * 100}%`,   backgroundColor: "#b91c1c" }} />}
-              <div style={{ width: `${((workstreams.length - ragCounts.Green - ragCounts.Amber - ragCounts.Red) / workstreams.length) * 100}%`, backgroundColor: "#d1d5db" }} />
-            </div>
-            <p className="text-xs mt-1" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
-              {workstreams.length - ragCounts.Green - ragCounts.Amber - ragCounts.Red} OF {workstreams.length} WORKSTREAMS AWAITING STATUS
-            </p>
+          {/* RYG summary counts */}
+          <div className="grid grid-cols-3 gap-0 mb-3" style={{ borderTop: "1px solid #e5e3de" }}>
+            <StatCell value={rygCounts.Green}  label="On Track"  color="#15803d" />
+            <StatCell value={rygCounts.Yellow} label="At Risk"   color="#854d0e" />
+            <StatCell value={rygCounts.Red}    label="Off Track" color="#b91c1c" />
           </div>
+          <div className="h-1 overflow-hidden flex mb-1" style={{ backgroundColor: "#e5e3de" }}>
+            {rygCounts.Green  > 0 && <div style={{ width: `${(rygCounts.Green  / workstreams.length) * 100}%`, backgroundColor: "#15803d" }} />}
+            {rygCounts.Yellow > 0 && <div style={{ width: `${(rygCounts.Yellow / workstreams.length) * 100}%`, backgroundColor: "#eab308" }} />}
+            {rygCounts.Red    > 0 && <div style={{ width: `${(rygCounts.Red    / workstreams.length) * 100}%`, backgroundColor: "#b91c1c" }} />}
+            <div style={{ width: `${((workstreams.length - rygCounts.Green - rygCounts.Yellow - rygCounts.Red) / workstreams.length) * 100}%`, backgroundColor: "#d1d5db" }} />
+          </div>
+          <p className="text-xs mb-4" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+            {workstreams.length - rygCounts.Green - rygCounts.Yellow - rygCounts.Red} OF {workstreams.length} WORKSTREAMS AWAITING STATUS
+          </p>
 
-          {/* Task Progress — second */}
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-widest mb-3"
-              style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)", borderBottom: "1px solid #e5e3de", paddingBottom: "8px" }}>
-              Task Progress
-            </p>
-            <div className="grid grid-cols-3 gap-0" style={{ borderTop: "1px solid #e5e3de" }}>
-              <StatCell value={complete}   label="Complete"    color="#1a5c3a" />
-              <StatCell value={inProgress} label="In Progress" color="#1d4ed8" />
-              <StatCell value={blocked}    label="Blocked"     color="#b91c1c" />
+          {/* Per-workstream breakdown table */}
+          <div className="overflow-hidden" style={{ border: "1px solid #e5e3de", borderRadius: "6px", backgroundColor: "white" }}>
+            <div className="grid text-xs uppercase tracking-widest font-semibold px-5 py-2.5"
+              style={{
+                gridTemplateColumns: "32px 1fr 130px 110px 90px 90px 48px",
+                backgroundColor: "#f7f6f3",
+                color: "#9ca3af",
+                fontFamily: "var(--font-geist-mono)",
+                borderBottom: "1px solid #e5e3de",
+              }}>
+              <span>#</span>
+              <span>Workstream</span>
+              <span>Flagship Goal</span>
+              <span>Leader</span>
+              <span>Status</span>
+              <span>Tasks</span>
+              <span className="text-right">%</span>
             </div>
-            <div className="h-1 overflow-hidden flex mt-3" style={{ backgroundColor: "#e5e3de" }}>
-              {complete > 0   && <div style={{ width: `${(complete / total) * 100}%`,   backgroundColor: "#1a5c3a" }} />}
-              {inProgress > 0 && <div style={{ width: `${(inProgress / total) * 100}%`, backgroundColor: "#1d4ed8" }} />}
-              {atRisk > 0     && <div style={{ width: `${(atRisk / total) * 100}%`,     backgroundColor: "#c2410c" }} />}
-              {blocked > 0    && <div style={{ width: `${(blocked / total) * 100}%`,    backgroundColor: "#b91c1c" }} />}
-              {notStarted > 0 && <div style={{ width: `${(notStarted / total) * 100}%`, backgroundColor: "#d1d5db" }} />}
-            </div>
-            <p className="text-xs mt-1" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
-              {overallPct}% COMPLETE · {total} TOTAL TASKS
-            </p>
+
+            {workstreams.map((ws, i) => {
+              const t    = ws.tasks.length;
+              const c    = ws.tasks.filter((x) => x.status === "Complete").length;
+              const ip   = ws.tasks.filter((x) => x.status === "In Progress").length;
+              const pct  = t > 0 ? Math.round((c / t) * 100) : 0;
+              const { ryg } = rygMap[ws.id] ?? { ryg: "" as RYG };
+              const meta = RYG_META[ryg];
+
+              return (
+                <div key={ws.id} className="grid px-5 py-2.5 hover:bg-stone-50 transition-colors"
+                  style={{
+                    gridTemplateColumns: "32px 1fr 130px 110px 90px 90px 48px",
+                    borderBottom: i < workstreams.length - 1 ? "1px solid #f0efe9" : "none",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}>
+                  <span className="text-xs font-bold" style={{ color: "#1a5c3a", fontFamily: "var(--font-geist-mono)" }}>{i + 1}</span>
+                  <span className="text-xs font-semibold" style={{ color: "#1a1a1a" }}>{ws.name}</span>
+                  <span className="text-xs" style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)" }}>{ws.flagshipGoal}</span>
+                  <span className="text-xs" style={{ color: "#6b7280" }}>{ws.leader}</span>
+                  <div>
+                    {ryg ? (
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded"
+                        style={{ backgroundColor: meta.bg, color: meta.color, fontFamily: "var(--font-geist-mono)" }}>
+                        {meta.label}
+                      </span>
+                    ) : (
+                      <span className="text-xs" style={{ color: "#d1d5db", fontFamily: "var(--font-geist-mono)" }}>—</span>
+                    )}
+                  </div>
+                  <span className="text-xs" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+                    {c}/{t} done{ip > 0 ? ` · ${ip} active` : ""}
+                  </span>
+                  <span className="text-xs font-semibold text-right"
+                    style={{ color: pct > 0 ? "#1a5c3a" : "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+                    {pct}%
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* Flagship goals / RAG overview table */}
+        {/* Workstream Overview table */}
         <p className="text-xs font-semibold uppercase tracking-widest mb-3"
           style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)", borderBottom: "1px solid #e5e3de", paddingBottom: "8px" }}>
           Workstream Overview
@@ -176,7 +207,7 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
             }}>
             <span>Workstream</span>
             <span>Success Metric</span>
-            <span>RAG</span>
+            <span>RYG</span>
             <span>Weekly Note</span>
             <span className="text-right">% Done</span>
           </div>
@@ -188,8 +219,8 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
                 key={fg.id}
                 label={fg.label}
                 workstreams={wss}
-                ragMap={ragMap}
-                onRagChange={updateRag}
+                rygMap={rygMap}
+                onRygChange={updateRyg}
                 onNoteChange={updateNote}
               />
             );
@@ -213,10 +244,10 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
             key={ws.id}
             workstream={ws}
             index={i + 1}
-            rag={ragMap[ws.id]?.rag ?? ""}
-            ragNote={ragMap[ws.id]?.note ?? ""}
-            onRagChange={(rag) => updateRag(ws.id, rag)}
-            onRagNoteChange={(note) => updateNote(ws.id, note)}
+            ryg={rygMap[ws.id]?.ryg ?? ""}
+            rygNote={rygMap[ws.id]?.note ?? ""}
+            onRygChange={(ryg) => updateRyg(ws.id, ryg)}
+            onRygNoteChange={(note) => updateNote(ws.id, note)}
           />
         ))}
       </div>
@@ -225,12 +256,12 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
 }
 
 function FlagshipGroup({
-  label, workstreams, ragMap, onRagChange, onNoteChange,
+  label, workstreams, rygMap, onRygChange, onNoteChange,
 }: {
   label: string;
   workstreams: Workstream100[];
-  ragMap: RagMap;
-  onRagChange: (id: string, rag: RAG) => void;
+  rygMap: RygMap;
+  onRygChange: (id: string, ryg: RYG) => void;
   onNoteChange: (id: string, note: string) => void;
 }) {
   return (
@@ -243,18 +274,18 @@ function FlagshipGroup({
         const t = ws.tasks.length;
         const c = ws.tasks.filter((x) => x.status === "Complete").length;
         const pct = t > 0 ? Math.round((c / t) * 100) : 0;
-        const { rag, note } = ragMap[ws.id] ?? { rag: "" as RAG, note: "" };
-        const meta = RAG_META[rag];
+        const { ryg, note } = rygMap[ws.id] ?? { ryg: "" as RYG, note: "" };
+        const meta = RYG_META[ryg];
 
         return (
           <OverviewRow
             key={ws.id}
             ws={ws}
-            rag={rag}
+            ryg={ryg}
             note={note}
             pct={pct}
             meta={meta}
-            onRagChange={(r) => onRagChange(ws.id, r)}
+            onRygChange={(r) => onRygChange(ws.id, r)}
             onNoteChange={(n) => onNoteChange(ws.id, n)}
           />
         );
@@ -264,20 +295,19 @@ function FlagshipGroup({
 }
 
 function OverviewRow({
-  ws, rag, note, pct, meta, onRagChange, onNoteChange,
+  ws, ryg, note, pct, meta, onRygChange, onNoteChange,
 }: {
   ws: Workstream100;
-  rag: RAG;
+  ryg: RYG;
   note: string;
   pct: number;
-  meta: typeof RAG_META[RAG];
-  onRagChange: (r: RAG) => void;
+  meta: typeof RYG_META[RYG];
+  onRygChange: (r: RYG) => void;
   onNoteChange: (n: string) => void;
 }) {
   const [editingNote, setEditingNote] = useState(false);
   const [draft, setDraft] = useState(note);
-
-  const RAGS: RAG[] = ["Green", "Amber", "Red"];
+  const RYGS: RYG[] = ["Green", "Yellow", "Red"];
 
   return (
     <div className="grid px-6 py-3 hover:bg-stone-50 transition-colors"
@@ -294,15 +324,15 @@ function OverviewRow({
 
       <p className="text-xs leading-relaxed" style={{ color: "#374151" }}>{ws.goal}</p>
 
-      {/* RAG toggle */}
+      {/* RYG toggle */}
       <div className="flex items-center gap-1 pt-0.5">
-        {RAGS.map((r) => {
-          const m = RAG_META[r];
-          const active = rag === r;
+        {RYGS.map((r) => {
+          const m = RYG_META[r];
+          const active = ryg === r;
           return (
             <button
               key={r}
-              onClick={() => onRagChange(active ? "" : r)}
+              onClick={() => onRygChange(active ? "" : r)}
               title={m.label}
               className="w-5 h-5 rounded-full transition-all border-2 flex-shrink-0"
               style={{
@@ -312,7 +342,7 @@ function OverviewRow({
             />
           );
         })}
-        {rag && (
+        {ryg && (
           <span className="text-xs ml-1" style={{ color: meta.color, fontFamily: "var(--font-geist-mono)" }}>
             {meta.label}
           </span>
@@ -353,33 +383,31 @@ function OverviewRow({
 }
 
 function TldrSummary({
-  workstreams, ragMap, complete, inProgress, blocked, atRisk, total, ragCounts,
+  workstreams, rygMap, complete, inProgress, blocked, atRisk, total, rygCounts,
 }: {
   workstreams: Workstream100[];
-  ragMap: RagMap;
+  rygMap: RygMap;
   complete: number;
   inProgress: number;
   blocked: number;
   atRisk: number;
   total: number;
-  ragCounts: { Green: number; Amber: number; Red: number };
+  rygCounts: { Green: number; Yellow: number; Red: number };
 }) {
-  const noStatus = workstreams.length - ragCounts.Green - ragCounts.Amber - ragCounts.Red;
-  const active = inProgress + atRisk;
+  const noStatus = workstreams.length - rygCounts.Green - rygCounts.Yellow - rygCounts.Red;
+  const active   = inProgress + atRisk;
 
-  // Build sentence 1: workstream health
   let healthLine = "";
   if (noStatus === workstreams.length) {
     healthLine = `${workstreams.length} workstreams tracked — no health status set yet.`;
-  } else if (ragCounts.Red > 0) {
-    healthLine = `${ragCounts.Red} workstream${ragCounts.Red > 1 ? "s are" : " is"} off track${ragCounts.Amber > 0 ? `, ${ragCounts.Amber} at risk` : ""}${ragCounts.Green > 0 ? `, ${ragCounts.Green} on track` : ""}.`;
-  } else if (ragCounts.Amber > 0) {
-    healthLine = `${ragCounts.Amber} workstream${ragCounts.Amber > 1 ? "s are" : " is"} at risk${ragCounts.Green > 0 ? `, ${ragCounts.Green} on track` : ""}${noStatus > 0 ? `, ${noStatus} awaiting status` : ""}.`;
+  } else if (rygCounts.Red > 0) {
+    healthLine = `${rygCounts.Red} workstream${rygCounts.Red > 1 ? "s are" : " is"} off track${rygCounts.Yellow > 0 ? `, ${rygCounts.Yellow} at risk` : ""}${rygCounts.Green > 0 ? `, ${rygCounts.Green} on track` : ""}.`;
+  } else if (rygCounts.Yellow > 0) {
+    healthLine = `${rygCounts.Yellow} workstream${rygCounts.Yellow > 1 ? "s are" : " is"} at risk${rygCounts.Green > 0 ? `, ${rygCounts.Green} on track` : ""}${noStatus > 0 ? `, ${noStatus} awaiting status` : ""}.`;
   } else {
-    healthLine = `All ${ragCounts.Green} rated workstream${ragCounts.Green > 1 ? "s are" : " is"} on track${noStatus > 0 ? ` — ${noStatus} still awaiting status` : ""}.`;
+    healthLine = `All ${rygCounts.Green} rated workstream${rygCounts.Green > 1 ? "s are" : " is"} on track${noStatus > 0 ? ` — ${noStatus} still awaiting status` : ""}.`;
   }
 
-  // Build sentence 2: task momentum
   let taskLine = "";
   if (complete === 0 && active === 0) {
     taskLine = `${total} tasks defined across all workstreams — none started yet.`;

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Workstream100, Task100, Status100 } from "@/lib/hundredday";
-import { RAG, RAG_META } from "./HundredDayDashboard";
+import { RYG, RYG_META } from "./HundredDayDashboard";
 
 interface IMNote {
   timestamp: string;
@@ -36,18 +36,18 @@ const STATUS_BG: Record<Status100, string> = {
 };
 
 const STATUSES: Status100[] = ["Not Started", "In Progress", "At Risk", "Blocked", "Complete"];
-const RAGS: RAG[] = ["Green", "Amber", "Red"];
+const RYGS: RYG[] = ["Green", "Yellow", "Red"];
 
 interface Props {
   workstream: Workstream100;
   index: number;
-  rag: RAG;
-  ragNote: string;
-  onRagChange: (rag: RAG) => void;
-  onRagNoteChange: (note: string) => void;
+  ryg: RYG;
+  rygNote: string;
+  onRygChange: (ryg: RYG) => void;
+  onRygNoteChange: (note: string) => void;
 }
 
-export default function HundredDayCard({ workstream, index, rag, ragNote, onRagChange, onRagNoteChange }: Props) {
+export default function HundredDayCard({ workstream, index, ryg, rygNote, onRygChange, onRygNoteChange }: Props) {
   const [tasks, setTasks] = useState<Task100[]>(workstream.tasks);
   const [expanded, setExpanded] = useState(false);
   const [saving, setSaving] = useState<string | null>(null);
@@ -55,8 +55,8 @@ export default function HundredDayCard({ workstream, index, rag, ragNote, onRagC
   const [noteValues, setNoteValues] = useState<Record<string, string>>(
     Object.fromEntries(workstream.tasks.map((t) => [t.id, t.notes]))
   );
-  const [editingRagNote, setEditingRagNote] = useState(false);
-  const [ragNoteDraft, setRagNoteDraft] = useState(ragNote);
+  const [editingRygNote, setEditingRygNote] = useState(false);
+  const [rygNoteDraft, setRygNoteDraft] = useState(rygNote);
   const [imNotes, setImNotes] = useState<IMNote[]>([]);
   const [imDraft, setImDraft] = useState("");
   const [imHistoryOpen, setImHistoryOpen] = useState(false);
@@ -92,7 +92,7 @@ export default function HundredDayCard({ workstream, index, rag, ragNote, onRagC
   const overdueCount = tasks.filter(isOverdue).length;
   const stuckCount   = tasks.filter((t) => t.status === "Blocked" || t.status === "At Risk").length;
 
-  const ragMeta = RAG_META[rag];
+  const rygMeta = RYG_META[ryg];
 
   const handleStatusChange = async (taskId: string, newStatus: Status100) => {
     setSaving(taskId);
@@ -146,16 +146,16 @@ export default function HundredDayCard({ workstream, index, rag, ragNote, onRagC
                 </span>
               )}
 
-              {/* RAG toggle — stop propagation so clicking doesn't collapse card */}
+              {/* RYG toggle — stop propagation so clicking doesn't collapse card */}
               <span style={{ color: "#d1cfc9" }}>·</span>
               <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                {RAGS.map((r) => {
-                  const m = RAG_META[r];
-                  const active = rag === r;
+                {RYGS.map((r) => {
+                  const m = RYG_META[r];
+                  const active = ryg === r;
                   return (
                     <button
                       key={r}
-                      onClick={() => onRagChange(active ? "" : r)}
+                      onClick={() => onRygChange(active ? "" : r)}
                       title={m.label}
                       className="w-4 h-4 rounded-full transition-all border-2 flex-shrink-0"
                       style={{
@@ -165,10 +165,10 @@ export default function HundredDayCard({ workstream, index, rag, ragNote, onRagC
                     />
                   );
                 })}
-                {rag && (
+                {ryg && (
                   <span className="text-xs font-semibold px-2 py-0.5 rounded"
-                    style={{ backgroundColor: ragMeta.bg, color: ragMeta.color, fontFamily: "var(--font-geist-mono)" }}>
-                    {ragMeta.label}
+                    style={{ backgroundColor: rygMeta.bg, color: rygMeta.color, fontFamily: "var(--font-geist-mono)" }}>
+                    {rygMeta.label}
                   </span>
                 )}
               </div>
@@ -178,15 +178,15 @@ export default function HundredDayCard({ workstream, index, rag, ragNote, onRagC
               {workstream.goal}
             </p>
 
-            {/* Weekly RAG note */}
+            {/* Weekly RYG note */}
             <div className="mt-1.5" style={{ paddingLeft: "22px" }} onClick={(e) => e.stopPropagation()}>
-              {editingRagNote ? (
+              {editingRygNote ? (
                 <textarea
                   autoFocus
-                  value={ragNoteDraft}
-                  onChange={(e) => setRagNoteDraft(e.target.value)}
-                  onBlur={() => { onRagNoteChange(ragNoteDraft); setEditingRagNote(false); }}
-                  onKeyDown={(e) => { if (e.key === "Escape") setEditingRagNote(false); }}
+                  value={rygNoteDraft}
+                  onChange={(e) => setRygNoteDraft(e.target.value)}
+                  onBlur={() => { onRygNoteChange(rygNoteDraft); setEditingRygNote(false); }}
+                  onKeyDown={(e) => { if (e.key === "Escape") setEditingRygNote(false); }}
                   rows={2}
                   placeholder="Add weekly status note…"
                   className="w-full text-xs leading-relaxed rounded px-2 py-1.5 resize-none focus:outline-none"
@@ -195,10 +195,10 @@ export default function HundredDayCard({ workstream, index, rag, ragNote, onRagC
               ) : (
                 <p
                   className="text-xs leading-relaxed cursor-pointer inline-block rounded px-1 -mx-1 hover:bg-stone-100 transition-colors"
-                  style={{ color: ragNote ? "#57534e" : "#c0bdb8", fontStyle: ragNote ? "normal" : "italic" }}
-                  onClick={() => { setRagNoteDraft(ragNote); setEditingRagNote(true); }}
+                  style={{ color: rygNote ? "#57534e" : "#c0bdb8", fontStyle: rygNote ? "normal" : "italic" }}
+                  onClick={() => { setRygNoteDraft(rygNote); setEditingRygNote(true); }}
                 >
-                  {ragNote || "Add weekly status note…"}
+                  {rygNote || "Add weekly status note…"}
                 </p>
               )}
             </div>
