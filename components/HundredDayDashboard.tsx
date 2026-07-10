@@ -105,26 +105,7 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
                   <div style={{ width: `${pct}%`, height: "100%", backgroundColor: "#1a5c3a", borderRadius: "2px" }} />
                   <div className="absolute" style={{ left: `${pct}%`, top: "50%", transform: "translate(-50%, -50%)", width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#1a5c3a", border: "2px solid white", boxShadow: "0 0 0 1px #1a5c3a" }} />
                 </div>
-                {/* Logos + finish line */}
-                <img src="/RadialMHS.png" alt="Radial × MHS" style={{ height: "28px", width: "auto", flexShrink: 0, opacity: 0.85 }} />
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}>
-                  <rect x="0" y="0" width="5" height="5" fill="#1a1a1a" />
-                  <rect x="5" y="0" width="5" height="5" fill="#e5e3de" />
-                  <rect x="10" y="0" width="5" height="5" fill="#1a1a1a" />
-                  <rect x="15" y="0" width="5" height="5" fill="#e5e3de" />
-                  <rect x="0" y="5" width="5" height="5" fill="#e5e3de" />
-                  <rect x="5" y="5" width="5" height="5" fill="#1a1a1a" />
-                  <rect x="10" y="5" width="5" height="5" fill="#e5e3de" />
-                  <rect x="15" y="5" width="5" height="5" fill="#1a1a1a" />
-                  <rect x="0" y="10" width="5" height="5" fill="#1a1a1a" />
-                  <rect x="5" y="10" width="5" height="5" fill="#e5e3de" />
-                  <rect x="10" y="10" width="5" height="5" fill="#1a1a1a" />
-                  <rect x="15" y="10" width="5" height="5" fill="#e5e3de" />
-                  <rect x="0" y="15" width="5" height="5" fill="#e5e3de" />
-                  <rect x="5" y="15" width="5" height="5" fill="#1a1a1a" />
-                  <rect x="10" y="15" width="5" height="5" fill="#e5e3de" />
-                  <rect x="15" y="15" width="5" height="5" fill="#1a1a1a" />
-                </svg>
+                <img src="/RadialMHS.png" alt="Radial × MHS" style={{ height: "112px", width: "auto", flexShrink: 0, opacity: 0.85 }} />
               </div>
             </div>
           );
@@ -300,29 +281,6 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
           <div className="flex-1" style={{ height: "2px", backgroundColor: "#e5e3de" }} />
         </div>
 
-        {/* Status color legend */}
-        <div className="mb-6 rounded-lg overflow-hidden" style={{ border: "1px solid #e5e3de" }}>
-          <div className="px-5 py-3" style={{ backgroundColor: "#f7f6f3", borderBottom: "1px solid #e5e3de" }}>
-            <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
-              Status Legend — Task Status Key
-            </p>
-          </div>
-          <div style={{ backgroundColor: "white" }}>
-            {([
-              ["Not Started", "#374151"],
-              ["In Progress", "#1d4ed8"],
-              ["At Risk",     "#eab308"],
-              ["Blocked",     "#b91c1c"],
-              ["Complete",    "#15803d"],
-            ] as [string, string][]).map(([label, color], i, arr) => (
-              <div key={label} className="flex items-center gap-3 px-5 py-3"
-                style={{ borderBottom: i < arr.length - 1 ? "1px solid #f0efe9" : "none" }}>
-                <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: color, flexShrink: 0 }} />
-                <span className="text-xs font-semibold" style={{ color: "#1a1a1a", fontFamily: "var(--font-geist-mono)" }}>{label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
 
       {/* Workstream cards */}
