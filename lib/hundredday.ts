@@ -24,7 +24,7 @@ export interface Workstream100 {
 export const KEY_DATES = [
   { label: "Transaction Close", date: "Jun 23, 2026" },
   { label: "Day 30",            date: "Jul 23, 2026" },
-  { label: "Q2 Board Meeting",  date: "Aug 7, 2026" },
+  { label: "Next Board Meeting", date: "Aug 7, 2026" },
   { label: "Day 60",            date: "Aug 22, 2026" },
   { label: "Day 90",            date: "Sep 21, 2026" },
   { label: "Day 100",           date: "Oct 1, 2026" },

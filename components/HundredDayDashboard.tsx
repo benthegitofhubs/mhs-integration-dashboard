@@ -113,13 +113,17 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
           style={{ border: "1px solid #e5e3de", borderRadius: "6px", backgroundColor: "white" }}>
           {KEY_DATES.map((kd, i) => (
             <>
-              <div key={kd.label} className="px-5 py-3 flex flex-col gap-0.5"
-                style={{ borderRight: "1px solid #e5e3de" }}>
-                <span className="text-xs uppercase tracking-widest" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
-                  {kd.label}
-                </span>
-                <span className="text-sm font-semibold" style={{ color: "#1a1a1a" }}>{kd.date}</span>
-              </div>
+              {kd.label === "Next Board Meeting" ? (
+                <BoardMeetingCell key={kd.label} defaultDate={kd.date} />
+              ) : (
+                <div key={kd.label} className="px-5 py-3 flex flex-col gap-0.5"
+                  style={{ borderRight: "1px solid #e5e3de" }}>
+                  <span className="text-xs uppercase tracking-widest" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+                    {kd.label}
+                  </span>
+                  <span className="text-sm font-semibold" style={{ color: "#1a1a1a" }}>{kd.date}</span>
+                </div>
+              )}
               {i === 0 && (
                 <div key="today" className="px-5 py-3 flex flex-col gap-0.5"
                   style={{ borderRight: "1px solid #e5e3de", backgroundColor: "#f7faf8" }}>
@@ -420,6 +424,50 @@ function HealthLegend() {
           </p>
         </div>
       </div>
+    </div>
+  );
+}
+
+function BoardMeetingCell({ defaultDate }: { defaultDate: string }) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(() => {
+    if (typeof window === "undefined") return defaultDate;
+    return localStorage.getItem("next-board-meeting") ?? defaultDate;
+  });
+  const [draft, setDraft] = useState(value);
+
+  const save = () => {
+    const trimmed = draft.trim() || defaultDate;
+    setValue(trimmed);
+    localStorage.setItem("next-board-meeting", trimmed);
+    setEditing(false);
+  };
+
+  return (
+    <div className="px-5 py-3 flex flex-col gap-0.5" style={{ borderRight: "1px solid #e5e3de" }}>
+      <span className="text-xs uppercase tracking-widest" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+        Next Board Meeting
+      </span>
+      {editing ? (
+        <input
+          autoFocus
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={save}
+          onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") { setDraft(value); setEditing(false); } }}
+          className="text-sm font-semibold focus:outline-none bg-transparent border-b"
+          style={{ color: "#1a1a1a", borderColor: "#1a5c3a", width: "120px" }}
+        />
+      ) : (
+        <span
+          className="text-sm font-semibold cursor-pointer hover:text-green-800 transition-colors"
+          style={{ color: "#1a1a1a" }}
+          onClick={() => { setDraft(value); setEditing(true); }}
+          title="Click to edit"
+        >
+          {value}
+        </span>
+      )}
     </div>
   );
 }
