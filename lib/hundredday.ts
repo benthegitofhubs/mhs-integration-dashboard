@@ -4,6 +4,9 @@ export interface Task100 {
   id: string;
   description: string;
   dueDate: string;
+  startDate?: string;
+  percentComplete?: number;
+  lastUpdatedPercent?: number;
   owner: string;
   status: Status100;
   notes: string;

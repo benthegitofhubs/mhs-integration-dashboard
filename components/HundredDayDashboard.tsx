@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Workstream100, FLAGSHIP_GOALS, KEY_DATES, Status100 } from "@/lib/hundredday";
 import HundredDayCard from "./HundredDayCard";
+import { calcTaskHealth, rollupWorkstreamHealth, HEALTH_META, TaskHealth } from "@/lib/taskHealth";
 
 export type RYG = Status100 | "";
 
@@ -43,6 +44,20 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
     "At Risk":     workstreams.filter((ws) => rygMap[ws.id]?.ryg === "At Risk").length,
     "Blocked":     workstreams.filter((ws) => rygMap[ws.id]?.ryg === "Blocked").length,
     "Complete":    workstreams.filter((ws) => rygMap[ws.id]?.ryg === "Complete").length,
+  };
+
+  // Auto-calculated health rollup per workstream (from task pace data)
+  const autoHealth = Object.fromEntries(
+    workstreams.map((ws) => [
+      ws.id,
+      rollupWorkstreamHealth(ws.tasks.map((t) => calcTaskHealth(t))),
+    ])
+  ) as Record<string, TaskHealth | null>;
+
+  const autoHealthCounts: Record<TaskHealth, number> = {
+    "On Track":  workstreams.filter((ws) => autoHealth[ws.id] === "On Track").length,
+    "At Risk":   workstreams.filter((ws) => autoHealth[ws.id] === "At Risk").length,
+    "Off Track": workstreams.filter((ws) => autoHealth[ws.id] === "Off Track").length,
   };
 
   return (
@@ -146,7 +161,7 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
           <div className="overflow-hidden" style={{ border: "1px solid #e5e3de", borderRadius: "6px", backgroundColor: "white" }}>
             <div className="grid text-xs uppercase tracking-widest font-semibold px-5 py-2.5"
               style={{
-                gridTemplateColumns: "28px 1fr 130px 160px 86px 110px 44px",
+                gridTemplateColumns: "28px 1fr 130px 160px 90px 90px 110px 44px",
                 backgroundColor: "#f7f6f3",
                 color: "#9ca3af",
                 fontFamily: "var(--font-geist-mono)",
@@ -156,6 +171,7 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
               <span style={{ whiteSpace: "nowrap" }}>Workstream</span>
               <span style={{ whiteSpace: "nowrap" }}>Flagship Goal</span>
               <span style={{ whiteSpace: "nowrap" }}>Leader</span>
+              <span style={{ whiteSpace: "nowrap" }}>Auto Health</span>
               <span style={{ whiteSpace: "nowrap" }}>Status</span>
               <span style={{ whiteSpace: "nowrap" }}>Tasks</span>
               <span className="text-right" style={{ whiteSpace: "nowrap" }}>%</span>
@@ -167,12 +183,13 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
               const ip   = ws.tasks.filter((x) => x.status === "In Progress").length;
               const pct  = t > 0 ? Math.round((c / t) * 100) : 0;
               const { ryg } = rygMap[ws.id] ?? { ryg: "" as RYG };
-              const meta = ryg ? RYG_META[ryg as Status100] : null;
+              const ah    = autoHealth[ws.id];
+              const ahMeta = ah ? HEALTH_META[ah] : null;
 
               return (
                 <div key={ws.id} className="grid px-5 py-2.5 hover:bg-stone-50 transition-colors"
                   style={{
-                    gridTemplateColumns: "28px 1fr 130px 160px 86px 110px 44px",
+                    gridTemplateColumns: "28px 1fr 130px 160px 90px 90px 110px 44px",
                     borderBottom: i < workstreams.length - 1 ? "1px solid #f0efe9" : "none",
                     alignItems: "center",
                     gap: "8px",
@@ -181,6 +198,18 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
                   <span className="text-xs font-semibold" style={{ color: "#1a1a1a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ws.name}</span>
                   <span className="text-xs" style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ws.flagshipGoal.replace(/^\d+\s*·\s*/, "")}</span>
                   <span className="text-xs" style={{ color: "#6b7280", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ws.leader}</span>
+                  {/* Auto health — computed from task pace */}
+                  <div>
+                    {ahMeta ? (
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded"
+                        style={{ backgroundColor: ahMeta.bg, color: ahMeta.color, fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap" }}>
+                        {ah}
+                      </span>
+                    ) : (
+                      <span className="text-xs" style={{ color: "#d1d5db", fontFamily: "var(--font-geist-mono)" }}>—</span>
+                    )}
+                  </div>
+                  {/* Manual status override */}
                   <div>
                     {ryg ? (
                       <span className="text-xs font-semibold px-2 py-0.5 rounded"
@@ -202,6 +231,9 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
               );
             })}
           </div>
+
+          {/* Health legend */}
+          <HealthLegend />
         </div>
 
         {/* Workstream Work Items table */}
@@ -462,6 +494,63 @@ function TldrSummary({
         {healthLine}{" "}
         <span style={{ color: "#78716c" }}>{taskLine}</span>
       </p>
+    </div>
+  );
+}
+
+function HealthLegend() {
+  const rows: { status: string; dot: string; what: string; plain: string }[] = [
+    {
+      status: "On Track",
+      dot: "#15803d",
+      what: "Progress is keeping pace with time elapsed — no blockers",
+      plain: "Moving as expected. No action needed.",
+    },
+    {
+      status: "At Risk",
+      dot: "#eab308",
+      what: "Progress is behind pace, but still recoverable without escalation",
+      plain: "Falling behind. Owner has flagged a plan to catch up.",
+    },
+    {
+      status: "Off Track",
+      dot: "#b91c1c",
+      what: "Progress is significantly behind pace, actively blocked, or the deadline cannot be met without intervention",
+      plain: "Needs leadership attention now.",
+    },
+  ];
+
+  return (
+    <div className="mt-6 rounded-lg overflow-hidden" style={{ border: "1px solid #e5e3de" }}>
+      <div className="px-5 py-3 flex items-center gap-3" style={{ backgroundColor: "#f7f6f3", borderBottom: "1px solid #e5e3de" }}>
+        <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+          Status Legend — How Task Health Is Calculated
+        </p>
+      </div>
+      <div style={{ backgroundColor: "white" }}>
+        <div className="grid text-xs uppercase tracking-widest font-semibold px-5 py-2"
+          style={{ gridTemplateColumns: "100px 1fr 1fr", color: "#9ca3af", fontFamily: "var(--font-geist-mono)", borderBottom: "1px solid #f0efe9" }}>
+          <span>Status</span>
+          <span>What It Means</span>
+          <span>Plain English</span>
+        </div>
+        {rows.map((r) => (
+          <div key={r.status} className="grid px-5 py-3 items-start"
+            style={{ gridTemplateColumns: "100px 1fr 1fr", borderBottom: "1px solid #f0efe9", gap: "12px" }}>
+            <div className="flex items-center gap-2">
+              <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: r.dot, flexShrink: 0 }} />
+              <span className="text-xs font-semibold" style={{ color: "#1a1a1a", whiteSpace: "nowrap" }}>{r.status}</span>
+            </div>
+            <p className="text-xs leading-relaxed" style={{ color: "#6b7280" }}>{r.what}</p>
+            <p className="text-xs leading-relaxed" style={{ color: "#374151" }}>{r.plain}</p>
+          </div>
+        ))}
+        <div className="px-5 py-3" style={{ backgroundColor: "#f7f6f3" }}>
+          <p className="text-xs leading-relaxed" style={{ color: "#9ca3af", fontStyle: "italic" }}>
+            Each task&apos;s percent complete is compared to how much of its timeline has already elapsed. If completion is falling meaningfully behind the clock, or if the task is blocked, the status downgrades automatically — rather than relying on a manual guess. Workstream health rolls up from its tasks: the worst task health determines the workstream score.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
