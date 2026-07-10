@@ -142,17 +142,6 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
           ))}
         </div>
 
-        {/* TL;DR */}
-        <TldrSummary
-          workstreams={workstreams}
-          wsCounts={wsCounts}
-          complete={complete}
-          inProgress={inProgress}
-          blocked={blocked}
-          atRisk={atRisk}
-          total={total}
-        />
-
         {/* Disclaimer */}
         <div className="mb-6 px-4 py-3 rounded" style={{ backgroundColor: "#fefce8", border: "1px solid #fde68a" }}>
           <p className="text-xs leading-relaxed" style={{ color: "#78716c", fontFamily: "var(--font-geist-mono)" }}>
@@ -299,57 +288,6 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
 }
 
 
-function TldrSummary({
-  workstreams, wsCounts, complete, inProgress, blocked, atRisk, total,
-}: {
-  workstreams: Workstream100[];
-  wsCounts: Record<Status100, number>;
-  complete: number;
-  inProgress: number;
-  blocked: number;
-  atRisk: number;
-  total: number;
-}) {
-  const active = inProgress + atRisk;
-
-  let healthLine = "";
-  if (wsCounts["Blocked"] > 0) {
-    healthLine = `${wsCounts["Blocked"]} workstream${wsCounts["Blocked"] > 1 ? "s" : ""} blocked${wsCounts["At Risk"] > 0 ? `, ${wsCounts["At Risk"]} at risk` : ""}${wsCounts["In Progress"] > 0 ? `, ${wsCounts["In Progress"]} in progress` : ""}${wsCounts["Complete"] > 0 ? `, ${wsCounts["Complete"]} complete` : ""}.`;
-  } else if (wsCounts["At Risk"] > 0) {
-    healthLine = `${wsCounts["At Risk"]} workstream${wsCounts["At Risk"] > 1 ? "s" : ""} at risk${wsCounts["In Progress"] > 0 ? `, ${wsCounts["In Progress"]} in progress` : ""}${wsCounts["Complete"] > 0 ? `, ${wsCounts["Complete"]} complete` : ""}.`;
-  } else {
-    const parts: string[] = [];
-    if (wsCounts["Complete"]    > 0) parts.push(`${wsCounts["Complete"]} complete`);
-    if (wsCounts["In Progress"] > 0) parts.push(`${wsCounts["In Progress"]} in progress`);
-    if (wsCounts["Not Started"] > 0) parts.push(`${wsCounts["Not Started"]} not started`);
-    healthLine = (parts.join(", ") || `${workstreams.length} workstreams tracked`) + ".";
-  }
-
-  let taskLine = "";
-  if (complete === 0 && active === 0) {
-    taskLine = `${total} tasks defined — none started yet.`;
-  } else {
-    const parts = [];
-    if (complete > 0) parts.push(`${complete} complete`);
-    if (active > 0)   parts.push(`${active} active`);
-    if (blocked > 0)  parts.push(`${blocked} blocked`);
-    taskLine = `${parts.join(", ")} out of ${total} total tasks.`;
-    if (blocked > 0) taskLine += " Blocked items need attention.";
-  }
-
-  return (
-    <div className="mb-8 px-5 py-4 rounded-lg" style={{ backgroundColor: "white", border: "1px solid #e5e3de" }}>
-      <p className="text-xs font-semibold uppercase tracking-widest mb-2"
-        style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
-        TL;DR
-      </p>
-      <p className="text-sm leading-relaxed" style={{ color: "#1a1a1a" }}>
-        {healthLine}{" "}
-        <span style={{ color: "#78716c" }}>{taskLine}</span>
-      </p>
-    </div>
-  );
-}
 
 function HealthLegend() {
   const rows: { status: string; dot: string; what: string; plain: string }[] = [
