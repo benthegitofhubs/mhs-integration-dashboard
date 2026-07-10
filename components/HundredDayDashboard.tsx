@@ -72,13 +72,18 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
       <div className="max-w-6xl mx-auto px-8 pt-12 pb-8">
 
         {/* Eyebrow + headline */}
-        <p className="text-xs font-semibold uppercase tracking-widest mb-2"
-          style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
-          Mindful Health Solutions · 100-Day Integration Plan
-        </p>
-        <h1 className="text-3xl font-bold leading-snug mb-6" style={{ letterSpacing: "-0.02em", color: "#111" }}>
-          100 days to one team, one mission.
-        </h1>
+        <div className="flex items-start justify-between mb-6">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest mb-2"
+              style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+              Mindful Health Solutions · 100-Day Integration Plan
+            </p>
+            <h1 className="text-3xl font-bold leading-snug" style={{ letterSpacing: "-0.02em", color: "#111" }}>
+              100 days to one team, one mission.
+            </h1>
+          </div>
+          <img src="/RadialMHS.png" alt="Radial × MHS" style={{ height: "100px", width: "auto", opacity: 0.9, flexShrink: 0 }} />
+        </div>
 
         {/* Progress timeline */}
         {(() => {
@@ -107,11 +112,6 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
             </div>
           );
         })()}
-
-        {/* Logo */}
-        <div className="flex justify-center mb-6 mt-4">
-          <img src="/RadialMHS.png" alt="Radial × MHS" style={{ height: "120px", width: "auto", opacity: 0.85 }} />
-        </div>
 
         {/* Key dates */}
         <div className="flex flex-wrap items-center mb-10 overflow-hidden"
