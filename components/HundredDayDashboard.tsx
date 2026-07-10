@@ -157,7 +157,7 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
             <StatCell value={wsCounts["In Progress"]}              label="In Progress" color="#1d4ed8" />
             <StatCell value={autoHealthCounts["On Track"]}         label="On Track"    color="#15803d" />
             <StatCell value={autoHealthCounts["Off Track"]}        label="Off Track"   color="#b91c1c" />
-            <StatCell value={autoHealthCounts["At Risk"]}          label="At Risk"     color="#854d0e" />
+            <StatCell value={autoHealthCounts["At Risk"]}          label="At Risk"     color="#eab308" />
           </div>
           <div className="h-1 overflow-hidden flex mb-4" style={{ backgroundColor: "#e5e3de" }}>
             {autoHealthCounts["On Track"]  > 0 && <div style={{ width: `${(autoHealthCounts["On Track"]  / workstreams.length) * 100}%`, backgroundColor: "#15803d" }} />}
