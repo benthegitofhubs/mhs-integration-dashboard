@@ -1,4 +1,4 @@
-export const LAST_SYNCED = "Jul 10, 2026";
+export const LAST_SYNCED = "Jul 10, 2026, 2:45 PM ET";
 
 export type Status100 = "Not Started" | "In Progress" | "At Risk" | "Blocked" | "Complete";
 
