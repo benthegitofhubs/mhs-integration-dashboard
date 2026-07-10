@@ -61,6 +61,12 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
     ])
   ) as Record<string, TaskHealth | null>;
 
+  const autoHealthCounts: Record<TaskHealth, number> = {
+    "On Track":  workstreams.filter((ws) => autoHealth[ws.id] === "On Track").length,
+    "At Risk":   workstreams.filter((ws) => autoHealth[ws.id] === "At Risk").length,
+    "Off Track": workstreams.filter((ws) => autoHealth[ws.id] === "Off Track").length,
+  };
+
   return (
     <main className="min-h-screen" style={{ backgroundColor: "#f7f6f3", color: "#1a1a1a" }}>
       <div className="max-w-6xl mx-auto px-8 pt-12 pb-8">
@@ -145,20 +151,19 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
             <div className="flex-1" style={{ height: "2px", backgroundColor: "#e5e3de" }} />
           </div>
 
-          {/* Status summary counts */}
+          {/* Summary counts: operational state + pace health */}
           <div className="grid grid-cols-5 gap-0 mb-3" style={{ borderTop: "1px solid #e5e3de" }}>
-            <StatCell value={wsCounts["Not Started"]} label="Not Started" color="#374151" />
-            <StatCell value={wsCounts["In Progress"]} label="In Progress" color="#1d4ed8" />
-            <StatCell value={wsCounts["At Risk"]}     label="At Risk"     color="#854d0e" />
-            <StatCell value={wsCounts["Blocked"]}     label="Blocked"     color="#b91c1c" />
-            <StatCell value={wsCounts["Complete"]}    label="Complete"    color="#15803d" />
+            <StatCell value={wsCounts["Not Started"]}              label="Not Started" color="#374151" />
+            <StatCell value={wsCounts["In Progress"]}              label="In Progress" color="#1d4ed8" />
+            <StatCell value={autoHealthCounts["On Track"]}         label="On Track"    color="#15803d" />
+            <StatCell value={autoHealthCounts["Off Track"]}        label="Off Track"   color="#b91c1c" />
+            <StatCell value={autoHealthCounts["At Risk"]}          label="At Risk"     color="#854d0e" />
           </div>
           <div className="h-1 overflow-hidden flex mb-4" style={{ backgroundColor: "#e5e3de" }}>
-            {wsCounts["Complete"]    > 0 && <div style={{ width: `${(wsCounts["Complete"]    / workstreams.length) * 100}%`, backgroundColor: "#15803d" }} />}
-            {wsCounts["In Progress"] > 0 && <div style={{ width: `${(wsCounts["In Progress"] / workstreams.length) * 100}%`, backgroundColor: "#1d4ed8" }} />}
-            {wsCounts["At Risk"]     > 0 && <div style={{ width: `${(wsCounts["At Risk"]     / workstreams.length) * 100}%`, backgroundColor: "#eab308" }} />}
-            {wsCounts["Blocked"]     > 0 && <div style={{ width: `${(wsCounts["Blocked"]     / workstreams.length) * 100}%`, backgroundColor: "#b91c1c" }} />}
-            {wsCounts["Not Started"] > 0 && <div style={{ width: `${(wsCounts["Not Started"] / workstreams.length) * 100}%`, backgroundColor: "#374151" }} />}
+            {autoHealthCounts["On Track"]  > 0 && <div style={{ width: `${(autoHealthCounts["On Track"]  / workstreams.length) * 100}%`, backgroundColor: "#15803d" }} />}
+            {autoHealthCounts["At Risk"]   > 0 && <div style={{ width: `${(autoHealthCounts["At Risk"]   / workstreams.length) * 100}%`, backgroundColor: "#eab308" }} />}
+            {autoHealthCounts["Off Track"] > 0 && <div style={{ width: `${(autoHealthCounts["Off Track"] / workstreams.length) * 100}%`, backgroundColor: "#b91c1c" }} />}
+            {wsCounts["Not Started"]       > 0 && <div style={{ width: `${(wsCounts["Not Started"]       / workstreams.length) * 100}%`, backgroundColor: "#374151" }} />}
           </div>
 
           {/* Per-workstream table */}
