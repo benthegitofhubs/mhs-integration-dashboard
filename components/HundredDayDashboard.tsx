@@ -86,13 +86,14 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
           const end      = new Date("Oct 1, 2026").getTime();
           const now      = new Date().getTime();
           const pct      = Math.min(100, Math.max(0, ((now - start) / (end - start)) * 100));
-          const daysLeft = Math.max(0, Math.ceil((end - now) / 86400000));
+          const daysLeft    = Math.max(0, Math.ceil((end - now) / 86400000));
+          const daysElapsed = Math.max(0, Math.floor((now - start) / 86400000));
           return (
             <div className="mb-2">
               <div className="relative" style={{ height: "28px" }}>
                 <div className="absolute flex flex-col items-center" style={{ left: `${pct}%`, transform: "translateX(-50%)", top: 0 }}>
                   <span className="text-xs font-semibold" style={{ color: "#1a5c3a", fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap" }}>
-                    Today · {daysLeft}d left
+                    {daysElapsed}d elapsed · Today · {daysLeft}d left
                   </span>
                   <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
                     <path d="M5 8L0 0H10L5 8Z" fill="#1a5c3a" />
@@ -111,13 +112,26 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
         <div className="flex flex-wrap items-center mb-10 overflow-hidden"
           style={{ border: "1px solid #e5e3de", borderRadius: "6px", backgroundColor: "white" }}>
           {KEY_DATES.map((kd, i) => (
-            <div key={kd.label} className="px-5 py-3 flex flex-col gap-0.5"
-              style={{ borderRight: i < KEY_DATES.length - 1 ? "1px solid #e5e3de" : "none" }}>
-              <span className="text-xs uppercase tracking-widest" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
-                {kd.label}
-              </span>
-              <span className="text-sm font-semibold" style={{ color: "#1a1a1a" }}>{kd.date}</span>
-            </div>
+            <>
+              <div key={kd.label} className="px-5 py-3 flex flex-col gap-0.5"
+                style={{ borderRight: "1px solid #e5e3de" }}>
+                <span className="text-xs uppercase tracking-widest" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+                  {kd.label}
+                </span>
+                <span className="text-sm font-semibold" style={{ color: "#1a1a1a" }}>{kd.date}</span>
+              </div>
+              {i === 0 && (
+                <div key="today" className="px-5 py-3 flex flex-col gap-0.5"
+                  style={{ borderRight: "1px solid #e5e3de", backgroundColor: "#f7faf8" }}>
+                  <span className="text-xs uppercase tracking-widest" style={{ color: "#1a5c3a", fontFamily: "var(--font-geist-mono)" }}>
+                    Today
+                  </span>
+                  <span className="text-sm font-semibold" style={{ color: "#1a5c3a" }}>
+                    {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                  </span>
+                </div>
+              )}
+            </>
           ))}
         </div>
 
