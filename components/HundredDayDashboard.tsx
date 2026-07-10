@@ -462,6 +462,7 @@ function BoardMeetingCell({ defaultDate }: { defaultDate: string }) {
 }
 
 function ByOwnerView({ workstreams }: { workstreams: Workstream100[] }) {
+  const [search, setSearch] = useState("");
   type OwnerTask = { owner: string; workstream: string; description: string; dueDate: string; status: Status100 };
 
   const rows: OwnerTask[] = workstreams.flatMap((ws) =>
@@ -489,9 +490,42 @@ function ByOwnerView({ workstreams }: { workstreams: Workstream100[] }) {
     return a.localeCompare(b);
   });
 
+  const filteredOwners = search.trim()
+    ? sortedOwners.filter((o) => o.toLowerCase().includes(search.trim().toLowerCase()))
+    : sortedOwners;
+
   return (
     <div className="pb-20 space-y-6">
-      {sortedOwners.map((owner) => (
+      <div className="relative mb-2" style={{ maxWidth: "320px" }}>
+        <input
+          type="text"
+          placeholder="Search by name…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full text-sm rounded px-4 py-2.5 focus:outline-none"
+          style={{
+            border: "1px solid #e5e3de",
+            backgroundColor: "white",
+            color: "#1a1a1a",
+            fontFamily: "var(--font-geist-mono)",
+          }}
+        />
+        {search && (
+          <button
+            onClick={() => setSearch("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs"
+            style={{ color: "#9ca3af" }}
+          >
+            ✕
+          </button>
+        )}
+      </div>
+      {filteredOwners.length === 0 && (
+        <p className="text-sm" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+          No owners match &ldquo;{search}&rdquo;
+        </p>
+      )}
+      {filteredOwners.map((owner) => (
         <div key={owner} style={{ border: "1px solid #e5e3de", borderRadius: "6px", overflow: "hidden", backgroundColor: "white" }}>
           <div className="px-5 py-3" style={{ backgroundColor: "#f7f6f3", borderBottom: "1px solid #e5e3de" }}>
             <span className="text-sm font-semibold" style={{ color: "#111" }}>{owner}</span>
