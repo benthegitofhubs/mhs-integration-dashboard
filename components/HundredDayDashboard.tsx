@@ -1,17 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { Workstream100, FLAGSHIP_GOALS, KEY_DATES } from "@/lib/hundredday";
+import { Workstream100, FLAGSHIP_GOALS, KEY_DATES, Status100 } from "@/lib/hundredday";
 import HundredDayCard from "./HundredDayCard";
 
-export type RYG = "Green" | "Yellow" | "Red" | "";
+export type RYG = Status100 | "";
 
-export const RYG_META: Record<RYG, { bg: string; color: string; label: string; dot: string }> = {
-  Green:  { bg: "#dcfce7", color: "#15803d", label: "On Track",  dot: "#15803d" },
-  Yellow: { bg: "#fef9c3", color: "#854d0e", label: "At Risk",   dot: "#eab308" },
-  Red:    { bg: "#fee2e2", color: "#b91c1c", label: "Off Track", dot: "#b91c1c" },
-  "":     { bg: "#f3f4f6", color: "#9ca3af", label: "No Status", dot: "#d1d5db" },
+export const RYG_META: Record<Status100, { bg: string; color: string; label: string; dot: string }> = {
+  "Not Started": { bg: "#f3f4f6", color: "#111111", label: "Not Started", dot: "#374151" },
+  "In Progress": { bg: "#dbeafe", color: "#1d4ed8", label: "In Progress", dot: "#1d4ed8" },
+  "At Risk":     { bg: "#fef9c3", color: "#854d0e", label: "At Risk",     dot: "#eab308" },
+  "Blocked":     { bg: "#fee2e2", color: "#b91c1c", label: "Blocked",     dot: "#b91c1c" },
+  "Complete":    { bg: "#dcfce7", color: "#15803d", label: "Complete",    dot: "#15803d" },
 };
+
+const STATUSES: Status100[] = ["Not Started", "In Progress", "At Risk", "Blocked", "Complete"];
 
 type RygMap = Record<string, { ryg: RYG; note: string }>;
 
@@ -35,9 +38,11 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
   const blocked    = allTasks.filter((t) => t.status === "Blocked").length;
 
   const rygCounts = {
-    Green:  workstreams.filter((ws) => rygMap[ws.id]?.ryg === "Green").length,
-    Yellow: workstreams.filter((ws) => rygMap[ws.id]?.ryg === "Yellow").length,
-    Red:    workstreams.filter((ws) => rygMap[ws.id]?.ryg === "Red").length,
+    "Not Started": workstreams.filter((ws) => rygMap[ws.id]?.ryg === "Not Started").length,
+    "In Progress": workstreams.filter((ws) => rygMap[ws.id]?.ryg === "In Progress").length,
+    "At Risk":     workstreams.filter((ws) => rygMap[ws.id]?.ryg === "At Risk").length,
+    "Blocked":     workstreams.filter((ws) => rygMap[ws.id]?.ryg === "Blocked").length,
+    "Complete":    workstreams.filter((ws) => rygMap[ws.id]?.ryg === "Complete").length,
   };
 
   return (
@@ -117,20 +122,24 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
             <div className="flex-1" style={{ height: "2px", backgroundColor: "#e5e3de" }} />
           </div>
 
-          {/* RYG summary counts */}
-          <div className="grid grid-cols-3 gap-0 mb-3" style={{ borderTop: "1px solid #e5e3de" }}>
-            <StatCell value={rygCounts.Green}  label="On Track"  color="#15803d" />
-            <StatCell value={rygCounts.Yellow} label="At Risk"   color="#854d0e" />
-            <StatCell value={rygCounts.Red}    label="Off Track" color="#b91c1c" />
+          {/* Status summary counts */}
+          <div className="grid grid-cols-5 gap-0 mb-3" style={{ borderTop: "1px solid #e5e3de" }}>
+            <StatCell value={rygCounts["Not Started"]} label="Not Started" color="#374151" />
+            <StatCell value={rygCounts["In Progress"]} label="In Progress" color="#1d4ed8" />
+            <StatCell value={rygCounts["At Risk"]}     label="At Risk"     color="#854d0e" />
+            <StatCell value={rygCounts["Blocked"]}     label="Blocked"     color="#b91c1c" />
+            <StatCell value={rygCounts["Complete"]}    label="Complete"    color="#15803d" />
           </div>
           <div className="h-1 overflow-hidden flex mb-1" style={{ backgroundColor: "#e5e3de" }}>
-            {rygCounts.Green  > 0 && <div style={{ width: `${(rygCounts.Green  / workstreams.length) * 100}%`, backgroundColor: "#15803d" }} />}
-            {rygCounts.Yellow > 0 && <div style={{ width: `${(rygCounts.Yellow / workstreams.length) * 100}%`, backgroundColor: "#eab308" }} />}
-            {rygCounts.Red    > 0 && <div style={{ width: `${(rygCounts.Red    / workstreams.length) * 100}%`, backgroundColor: "#b91c1c" }} />}
-            <div style={{ width: `${((workstreams.length - rygCounts.Green - rygCounts.Yellow - rygCounts.Red) / workstreams.length) * 100}%`, backgroundColor: "#d1d5db" }} />
+            {rygCounts["Complete"]    > 0 && <div style={{ width: `${(rygCounts["Complete"]    / workstreams.length) * 100}%`, backgroundColor: "#15803d" }} />}
+            {rygCounts["In Progress"] > 0 && <div style={{ width: `${(rygCounts["In Progress"] / workstreams.length) * 100}%`, backgroundColor: "#1d4ed8" }} />}
+            {rygCounts["At Risk"]     > 0 && <div style={{ width: `${(rygCounts["At Risk"]     / workstreams.length) * 100}%`, backgroundColor: "#eab308" }} />}
+            {rygCounts["Blocked"]     > 0 && <div style={{ width: `${(rygCounts["Blocked"]     / workstreams.length) * 100}%`, backgroundColor: "#b91c1c" }} />}
+            {rygCounts["Not Started"] > 0 && <div style={{ width: `${(rygCounts["Not Started"] / workstreams.length) * 100}%`, backgroundColor: "#374151" }} />}
+            <div style={{ width: `${((workstreams.length - rygCounts["Not Started"] - rygCounts["In Progress"] - rygCounts["At Risk"] - rygCounts["Blocked"] - rygCounts["Complete"]) / workstreams.length) * 100}%`, backgroundColor: "#d1d5db" }} />
           </div>
           <p className="text-xs mb-4" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
-            {workstreams.length - rygCounts.Green - rygCounts.Yellow - rygCounts.Red} OF {workstreams.length} WORKSTREAMS AWAITING STATUS
+            {workstreams.length - rygCounts["Not Started"] - rygCounts["In Progress"] - rygCounts["At Risk"] - rygCounts["Blocked"] - rygCounts["Complete"]} OF {workstreams.length} WORKSTREAMS AWAITING STATUS
           </p>
 
           {/* Per-workstream breakdown table */}
@@ -158,7 +167,7 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
               const ip   = ws.tasks.filter((x) => x.status === "In Progress").length;
               const pct  = t > 0 ? Math.round((c / t) * 100) : 0;
               const { ryg } = rygMap[ws.id] ?? { ryg: "" as RYG };
-              const meta = RYG_META[ryg];
+              const meta = ryg ? RYG_META[ryg as Status100] : null;
 
               return (
                 <div key={ws.id} className="grid px-5 py-2.5 hover:bg-stone-50 transition-colors"
@@ -175,8 +184,8 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
                   <div>
                     {ryg ? (
                       <span className="text-xs font-semibold px-2 py-0.5 rounded"
-                        style={{ backgroundColor: meta.bg, color: meta.color, fontFamily: "var(--font-geist-mono)" }}>
-                        {meta.label}
+                        style={{ backgroundColor: RYG_META[ryg as Status100].bg, color: RYG_META[ryg as Status100].color, fontFamily: "var(--font-geist-mono)" }}>
+                        {ryg}
                       </span>
                     ) : (
                       <span className="text-xs" style={{ color: "#d1d5db", fontFamily: "var(--font-geist-mono)" }}>—</span>
@@ -299,7 +308,7 @@ function FlagshipGroup({
         const c = ws.tasks.filter((x) => x.status === "Complete").length;
         const pct = t > 0 ? Math.round((c / t) * 100) : 0;
         const { ryg, note } = rygMap[ws.id] ?? { ryg: "" as RYG, note: "" };
-        const meta = RYG_META[ryg];
+        const meta = ryg ? RYG_META[ryg as Status100] : null;
 
         return (
           <OverviewRow
@@ -325,13 +334,12 @@ function OverviewRow({
   ryg: RYG;
   note: string;
   pct: number;
-  meta: typeof RYG_META[RYG];
+  meta: typeof RYG_META[Status100] | null;
   onRygChange: (r: RYG) => void;
   onNoteChange: (n: string) => void;
 }) {
   const [editingNote, setEditingNote] = useState(false);
   const [draft, setDraft] = useState(note);
-  const RYGS: RYG[] = ["Green", "Yellow", "Red"];
 
   return (
     <div className="grid px-6 py-3 hover:bg-stone-50 transition-colors"
@@ -348,29 +356,23 @@ function OverviewRow({
 
       <p className="text-xs leading-relaxed" style={{ color: "#374151" }}>{ws.goal}</p>
 
-      {/* RYG toggle */}
-      <div className="flex items-center gap-1 pt-0.5">
-        {RYGS.map((r) => {
-          const m = RYG_META[r];
-          const active = ryg === r;
-          return (
-            <button
-              key={r}
-              onClick={() => onRygChange(active ? "" : r)}
-              title={m.label}
-              className="w-5 h-5 rounded-full transition-all border-2 flex-shrink-0"
-              style={{
-                backgroundColor: active ? m.dot : "transparent",
-                borderColor: active ? m.dot : "#d1d5db",
-              }}
-            />
-          );
-        })}
-        {ryg && (
-          <span className="text-xs ml-1" style={{ color: meta.color, fontFamily: "var(--font-geist-mono)" }}>
-            {meta.label}
-          </span>
-        )}
+      {/* Status select */}
+      <div className="pt-0.5">
+        <select
+          value={ryg}
+          onChange={(e) => onRygChange(e.target.value as RYG)}
+          className="text-xs font-semibold cursor-pointer focus:outline-none rounded px-2 py-1"
+          style={{
+            backgroundColor: ryg ? RYG_META[ryg as Status100].bg : "#f3f4f6",
+            color: ryg ? RYG_META[ryg as Status100].color : "#9ca3af",
+            border: "none",
+            fontFamily: "var(--font-geist-mono)",
+            letterSpacing: "0.03em",
+          }}
+        >
+          <option value="">— No Status</option>
+          {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
       </div>
 
       {/* Weekly note */}
@@ -416,20 +418,26 @@ function TldrSummary({
   blocked: number;
   atRisk: number;
   total: number;
-  rygCounts: { Green: number; Yellow: number; Red: number };
+  rygCounts: Record<Status100, number>;
 }) {
-  const noStatus = workstreams.length - rygCounts.Green - rygCounts.Yellow - rygCounts.Red;
+  const rated    = rygCounts["Not Started"] + rygCounts["In Progress"] + rygCounts["At Risk"] + rygCounts["Blocked"] + rygCounts["Complete"];
+  const noStatus = workstreams.length - rated;
   const active   = inProgress + atRisk;
 
   let healthLine = "";
-  if (noStatus === workstreams.length) {
+  if (rated === 0) {
     healthLine = `${workstreams.length} workstreams tracked — no health status set yet.`;
-  } else if (rygCounts.Red > 0) {
-    healthLine = `${rygCounts.Red} workstream${rygCounts.Red > 1 ? "s are" : " is"} off track${rygCounts.Yellow > 0 ? `, ${rygCounts.Yellow} at risk` : ""}${rygCounts.Green > 0 ? `, ${rygCounts.Green} on track` : ""}.`;
-  } else if (rygCounts.Yellow > 0) {
-    healthLine = `${rygCounts.Yellow} workstream${rygCounts.Yellow > 1 ? "s are" : " is"} at risk${rygCounts.Green > 0 ? `, ${rygCounts.Green} on track` : ""}${noStatus > 0 ? `, ${noStatus} awaiting status` : ""}.`;
+  } else if (rygCounts["Blocked"] > 0) {
+    healthLine = `${rygCounts["Blocked"]} workstream${rygCounts["Blocked"] > 1 ? "s" : ""} blocked${rygCounts["At Risk"] > 0 ? `, ${rygCounts["At Risk"]} at risk` : ""}${rygCounts["In Progress"] > 0 ? `, ${rygCounts["In Progress"]} in progress` : ""}${rygCounts["Complete"] > 0 ? `, ${rygCounts["Complete"]} complete` : ""}.`;
+  } else if (rygCounts["At Risk"] > 0) {
+    healthLine = `${rygCounts["At Risk"]} workstream${rygCounts["At Risk"] > 1 ? "s" : ""} at risk${rygCounts["In Progress"] > 0 ? `, ${rygCounts["In Progress"]} in progress` : ""}${rygCounts["Complete"] > 0 ? `, ${rygCounts["Complete"]} complete` : ""}${noStatus > 0 ? `, ${noStatus} awaiting status` : ""}.`;
   } else {
-    healthLine = `All ${rygCounts.Green} rated workstream${rygCounts.Green > 1 ? "s are" : " is"} on track${noStatus > 0 ? ` — ${noStatus} still awaiting status` : ""}.`;
+    const parts: string[] = [];
+    if (rygCounts["Complete"]    > 0) parts.push(`${rygCounts["Complete"]} complete`);
+    if (rygCounts["In Progress"] > 0) parts.push(`${rygCounts["In Progress"]} in progress`);
+    if (rygCounts["Not Started"] > 0) parts.push(`${rygCounts["Not Started"]} not started`);
+    if (noStatus > 0)                  parts.push(`${noStatus} awaiting status`);
+    healthLine = parts.join(", ") + ".";
   }
 
   let taskLine = "";

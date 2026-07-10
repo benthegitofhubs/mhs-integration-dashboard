@@ -44,7 +44,6 @@ const STATUS_DOT: Record<Status100, string> = {
 };
 
 const STATUSES: Status100[] = ["Not Started", "In Progress", "At Risk", "Blocked", "Complete"];
-const RYGS: RYG[] = ["Green", "Yellow", "Red"];
 
 interface Props {
   workstream: Workstream100;
@@ -100,7 +99,7 @@ export default function HundredDayCard({ workstream, index, ryg, rygNote, onRygC
   const overdueCount = tasks.filter(isOverdue).length;
   const stuckCount   = tasks.filter((t) => t.status === "Blocked" || t.status === "At Risk").length;
 
-  const rygMeta = RYG_META[ryg];
+  const rygMeta = ryg ? RYG_META[ryg as Status100] : null;
 
   const handleStatusChange = async (taskId: string, newStatus: Status100) => {
     setSaving(taskId);
@@ -154,31 +153,23 @@ export default function HundredDayCard({ workstream, index, ryg, rygNote, onRygC
                 </span>
               )}
 
-              {/* RYG toggle — stop propagation so clicking doesn't collapse card */}
+              {/* Workstream status select */}
               <span style={{ color: "#d1cfc9" }}>·</span>
-              <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                {RYGS.map((r) => {
-                  const m = RYG_META[r];
-                  const active = ryg === r;
-                  return (
-                    <button
-                      key={r}
-                      onClick={() => onRygChange(active ? "" : r)}
-                      title={m.label}
-                      className="w-4 h-4 rounded-full transition-all border-2 flex-shrink-0"
-                      style={{
-                        backgroundColor: active ? m.dot : "transparent",
-                        borderColor: active ? m.dot : "#d1d5db",
-                      }}
-                    />
-                  );
-                })}
-                {ryg && (
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded"
-                    style={{ backgroundColor: rygMeta.bg, color: rygMeta.color, fontFamily: "var(--font-geist-mono)" }}>
-                    {rygMeta.label}
-                  </span>
-                )}
+              <div onClick={(e) => e.stopPropagation()}>
+                <select
+                  value={ryg}
+                  onChange={(e) => onRygChange(e.target.value as RYG)}
+                  className="text-xs font-semibold cursor-pointer focus:outline-none rounded px-2 py-0.5"
+                  style={{
+                    backgroundColor: rygMeta ? rygMeta.bg : "#f3f4f6",
+                    color: rygMeta ? rygMeta.color : "#9ca3af",
+                    border: "none",
+                    fontFamily: "var(--font-geist-mono)",
+                  }}
+                >
+                  <option value="">— Status</option>
+                  {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
               </div>
             </div>
 
