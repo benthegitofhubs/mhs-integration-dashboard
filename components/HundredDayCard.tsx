@@ -95,7 +95,7 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
   };
 
   return (
-    <div style={{ backgroundColor: "white", border: "1px solid #e5e3de", borderRadius: "6px", overflow: "hidden" }}>
+    <div id={`ws-${workstream.id}`} style={{ backgroundColor: "white", border: "1px solid #e5e3de", borderRadius: "6px", overflow: "hidden" }}>
 
       {/* Header */}
       <button
