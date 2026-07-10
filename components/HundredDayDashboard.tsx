@@ -139,7 +139,7 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
           ))}
           {/* Logo cell */}
           <div className="flex items-center justify-center px-4 py-3">
-            <img src="/RadialMHS.png" alt="Radial × MHS" style={{ height: "56px", width: "auto", opacity: 0.85 }} />
+            <img src="/RadialMHS.png" alt="Radial × MHS" style={{ height: "100px", width: "auto", opacity: 0.85 }} />
           </div>
         </div>
 
