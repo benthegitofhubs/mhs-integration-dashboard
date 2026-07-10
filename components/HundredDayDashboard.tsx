@@ -108,10 +108,14 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
 
         {/* Workstream Health */}
         <div className="mb-10">
-          <p className="text-xs font-semibold uppercase tracking-widest mb-3"
-            style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)", borderBottom: "1px solid #e5e3de", paddingBottom: "8px" }}>
-            Workstream Health
-          </p>
+          <div className="flex items-center gap-4 mb-6">
+            <div className="flex-1" style={{ height: "2px", backgroundColor: "#e5e3de" }} />
+            <p className="text-xs font-semibold uppercase tracking-widest shrink-0"
+              style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)" }}>
+              Workstream Health
+            </p>
+            <div className="flex-1" style={{ height: "2px", backgroundColor: "#e5e3de" }} />
+          </div>
 
           {/* RYG summary counts */}
           <div className="grid grid-cols-3 gap-0 mb-3" style={{ borderTop: "1px solid #e5e3de" }}>
@@ -133,19 +137,19 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
           <div className="overflow-hidden" style={{ border: "1px solid #e5e3de", borderRadius: "6px", backgroundColor: "white" }}>
             <div className="grid text-xs uppercase tracking-widest font-semibold px-5 py-2.5"
               style={{
-                gridTemplateColumns: "28px 1fr 80px 100px 86px 110px 44px",
+                gridTemplateColumns: "28px 1fr 130px 160px 86px 110px 44px",
                 backgroundColor: "#f7f6f3",
                 color: "#9ca3af",
                 fontFamily: "var(--font-geist-mono)",
                 borderBottom: "1px solid #e5e3de",
               }}>
-              <span>#</span>
-              <span>Workstream</span>
-              <span>Flagship Goal</span>
-              <span>Leader</span>
-              <span>Status</span>
-              <span>Tasks</span>
-              <span className="text-right">%</span>
+              <span style={{ whiteSpace: "nowrap" }}>#</span>
+              <span style={{ whiteSpace: "nowrap" }}>Workstream</span>
+              <span style={{ whiteSpace: "nowrap" }}>Flagship Goal</span>
+              <span style={{ whiteSpace: "nowrap" }}>Leader</span>
+              <span style={{ whiteSpace: "nowrap" }}>Status</span>
+              <span style={{ whiteSpace: "nowrap" }}>Tasks</span>
+              <span className="text-right" style={{ whiteSpace: "nowrap" }}>%</span>
             </div>
 
             {workstreams.map((ws, i) => {
@@ -159,15 +163,15 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
               return (
                 <div key={ws.id} className="grid px-5 py-2.5 hover:bg-stone-50 transition-colors"
                   style={{
-                    gridTemplateColumns: "28px 1fr 80px 100px 86px 110px 44px",
+                    gridTemplateColumns: "28px 1fr 130px 160px 86px 110px 44px",
                     borderBottom: i < workstreams.length - 1 ? "1px solid #f0efe9" : "none",
                     alignItems: "center",
                     gap: "8px",
                   }}>
                   <span className="text-xs font-bold" style={{ color: "#1a5c3a", fontFamily: "var(--font-geist-mono)" }}>{i + 1}</span>
                   <span className="text-xs font-semibold" style={{ color: "#1a1a1a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ws.name}</span>
-                  <span className="text-xs" style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)" }}>{ws.flagshipGoal.replace(/^\d+\s*·\s*/, "")}</span>
-                  <span className="text-xs" style={{ color: "#6b7280" }}>{ws.leader}</span>
+                  <span className="text-xs" style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ws.flagshipGoal.replace(/^\d+\s*·\s*/, "")}</span>
+                  <span className="text-xs" style={{ color: "#6b7280", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ws.leader}</span>
                   <div>
                     {ryg ? (
                       <span className="text-xs font-semibold px-2 py-0.5 rounded"
