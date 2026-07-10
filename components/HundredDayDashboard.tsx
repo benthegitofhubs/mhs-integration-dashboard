@@ -154,7 +154,7 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
           </div>
 
           {/* Per-workstream table */}
-          <div className="overflow-hidden" style={{ border: "1px solid #e5e3de", borderRadius: "6px", backgroundColor: "white" }}>
+          <div className="overflow-x-auto" style={{ border: "1px solid #e5e3de", borderRadius: "6px", backgroundColor: "white" }}>
             <div className="grid text-xs uppercase tracking-widest font-semibold px-5 py-2.5"
               style={{
                 gridTemplateColumns: "28px 1fr 130px 160px 100px 110px 80px 44px",
