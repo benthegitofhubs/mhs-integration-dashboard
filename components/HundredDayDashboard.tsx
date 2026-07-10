@@ -138,8 +138,8 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
         <div className="mb-10">
           <div className="flex items-center gap-4 mb-6">
             <div className="flex-1" style={{ height: "2px", backgroundColor: "#e5e3de" }} />
-            <p className="text-xs font-semibold uppercase tracking-widest shrink-0"
-              style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)" }}>
+            <p className="text-sm font-semibold uppercase tracking-widest shrink-0"
+              style={{ color: "#111111", fontFamily: "var(--font-geist-mono)" }}>
               Workstream Health
             </p>
             <div className="flex-1" style={{ height: "2px", backgroundColor: "#e5e3de" }} />
@@ -241,8 +241,8 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
         {/* Workstream Work Items */}
         <div className="mt-10 mb-6 flex items-center gap-4">
           <div className="flex-1" style={{ height: "2px", backgroundColor: "#e5e3de" }} />
-          <p className="text-xs font-semibold uppercase tracking-widest shrink-0"
-            style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)" }}>
+          <p className="text-sm font-semibold uppercase tracking-widest shrink-0"
+            style={{ color: "#111111", fontFamily: "var(--font-geist-mono)" }}>
             Workstream Work Items
           </p>
           <div className="flex-1" style={{ height: "2px", backgroundColor: "#e5e3de" }} />
