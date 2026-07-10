@@ -1,3 +1,5 @@
+export const LAST_SYNCED = "Jul 10, 2026";
+
 export type Status100 = "Not Started" | "In Progress" | "At Risk" | "Blocked" | "Complete";
 
 export interface Task100 {

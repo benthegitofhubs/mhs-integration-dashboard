@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Workstream100, KEY_DATES, Status100 } from "@/lib/hundredday";
+import { Workstream100, KEY_DATES, Status100, LAST_SYNCED } from "@/lib/hundredday";
 import HundredDayCard from "./HundredDayCard";
 import { calcTaskHealth, rollupWorkstreamHealth, HEALTH_META, TaskHealth } from "@/lib/taskHealth";
 
@@ -146,7 +146,8 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
         <div className="mb-6 px-4 py-3 rounded" style={{ backgroundColor: "#fefce8", border: "1px solid #fde68a" }}>
           <p className="text-xs leading-relaxed" style={{ color: "#78716c", fontFamily: "var(--font-geist-mono)" }}>
             <span className="font-semibold" style={{ color: "#57534e" }}>Source of record: the Google Sheet.</span>{" "}
-            This dashboard reflects the latest manual sync — edits made here are session-only and will not persist. All data updates must be made in the source file.
+            This dashboard reflects the latest manual sync — edits made here are session-only and will not persist. All data updates must be made in the source file.{" "}
+            <span className="font-semibold" style={{ color: "#57534e" }}>Last synced: {LAST_SYNCED}.</span>
           </p>
         </div>
 
