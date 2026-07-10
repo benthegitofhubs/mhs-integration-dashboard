@@ -133,7 +133,7 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
           <div className="overflow-hidden" style={{ border: "1px solid #e5e3de", borderRadius: "6px", backgroundColor: "white" }}>
             <div className="grid text-xs uppercase tracking-widest font-semibold px-5 py-2.5"
               style={{
-                gridTemplateColumns: "28px 160px 80px 100px 86px 1fr 44px",
+                gridTemplateColumns: "28px 1fr 80px 100px 86px 110px 44px",
                 backgroundColor: "#f7f6f3",
                 color: "#9ca3af",
                 fontFamily: "var(--font-geist-mono)",
@@ -159,13 +159,13 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
               return (
                 <div key={ws.id} className="grid px-5 py-2.5 hover:bg-stone-50 transition-colors"
                   style={{
-                    gridTemplateColumns: "28px 160px 80px 100px 86px 1fr 44px",
+                    gridTemplateColumns: "28px 1fr 80px 100px 86px 110px 44px",
                     borderBottom: i < workstreams.length - 1 ? "1px solid #f0efe9" : "none",
                     alignItems: "center",
                     gap: "8px",
                   }}>
                   <span className="text-xs font-bold" style={{ color: "#1a5c3a", fontFamily: "var(--font-geist-mono)" }}>{i + 1}</span>
-                  <span className="text-xs font-semibold" style={{ color: "#1a1a1a" }}>{ws.name}</span>
+                  <span className="text-xs font-semibold" style={{ color: "#1a1a1a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ws.name}</span>
                   <span className="text-xs" style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)" }}>{ws.flagshipGoal.replace(/^\d+\s*·\s*/, "")}</span>
                   <span className="text-xs" style={{ color: "#6b7280" }}>{ws.leader}</span>
                   <div>
