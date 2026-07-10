@@ -33,7 +33,7 @@ function deriveWorkstreamStatus(ws: Workstream100): Status100 | null {
 }
 
 export default function HundredDayDashboard({ workstreams }: { workstreams: Workstream100[] }) {
-  const [activeTab, setActiveTab] = useState<"workstreams" | "by-owner">("workstreams");
+  const [activeTab, setActiveTab] = useState<"workstreams" | "by-owner" | "ai-automations">("workstreams");
   const allTasks   = workstreams.flatMap((ws) => ws.tasks);
   const total      = allTasks.length;
   const complete   = allTasks.filter((t) => t.status === "Complete").length;
@@ -169,23 +169,29 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
 
         {/* Tab switcher */}
         <div className="flex gap-1 mb-8" style={{ borderBottom: "2px solid #e5e3de" }}>
-          {(["workstreams", "by-owner"] as const).map((tab) => (
-            <button key={tab} onClick={() => setActiveTab(tab)}
-              className="text-xs font-semibold uppercase tracking-widest px-4 py-2 transition-colors"
+          {([
+            { id: "workstreams",     label: "Workstreams" },
+            { id: "by-owner",        label: "By Owner" },
+            { id: "ai-automations",  label: "AI Automations" },
+          ] as const).map((tab) => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              className="text-xs font-semibold uppercase tracking-widest px-4 transition-colors"
               style={{
                 fontFamily: "var(--font-geist-mono)",
-                color: activeTab === tab ? "#1a5c3a" : "#9ca3af",
-                borderBottom: activeTab === tab ? "2px solid #1a5c3a" : "2px solid transparent",
+                color: activeTab === tab.id ? "#1a5c3a" : "#9ca3af",
+                borderBottom: activeTab === tab.id ? "2px solid #1a5c3a" : "2px solid transparent",
                 marginBottom: "-2px",
                 background: "none",
                 border: "none",
                 cursor: "pointer",
                 paddingBottom: "8px",
               }}>
-              {tab === "workstreams" ? "Workstreams" : "By Owner"}
+              {tab.label}
             </button>
           ))}
         </div>
+
+        {activeTab === "ai-automations" && <AIAutomationsView />}
 
         {activeTab === "by-owner" && (
           <ByOwnerView workstreams={workstreams} />
@@ -561,6 +567,191 @@ function ByOwnerView({ workstreams }: { workstreams: Workstream100[] }) {
           ))}
         </div>
       ))}
+    </div>
+  );
+}
+
+type AutomationStatus = "Parked" | "In Review" | "Active";
+
+const AUTOMATION_IDEAS: { category: string; title: string; description: string; trigger: string; channel: string; status: AutomationStatus }[] = [
+  {
+    category: "Due Date Alerts",
+    title: "Task due in 3 days",
+    description: "Warn the task owner when a non-complete task is 3 days from its due date.",
+    trigger: "Daily check — 3 days before due date",
+    channel: "Roam DM to owner",
+    status: "Parked",
+  },
+  {
+    category: "Due Date Alerts",
+    title: "Task is now past due",
+    description: "Alert when a task passes its due date and is still not Complete. Repeats daily until resolved.",
+    trigger: "Daily — fires the morning after due date passes",
+    channel: "Roam DM to owner",
+    status: "Parked",
+  },
+  {
+    category: "Due Date Alerts",
+    title: "Weekly overdue rollup",
+    description: "Monday morning summary of all tasks past due across every workstream.",
+    trigger: "Monday 8am ET",
+    channel: "Roam — TBD group",
+    status: "Parked",
+  },
+  {
+    category: "Status Change Alerts",
+    title: "Task flips to Blocked",
+    description: "Immediate alert when any task status changes to Blocked.",
+    trigger: "On status change (daily sheet read)",
+    channel: "Roam — TBD group",
+    status: "Parked",
+  },
+  {
+    category: "Status Change Alerts",
+    title: "Task flips to At Risk",
+    description: "Alert when a task moves to At Risk, giving the team a chance to course-correct before it becomes Blocked.",
+    trigger: "On status change (daily sheet read)",
+    channel: "Roam DM to owner",
+    status: "Parked",
+  },
+  {
+    category: "Status Change Alerts",
+    title: "Workstream status degrades",
+    description: "Alert when a workstream rolls up to a worse status than the prior day (e.g. In Progress → Blocked).",
+    trigger: "Daily comparison",
+    channel: "Roam — TBD group",
+    status: "Parked",
+  },
+  {
+    category: "Progress Alerts",
+    title: "Workstream stalled with <30 days left",
+    description: "Flag any workstream at 0% complete with fewer than 30 days remaining in the 100-day window.",
+    trigger: "Daily check",
+    channel: "Roam — TBD group",
+    status: "Parked",
+  },
+  {
+    category: "Progress Alerts",
+    title: "Overall plan behind pace",
+    description: "Alert if overall % complete is meaningfully behind the % of the 100-day window elapsed.",
+    trigger: "Weekly — Monday 8am ET",
+    channel: "Roam — TBD group",
+    status: "Parked",
+  },
+  {
+    category: "Owner Digest",
+    title: "Monday morning owner digest",
+    description: "Each owner receives a personal list of their tasks due that week, with statuses and any overdue items highlighted.",
+    trigger: "Monday 8am ET",
+    channel: "Roam DM to each owner",
+    status: "Parked",
+  },
+  {
+    category: "Milestone Alerts",
+    title: "Day 30 / 60 / 90 approaching",
+    description: "7 days before each milestone, send a workstream completion summary so leaders can prepare.",
+    trigger: "7 days before Day 30, 60, 90",
+    channel: "Roam — TBD group",
+    status: "Parked",
+  },
+  {
+    category: "Milestone Alerts",
+    title: "Board Meeting approaching",
+    description: "7 days before the Next Board Meeting, surface all open and at-risk items across workstreams.",
+    trigger: "7 days before board meeting date",
+    channel: "Roam — TBD group",
+    status: "Parked",
+  },
+];
+
+const AUTOMATION_STATUS_META: Record<AutomationStatus, { bg: string; color: string }> = {
+  "Parked":    { bg: "#f3f4f6", color: "#374151" },
+  "In Review": { bg: "#fef9c3", color: "#854d0e" },
+  "Active":    { bg: "#dcfce7", color: "#15803d" },
+};
+
+const AUTOMATION_STATUSES: AutomationStatus[] = ["Parked", "In Review", "Active"];
+
+function AIAutomationsView() {
+  const [statuses, setStatuses] = useState<Record<string, AutomationStatus>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("ai-automation-statuses") ?? "{}");
+    } catch { return {}; }
+  });
+
+  const setStatus = (title: string, status: AutomationStatus) => {
+    const updated = { ...statuses, [title]: status };
+    setStatuses(updated);
+    localStorage.setItem("ai-automation-statuses", JSON.stringify(updated));
+  };
+
+  const categories = Array.from(new Set(AUTOMATION_IDEAS.map((a) => a.category)));
+
+  const counts: Record<AutomationStatus, number> = { Parked: 0, "In Review": 0, Active: 0 };
+  AUTOMATION_IDEAS.forEach((a) => {
+    const s = statuses[a.title] ?? a.status;
+    counts[s]++;
+  });
+
+  return (
+    <div className="pb-20">
+      <div className="mb-6">
+        <p className="text-xs leading-relaxed mb-4" style={{ color: "#78716c", fontFamily: "var(--font-geist-mono)" }}>
+          A running list of Claude-managed automations for this dashboard. Change a status to <strong>In Review</strong> to discuss, or <strong>Active</strong> once built. Status persists in your browser.
+        </p>
+        <div className="flex gap-6">
+          {AUTOMATION_STATUSES.map((s) => {
+            const meta = AUTOMATION_STATUS_META[s];
+            return (
+              <div key={s} className="flex items-center gap-2">
+                <span className="text-2xl font-bold" style={{ color: meta.color, letterSpacing: "-0.03em" }}>{counts[s]}</span>
+                <span className="text-xs uppercase tracking-widest" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>{s}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="space-y-8">
+        {categories.map((cat) => (
+          <div key={cat}>
+            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>{cat}</p>
+            <div style={{ border: "1px solid #e5e3de", borderRadius: "6px", overflow: "hidden", backgroundColor: "white" }}>
+              <div className="grid text-xs uppercase tracking-widest font-semibold px-5 py-2"
+                style={{ gridTemplateColumns: "1fr 200px 180px 110px", color: "#9ca3af", fontFamily: "var(--font-geist-mono)", borderBottom: "1px solid #e5e3de", backgroundColor: "#f7f6f3" }}>
+                <span>Automation</span>
+                <span>Trigger</span>
+                <span>Channel</span>
+                <span>Status</span>
+              </div>
+              {AUTOMATION_IDEAS.filter((a) => a.category === cat).map((a, i, arr) => {
+                const currentStatus = statuses[a.title] ?? a.status;
+                const meta = AUTOMATION_STATUS_META[currentStatus];
+                return (
+                  <div key={a.title} className="grid px-5 py-4 hover:bg-stone-50 transition-colors"
+                    style={{ gridTemplateColumns: "1fr 200px 180px 110px", borderBottom: i < arr.length - 1 ? "1px solid #f0efe9" : "none", alignItems: "start", gap: "12px" }}>
+                    <div>
+                      <p className="text-sm font-semibold mb-0.5" style={{ color: "#1a1a1a" }}>{a.title}</p>
+                      <p className="text-xs leading-relaxed" style={{ color: "#78716c" }}>{a.description}</p>
+                    </div>
+                    <span className="text-xs leading-relaxed pt-0.5" style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)" }}>{a.trigger}</span>
+                    <span className="text-xs leading-relaxed pt-0.5" style={{ color: "#6b7280" }}>{a.channel}</span>
+                    <div className="pt-0.5">
+                      <select
+                        value={currentStatus}
+                        onChange={(e) => setStatus(a.title, e.target.value as AutomationStatus)}
+                        className="text-xs font-semibold cursor-pointer focus:outline-none rounded px-2 py-1"
+                        style={{ backgroundColor: meta.bg, color: meta.color, border: "none", fontFamily: "var(--font-geist-mono)" }}>
+                        {AUTOMATION_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
