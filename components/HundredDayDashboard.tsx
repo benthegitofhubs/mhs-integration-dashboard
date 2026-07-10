@@ -466,7 +466,7 @@ function ByOwnerView({ workstreams }: { workstreams: Workstream100[] }) {
 
   const rows: OwnerTask[] = workstreams.flatMap((ws) =>
     ws.tasks.flatMap((t) => {
-      const owners = t.owner ? t.owner.split(/[/,]/).map((o) => o.trim()).filter(Boolean) : ["—"];
+      const owners = t.owner ? t.owner.split(/[/,]/).map((o) => o.trim()).filter(Boolean) : ["Unassigned Tasks"];
       return owners.map((owner) => ({
         owner,
         workstream: ws.name,
@@ -484,8 +484,8 @@ function ByOwnerView({ workstreams }: { workstreams: Workstream100[] }) {
   }, {});
 
   const sortedOwners = Object.keys(grouped).sort((a, b) => {
-    if (a === "—") return 1;
-    if (b === "—") return -1;
+    if (a === "Unassigned Tasks") return 1;
+    if (b === "Unassigned Tasks") return -1;
     return a.localeCompare(b);
   });
 
@@ -500,7 +500,8 @@ function ByOwnerView({ workstreams }: { workstreams: Workstream100[] }) {
             </span>
           </div>
           <div className="grid text-xs uppercase tracking-widest font-semibold px-5 py-2"
-            style={{ gridTemplateColumns: "1fr 180px 110px 100px", color: "#9ca3af", fontFamily: "var(--font-geist-mono)", borderBottom: "1px solid #e5e3de" }}>
+            style={{ gridTemplateColumns: "32px 1fr 180px 110px 100px", color: "#9ca3af", fontFamily: "var(--font-geist-mono)", borderBottom: "1px solid #e5e3de" }}>
+            <span>#</span>
             <span>Work Item</span>
             <span>Workstream</span>
             <span>Due Date</span>
@@ -509,11 +510,12 @@ function ByOwnerView({ workstreams }: { workstreams: Workstream100[] }) {
           {grouped[owner].map((row, i) => (
             <div key={i} className="grid px-5 py-3 hover:bg-stone-50 transition-colors"
               style={{
-                gridTemplateColumns: "1fr 180px 110px 100px",
+                gridTemplateColumns: "32px 1fr 180px 110px 100px",
                 borderBottom: i < grouped[owner].length - 1 ? "1px solid #f0efe9" : "none",
                 alignItems: "start",
                 gap: "12px",
               }}>
+              <span className="text-xs font-bold pt-0.5" style={{ color: "#1a5c3a", fontFamily: "var(--font-geist-mono)" }}>{i + 1}</span>
               <p className="text-xs leading-relaxed" style={{ color: "#1a1a1a" }}>{row.description}</p>
               <span className="text-xs" style={{ color: "#6b7280", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{row.workstream}</span>
               <span className="text-xs" style={{ color: "#57534e", fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap" }}>{row.dueDate}</span>
