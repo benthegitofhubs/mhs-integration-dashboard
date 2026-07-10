@@ -162,7 +162,7 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
           <p className="text-xs leading-relaxed" style={{ color: "#78716c", fontFamily: "var(--font-geist-mono)" }}>
             <span className="font-semibold" style={{ color: "#57534e" }}>Source of record: the Google Sheet.</span>{" "}
             This dashboard reflects the latest manual sync — edits made here are session-only and will not persist. All data updates must be made in the source file.{" "}
-            <span className="font-semibold" style={{ color: "#57534e" }}>Last synced: {LAST_SYNCED}.</span>
+            <span className="font-semibold" style={{ color: "#57534e" }}>Last synced: {process.env.NEXT_PUBLIC_BUILD_TIME ?? LAST_SYNCED}.</span>
           </p>
         </div>
 
