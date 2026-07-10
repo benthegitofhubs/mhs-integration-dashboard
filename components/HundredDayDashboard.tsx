@@ -89,7 +89,7 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
           const daysLeft    = Math.max(0, Math.ceil((end - now) / 86400000));
           const daysElapsed = Math.max(0, Math.floor((now - start) / 86400000));
           return (
-            <div className="mb-2">
+            <div className="mb-2" style={{ position: "relative" }}>
               <div className="relative" style={{ height: "28px" }}>
                 <div className="absolute flex flex-col items-center" style={{ left: `${pct}%`, transform: "translateX(-50%)", top: 0 }}>
                   <span className="text-xs font-semibold" style={{ color: "#1a5c3a", fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap" }}>
@@ -100,12 +100,10 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
                   </svg>
                 </div>
               </div>
-              <div className="relative w-full flex items-center gap-2">
-                <div className="relative flex-1" style={{ height: "4px", backgroundColor: "#e5e3de", borderRadius: "2px" }}>
-                  <div style={{ width: `${pct}%`, height: "100%", backgroundColor: "#1a5c3a", borderRadius: "2px" }} />
-                  <div className="absolute" style={{ left: `${pct}%`, top: "50%", transform: "translate(-50%, -50%)", width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#1a5c3a", border: "2px solid white", boxShadow: "0 0 0 1px #1a5c3a" }} />
-                </div>
-                <img src="/RadialMHS.png" alt="Radial × MHS" style={{ height: "224px", width: "auto", flexShrink: 0, opacity: 0.85 }} />
+              <div className="relative w-full" style={{ height: "4px", backgroundColor: "#e5e3de", borderRadius: "2px" }}>
+                <div style={{ width: `${pct}%`, height: "100%", backgroundColor: "#1a5c3a", borderRadius: "2px" }} />
+                <div className="absolute" style={{ left: `${pct}%`, top: "50%", transform: "translate(-50%, -50%)", width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#1a5c3a", border: "2px solid white", boxShadow: "0 0 0 1px #1a5c3a" }} />
+                <img src="/RadialMHS.png" alt="Radial × MHS" style={{ position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)", height: "224px", width: "auto", opacity: 0.85, pointerEvents: "none" }} />
               </div>
             </div>
           );
