@@ -166,6 +166,8 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
             {wsCounts["Not Started"]       > 0 && <div style={{ width: `${(wsCounts["Not Started"]       / workstreams.length) * 100}%`, backgroundColor: "#374151" }} />}
           </div>
 
+          <HealthLegend />
+
           {/* Per-workstream table */}
           <div className="overflow-x-auto" style={{ border: "1px solid #e5e3de", borderRadius: "6px", backgroundColor: "white" }}>
             <div className="grid text-xs uppercase tracking-widest font-semibold px-5 py-2.5"
@@ -247,11 +249,19 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
             })}
           </div>
 
-          <HealthLegend />
+        </div>
+
+        <div className="mb-3 flex items-center gap-4">
+          <div className="flex-1" style={{ height: "2px", backgroundColor: "#e5e3de" }} />
+          <p className="text-sm font-semibold uppercase tracking-widest shrink-0"
+            style={{ color: "#111111", fontFamily: "var(--font-geist-mono)" }}>
+            Workstream Tasks
+          </p>
+          <div className="flex-1" style={{ height: "2px", backgroundColor: "#e5e3de" }} />
         </div>
 
         {/* Status color legend */}
-        <div className="flex items-center gap-5 mb-4 mt-8">
+        <div className="flex items-center gap-5 mb-6">
           {([
             ["Not Started", "#374151"],
             ["In Progress", "#1d4ed8"],
@@ -264,15 +274,6 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
               <span className="text-xs" style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)" }}>{label}</span>
             </div>
           ))}
-        </div>
-
-        <div className="mb-6 flex items-center gap-4">
-          <div className="flex-1" style={{ height: "2px", backgroundColor: "#e5e3de" }} />
-          <p className="text-sm font-semibold uppercase tracking-widest shrink-0"
-            style={{ color: "#111111", fontFamily: "var(--font-geist-mono)" }}>
-            Workstream Tasks
-          </p>
-          <div className="flex-1" style={{ height: "2px", backgroundColor: "#e5e3de" }} />
         </div>
       </div>
 
