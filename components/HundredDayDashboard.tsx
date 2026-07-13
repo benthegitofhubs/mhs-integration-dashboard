@@ -859,7 +859,7 @@ function NeedsActionView({ workstreams, autoHealth }: { workstreams: Workstream1
                 borderBottom: i < flaggedWorkstreams.length - 1 ? "1px solid #fef2f2" : "none",
                 alignItems: "center",
               }}>
-              <span className="text-xs font-semibold" style={{ color: "#1a1a1a" }}>{ws.name}</span>
+              <a href={`#na-${ws.id}`} className="text-xs font-semibold hover:underline" style={{ color: "#1a1a1a", textDecoration: "none" }}>{ws.name}</a>
               <span className="text-xs" style={{ color: "#6b7280", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ws.leader}</span>
               <span className="text-xs font-semibold" style={{ color: offTrack > 0 ? "#b91c1c" : "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>{offTrack > 0 ? offTrack : "—"}</span>
               <span className="text-xs font-semibold" style={{ color: atRisk > 0 ? "#854d0e" : "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>{atRisk > 0 ? atRisk : "—"}</span>
@@ -873,7 +873,7 @@ function NeedsActionView({ workstreams, autoHealth }: { workstreams: Workstream1
       {flaggedWorkstreams.map(({ ws, wsHealth, flaggedTasks }) => {
         const hMeta = wsHealth ? HEALTH_META[wsHealth] : null;
         return (
-          <div key={ws.id} style={{ border: "1px solid #fecaca", borderRadius: "6px", overflow: "hidden", backgroundColor: "white" }}>
+          <div key={ws.id} id={`na-${ws.id}`} style={{ border: "1px solid #fecaca", borderRadius: "6px", overflow: "hidden", backgroundColor: "white" }}>
             {/* Workstream header */}
             <div className="px-5 py-3 flex items-center justify-between gap-4"
               style={{ backgroundColor: "#fff5f5", borderBottom: "1px solid #fecaca" }}>
