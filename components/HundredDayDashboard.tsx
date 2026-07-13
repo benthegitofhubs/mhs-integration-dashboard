@@ -249,7 +249,6 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
             {wsCounts["Not Started"]       > 0 && <div style={{ width: `${(wsCounts["Not Started"]       / workstreams.length) * 100}%`, backgroundColor: "#374151" }} />}
           </div>
 
-          <HealthLegend />
 
           {/* Per-workstream table */}
           <div className="overflow-x-auto" style={{ border: "1px solid #e5e3de", borderRadius: "6px", backgroundColor: "white" }}>
@@ -391,62 +390,6 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
 
 
 
-function HealthLegend() {
-  const rows: { status: string; dot: string; what: string; plain: string }[] = [
-    {
-      status: "On Track",
-      dot: "#15803d",
-      what: "Due date has not passed and no manual flag — progressing normally",
-      plain: "Moving as expected. No action needed.",
-    },
-    {
-      status: "At Risk",
-      dot: "#eab308",
-      what: "Manually flagged At Risk or Blocked, but due date has not yet passed",
-      plain: "Flagged by owner. Needs attention before it slips further.",
-    },
-    {
-      status: "Off Track",
-      dot: "#b91c1c",
-      what: "Due date has passed and the task is not yet complete",
-      plain: "Needs leadership attention now.",
-    },
-  ];
-
-  return (
-    <div className="mt-6 rounded-lg overflow-hidden" style={{ border: "1px solid #e5e3de" }}>
-      <div className="px-5 py-3" style={{ backgroundColor: "#f7f6f3", borderBottom: "1px solid #e5e3de" }}>
-        <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
-          Status Legend — How Task Health Is Calculated
-        </p>
-      </div>
-      <div style={{ backgroundColor: "white" }}>
-        <div className="grid text-xs uppercase tracking-widest font-semibold px-5 py-2"
-          style={{ gridTemplateColumns: "100px 1fr 1fr", color: "#9ca3af", fontFamily: "var(--font-geist-mono)", borderBottom: "1px solid #f0efe9" }}>
-          <span>Status</span>
-          <span>What It Means</span>
-          <span>Plain English</span>
-        </div>
-        {rows.map((r) => (
-          <div key={r.status} className="grid px-5 py-3 items-start"
-            style={{ gridTemplateColumns: "100px 1fr 1fr", borderBottom: "1px solid #f0efe9", gap: "12px" }}>
-            <div className="flex items-center gap-2">
-              <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: r.dot, flexShrink: 0 }} />
-              <span className="text-xs font-semibold" style={{ color: "#1a1a1a", whiteSpace: "nowrap" }}>{r.status}</span>
-            </div>
-            <p className="text-xs leading-relaxed" style={{ color: "#6b7280" }}>{r.what}</p>
-            <p className="text-xs leading-relaxed" style={{ color: "#374151" }}>{r.plain}</p>
-          </div>
-        ))}
-        <div className="px-5 py-3" style={{ backgroundColor: "#f7f6f3" }}>
-          <p className="text-xs leading-relaxed" style={{ color: "#9ca3af", fontStyle: "italic" }}>
-            Each task&apos;s percent complete is compared to how much of its timeline has already elapsed. If completion is falling meaningfully behind the clock, or if the task is blocked, the status downgrades automatically — rather than relying on a manual guess. Workstream health rolls up from its tasks: the worst task health determines the workstream score.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function BoardMeetingCell({ defaultDate }: { defaultDate: string }) {
   const [editing, setEditing] = useState(false);
