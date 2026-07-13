@@ -352,8 +352,9 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
           </div>
           <div style={{ backgroundColor: "white" }}>
             {([
-              { label: "On Track", dot: "#15803d", bg: "#dcfce7", color: "#15803d", desc: "Due date has not passed, or task is complete." },
-              { label: "Off Track", dot: "#b91c1c", bg: "#fee2e2", color: "#b91c1c", desc: "Due date has passed and the task is not yet complete." },
+              { label: "On Track",  bg: "#dcfce7", color: "#15803d", desc: "Due date has not passed and no manual flag — progressing normally." },
+              { label: "At Risk",   bg: "#fef9c3", color: "#854d0e", desc: "Manually flagged At Risk or Blocked, but due date has not yet passed." },
+              { label: "Off Track", bg: "#fee2e2", color: "#b91c1c", desc: "Due date has passed and the task is not yet complete." },
             ]).map((row, i, arr) => (
               <div key={row.label} className="grid px-5 py-3 items-center gap-4"
                 style={{ gridTemplateColumns: "110px 1fr", borderBottom: i < arr.length - 1 ? "1px solid #f0efe9" : "none" }}>
@@ -395,19 +396,19 @@ function HealthLegend() {
     {
       status: "On Track",
       dot: "#15803d",
-      what: "Progress is keeping pace with time elapsed — no blockers",
+      what: "Due date has not passed and no manual flag — progressing normally",
       plain: "Moving as expected. No action needed.",
     },
     {
       status: "At Risk",
       dot: "#eab308",
-      what: "Progress is behind pace, but still recoverable without escalation",
-      plain: "Falling behind. Owner has flagged a plan to catch up.",
+      what: "Manually flagged At Risk or Blocked, but due date has not yet passed",
+      plain: "Flagged by owner. Needs attention before it slips further.",
     },
     {
       status: "Off Track",
       dot: "#b91c1c",
-      what: "Progress is significantly behind pace, actively blocked, or the deadline cannot be met without intervention",
+      what: "Due date has passed and the task is not yet complete",
       plain: "Needs leadership attention now.",
     },
   ];
