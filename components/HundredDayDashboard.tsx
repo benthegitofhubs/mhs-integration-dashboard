@@ -171,9 +171,9 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
         <div className="flex gap-1 mb-8" style={{ borderBottom: "2px solid #e5e3de" }}>
           {([
             { id: "workstreams",    label: "Workstreams",   red: false },
+            { id: "needs-action",   label: "Needs Action",  red: true  },
             { id: "by-owner",       label: "By Owner",      red: false },
             { id: "ai-automations", label: "AI Automations",red: false },
-            { id: "needs-action",   label: "Needs Action",  red: true  },
           ] as const).map((tab) => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className="text-xs font-semibold uppercase tracking-widest px-4 transition-colors"
