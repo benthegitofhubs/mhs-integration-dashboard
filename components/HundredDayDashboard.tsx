@@ -33,7 +33,7 @@ function deriveWorkstreamStatus(ws: Workstream100): Status100 | null {
 }
 
 export default function HundredDayDashboard({ workstreams }: { workstreams: Workstream100[] }) {
-  const [activeTab, setActiveTab] = useState<"workstreams" | "by-owner" | "ai-automations">("workstreams");
+  const [activeTab, setActiveTab] = useState<"workstreams" | "by-owner" | "ai-automations" | "needs-action">("workstreams");
   const allTasks   = workstreams.flatMap((ws) => ws.tasks);
   const total      = allTasks.length;
   const complete   = allTasks.filter((t) => t.status === "Complete").length;
@@ -170,16 +170,21 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
         {/* Tab switcher */}
         <div className="flex gap-1 mb-8" style={{ borderBottom: "2px solid #e5e3de" }}>
           {([
-            { id: "workstreams",     label: "Workstreams" },
-            { id: "by-owner",        label: "By Owner" },
-            { id: "ai-automations",  label: "AI Automations" },
+            { id: "workstreams",    label: "Workstreams",   red: false },
+            { id: "by-owner",       label: "By Owner",      red: false },
+            { id: "ai-automations", label: "AI Automations",red: false },
+            { id: "needs-action",   label: "Needs Action",  red: true  },
           ] as const).map((tab) => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className="text-xs font-semibold uppercase tracking-widest px-4 transition-colors"
               style={{
                 fontFamily: "var(--font-geist-mono)",
-                color: activeTab === tab.id ? "#1a5c3a" : "#9ca3af",
-                borderBottom: activeTab === tab.id ? "2px solid #1a5c3a" : "2px solid transparent",
+                color: activeTab === tab.id
+                  ? (tab.red ? "#b91c1c" : "#1a5c3a")
+                  : (tab.red ? "#f87171" : "#9ca3af"),
+                borderBottom: activeTab === tab.id
+                  ? `2px solid ${tab.red ? "#b91c1c" : "#1a5c3a"}`
+                  : "2px solid transparent",
                 marginBottom: "-2px",
                 background: "none",
                 border: "none",
@@ -195,6 +200,10 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
 
         {activeTab === "by-owner" && (
           <ByOwnerView workstreams={workstreams} />
+        )}
+
+        {activeTab === "needs-action" && (
+          <NeedsActionView workstreams={workstreams} autoHealth={autoHealth} />
         )}
 
         {activeTab === "workstreams" && (
@@ -777,6 +786,106 @@ function StatCell({ value, label, color }: { value: number; label: string; color
       <p className="text-xs uppercase tracking-widest" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
         {label}
       </p>
+    </div>
+  );
+}
+
+function NeedsActionView({ workstreams, autoHealth }: { workstreams: Workstream100[]; autoHealth: Record<string, TaskHealth | null> }) {
+  const FLAGGED_STATUSES = new Set(["Not Started", "At Risk", "Blocked"]);
+
+  const flaggedWorkstreams = workstreams
+    .map((ws) => {
+      const wsHealth = autoHealth[ws.id];
+      const flaggedTasks = ws.tasks.filter(
+        (t) => t.status !== "Complete" && (FLAGGED_STATUSES.has(t.status) || calcTaskHealth(t).status !== "On Track")
+      );
+      return { ws, wsHealth, flaggedTasks };
+    })
+    .filter(({ wsHealth, flaggedTasks }) => wsHealth !== "On Track" || flaggedTasks.length > 0);
+
+  if (flaggedWorkstreams.length === 0) {
+    return (
+      <div className="pb-20 flex flex-col items-center justify-center py-20">
+        <p className="text-2xl mb-2">✓</p>
+        <p className="text-sm font-semibold" style={{ color: "#15803d" }}>Everything is on track.</p>
+        <p className="text-xs mt-1" style={{ color: "#9ca3af" }}>No workstreams or tasks need attention right now.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="pb-20 space-y-4">
+      <p className="text-xs mb-4" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+        {flaggedWorkstreams.length} workstream{flaggedWorkstreams.length !== 1 ? "s" : ""} with tasks that are off track, at risk, blocked, or not started.
+      </p>
+
+      {flaggedWorkstreams.map(({ ws, wsHealth, flaggedTasks }) => {
+        const hMeta = wsHealth ? HEALTH_META[wsHealth] : null;
+        return (
+          <div key={ws.id} style={{ border: "1px solid #fecaca", borderRadius: "6px", overflow: "hidden", backgroundColor: "white" }}>
+            {/* Workstream header */}
+            <div className="px-5 py-3 flex items-center justify-between gap-4"
+              style={{ backgroundColor: "#fff5f5", borderBottom: "1px solid #fecaca" }}>
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="text-sm font-semibold" style={{ color: "#111" }}>{ws.name}</span>
+                <span className="text-xs" style={{ color: "#9ca3af" }}>{ws.leader}</span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {hMeta && (
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded"
+                    style={{ backgroundColor: hMeta.bg, color: hMeta.color, fontFamily: "var(--font-geist-mono)" }}>
+                    {wsHealth}
+                  </span>
+                )}
+                <span className="text-xs" style={{ color: "#b91c1c", fontFamily: "var(--font-geist-mono)" }}>
+                  {flaggedTasks.length} task{flaggedTasks.length !== 1 ? "s" : ""}
+                </span>
+              </div>
+            </div>
+
+            {/* Task rows */}
+            <div className="grid text-xs uppercase tracking-widest font-semibold px-5 py-2"
+              style={{ gridTemplateColumns: "1fr 110px 110px 90px 120px", color: "#9ca3af", fontFamily: "var(--font-geist-mono)", borderBottom: "1px solid #fecaca", backgroundColor: "#fafafa" }}>
+              <span>Task</span>
+              <span>Due Date</span>
+              <span>Owner</span>
+              <span>Health</span>
+              <span>Status</span>
+            </div>
+
+            {flaggedTasks.map((task, idx) => {
+              const health = calcTaskHealth(task);
+              const hm = HEALTH_META[health.status];
+              const overdue = task.status !== "Complete" && task.dueDate && new Date(task.dueDate) < new Date();
+              return (
+                <div key={task.id} className="grid px-5 py-3 hover:bg-red-50 transition-colors"
+                  style={{
+                    gridTemplateColumns: "1fr 110px 110px 90px 120px",
+                    borderBottom: idx < flaggedTasks.length - 1 ? "1px solid #fef2f2" : "none",
+                    alignItems: "start",
+                    gap: "12px",
+                  }}>
+                  <p className="text-xs leading-relaxed" style={{ color: "#1a1a1a" }}>{task.description}</p>
+                  <span className="text-xs pt-0.5" style={{ color: overdue ? "#b91c1c" : task.dueDate ? "#57534e" : "#c0bdb8", fontFamily: "var(--font-geist-mono)", fontWeight: overdue ? 600 : undefined }}>
+                    {task.dueDate || "—"}
+                  </span>
+                  <span className="text-xs pt-0.5" style={{ color: task.owner ? "#78716c" : "#c0bdb8" }}>
+                    {task.owner || "—"}
+                  </span>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded pt-0.5"
+                    style={{ backgroundColor: hm.bg, color: hm.color, fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap", display: "inline-block" }}>
+                    {health.status}
+                  </span>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded"
+                    style={{ backgroundColor: STATUS_BG[task.status], color: STATUS_COLOR[task.status], fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap", display: "inline-block" }}>
+                    {task.status}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
     </div>
   );
 }
