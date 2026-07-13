@@ -734,9 +734,9 @@ function AIAutomationsView() {
 
 function StatCell({ value, label, color }: { value: number; label: string; color: string }) {
   return (
-    <div className="pt-5 pb-4 pr-6" style={{ borderBottom: "1px solid #e5e3de" }}>
+    <div className="pt-5 pb-4 px-5" style={{ borderBottom: "1px solid #e5e3de", minWidth: 0 }}>
       <p className="text-3xl font-bold mb-0.5" style={{ color, letterSpacing: "-0.03em" }}>{value}</p>
-      <p className="text-xs uppercase tracking-widest" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+      <p className="text-xs uppercase tracking-widest" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap" }}>
         {label}
       </p>
     </div>
