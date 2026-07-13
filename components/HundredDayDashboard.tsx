@@ -242,12 +242,6 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
               </div>
             </div>
           </div>
-          <div className="h-1 overflow-hidden flex mb-4" style={{ backgroundColor: "#e5e3de" }}>
-            {autoHealthCounts["On Track"]  > 0 && <div style={{ width: `${(autoHealthCounts["On Track"]  / workstreams.length) * 100}%`, backgroundColor: "#15803d" }} />}
-            {autoHealthCounts["At Risk"]   > 0 && <div style={{ width: `${(autoHealthCounts["At Risk"]   / workstreams.length) * 100}%`, backgroundColor: "#eab308" }} />}
-            {autoHealthCounts["Off Track"] > 0 && <div style={{ width: `${(autoHealthCounts["Off Track"] / workstreams.length) * 100}%`, backgroundColor: "#b91c1c" }} />}
-            {wsCounts["Not Started"]       > 0 && <div style={{ width: `${(wsCounts["Not Started"]       / workstreams.length) * 100}%`, backgroundColor: "#374151" }} />}
-          </div>
 
 
           {/* Per-workstream table */}
