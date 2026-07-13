@@ -221,12 +221,26 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
           </div>
 
           {/* Summary counts: operational state + pace health */}
-          <div className="grid grid-cols-5 gap-0 mb-3" style={{ borderTop: "1px solid #e5e3de" }}>
-            <StatCell value={wsCounts["Not Started"]}              label="Not Started" color="#374151" />
-            <StatCell value={wsCounts["In Progress"]}              label="In Progress" color="#1d4ed8" />
-            <StatCell value={autoHealthCounts["On Track"]}         label="On Track"    color="#15803d" />
-            <StatCell value={autoHealthCounts["Off Track"]}        label="Off Track"   color="#b91c1c" />
-            <StatCell value={autoHealthCounts["At Risk"]}          label="At Risk"     color="#eab308" />
+          <div className="flex mb-3" style={{ borderTop: "1px solid #e5e3de" }}>
+            {/* Progress group */}
+            <div className="flex-1">
+              <div className="text-xs font-semibold uppercase tracking-widest px-5 pt-2 pb-1" style={{ color: "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>Progress</div>
+              <div className="grid grid-cols-2">
+                <StatCell value={wsCounts["Not Started"]} label="Not Started" color="#374151" />
+                <StatCell value={wsCounts["In Progress"]} label="In Progress" color="#1d4ed8" />
+              </div>
+            </div>
+            {/* Vertical separator */}
+            <div style={{ width: "1px", backgroundColor: "#e5e3de", margin: "8px 0" }} />
+            {/* Health group */}
+            <div className="flex-1">
+              <div className="text-xs font-semibold uppercase tracking-widest px-5 pt-2 pb-1" style={{ color: "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>Health</div>
+              <div className="grid grid-cols-3">
+                <StatCell value={autoHealthCounts["On Track"]}  label="On Track"  color="#15803d" />
+                <StatCell value={autoHealthCounts["Off Track"]} label="Off Track" color="#b91c1c" />
+                <StatCell value={autoHealthCounts["At Risk"]}   label="At Risk"   color="#eab308" />
+              </div>
+            </div>
           </div>
           <div className="h-1 overflow-hidden flex mb-4" style={{ backgroundColor: "#e5e3de" }}>
             {autoHealthCounts["On Track"]  > 0 && <div style={{ width: `${(autoHealthCounts["On Track"]  / workstreams.length) * 100}%`, backgroundColor: "#15803d" }} />}
