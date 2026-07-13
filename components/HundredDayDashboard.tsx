@@ -237,8 +237,8 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
               <div className="text-xs font-semibold uppercase tracking-widest px-5 pt-2 pb-1" style={{ color: "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>Health</div>
               <div className="grid grid-cols-3">
                 <StatCell value={autoHealthCounts["On Track"]}  label="On Track"  color="#15803d" />
-                <StatCell value={autoHealthCounts["Off Track"]} label="Off Track" color="#b91c1c" />
                 <StatCell value={autoHealthCounts["At Risk"]}   label="At Risk"   color="#eab308" />
+                <StatCell value={autoHealthCounts["Off Track"]} label="Off Track" color="#b91c1c" />
               </div>
             </div>
           </div>
