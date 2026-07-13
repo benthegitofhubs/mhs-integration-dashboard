@@ -10,6 +10,20 @@ interface IMNote {
   note: string;
 }
 
+// "Aug 15, 2026" → "2026-08-15" (for date input value)
+function toInputDate(display: string): string {
+  const d = new Date(display);
+  if (isNaN(d.getTime())) return "";
+  return d.toISOString().slice(0, 10);
+}
+
+// "2026-08-15" → "Aug 15, 2026" (to keep sheet format consistent)
+function toDisplayDate(input: string): string {
+  const d = new Date(input + "T12:00:00");
+  if (isNaN(d.getTime())) return input;
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
 const STATUS_DOT: Record<Status100, string> = {
   "Not Started": "#374151",
   "In Progress": "#1d4ed8",
@@ -82,13 +96,14 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
 
   const startEditField = (taskId: string, field: "dueDate" | "owner") => {
     const task = tasks.find((t) => t.id === taskId);
-    setFieldDraft(field === "dueDate" ? (task?.dueDate || "") : (task?.owner || ""));
+    const raw = field === "dueDate" ? (task?.dueDate || "") : (task?.owner || "");
+    setFieldDraft(field === "dueDate" ? toInputDate(raw) : raw);
     setEditingField({ taskId, field });
   };
 
   const saveField = async (taskId: string, field: "dueDate" | "owner") => {
     setEditingField(null);
-    const value = fieldDraft.trim();
+    const value = field === "dueDate" && fieldDraft ? toDisplayDate(fieldDraft) : fieldDraft.trim();
     setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, [field]: value } : t));
     const task = tasks.find((t) => t.id === taskId);
     await fetch("/api/update-field", {
@@ -271,12 +286,11 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
                 {editingField?.taskId === task.id && editingField.field === "dueDate" ? (
                   <input
                     autoFocus
-                    type="text"
+                    type="date"
                     value={fieldDraft}
                     onChange={(e) => setFieldDraft(e.target.value)}
                     onBlur={() => saveField(task.id, "dueDate")}
                     onKeyDown={(e) => { if (e.key === "Enter") saveField(task.id, "dueDate"); if (e.key === "Escape") setEditingField(null); }}
-                    placeholder="MMM D, YYYY"
                     className="text-xs rounded px-1 py-0.5 focus:outline-none w-full"
                     style={{ border: "1px solid #1a5c3a", fontFamily: "var(--font-geist-mono)", color: "#374151" }}
                   />
