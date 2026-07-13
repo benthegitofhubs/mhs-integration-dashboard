@@ -82,12 +82,13 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
 
   const handleStatusChange = async (taskId: string, newStatus: Status100) => {
     setSaving(taskId);
+    const task = tasks.find((t) => t.id === taskId);
     setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t)));
     try {
       await fetch("/api/update-status", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ taskId, status: newStatus, workstreamId: workstream.id }),
+        body: JSON.stringify({ taskId, taskDescription: task?.description, status: newStatus, workstreamId: workstream.id }),
       });
     } finally {
       setSaving(null);
