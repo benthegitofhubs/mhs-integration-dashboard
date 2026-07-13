@@ -20,6 +20,10 @@ export function calcTaskHealth(
     return { status: "Off Track", paceGap: null, reason: "Past due date" };
   }
 
+  if (task.status === "At Risk" || task.status === "Blocked") {
+    return { status: "At Risk", paceGap: null, reason: "Manually flagged as " + task.status };
+  }
+
   return { status: "On Track", paceGap: null, reason: "Due date not passed" };
 }
 
