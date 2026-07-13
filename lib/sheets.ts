@@ -123,6 +123,63 @@ export async function fetchWorkstreams(): Promise<Workstream100[]> {
   }
 }
 
+// Write any single field back to the sheet by task ID.
+export async function writeField(
+  workstreamId: string,
+  taskId: string,
+  taskDescription: string,
+  field: "status" | "dueDate" | "owner",
+  value: string
+): Promise<void> {
+  const fieldHeader: Record<string, string> = {
+    status:  "status",
+    dueDate: "due date",
+    owner:   "owner",
+  };
+
+  const tab = WS_TAB_MAP[workstreamId];
+  if (!tab) return;
+
+  const auth = getAuth();
+  const sheets = google.sheets({ version: "v4", auth });
+
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `'${tab}'!A:N`,
+  });
+  const rows = (res.data.values ?? []) as string[][];
+
+  const headerIdx = rows.findIndex((r) =>
+    r.some((c) => c?.toLowerCase().includes("work item"))
+  );
+  if (headerIdx === -1) return;
+
+  const header = rows[headerIdx].map((c) => c?.toLowerCase().trim());
+  const targetCol = header.findIndex((h) => h.includes(fieldHeader[field]));
+  const descCol   = header.findIndex((h) => h.includes("work item"));
+  const idCol     = header.findIndex((h) => h === "task id");
+  if (targetCol === -1) return;
+
+  let rowIdx = -1;
+  if (idCol !== -1) {
+    rowIdx = rows.findIndex((r, i) => i > headerIdx && r[idCol]?.trim() === taskId);
+  }
+  if (rowIdx === -1) {
+    rowIdx = rows.findIndex(
+      (r, i) => i > headerIdx && r[descCol]?.trim().slice(0, 40) === taskDescription.slice(0, 40)
+    );
+  }
+  if (rowIdx === -1) return;
+
+  const colLetter = String.fromCharCode(65 + targetCol);
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `'${tab}'!${colLetter}${rowIdx + 1}`,
+    valueInputOption: "RAW",
+    requestBody: { values: [[value]] },
+  });
+}
+
 // Write a status change back to the sheet.
 // Matches by task ID in column N first; falls back to description match.
 export async function writeStatus(

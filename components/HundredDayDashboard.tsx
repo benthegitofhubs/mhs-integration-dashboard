@@ -469,6 +469,7 @@ function BoardMeetingCell({ defaultDate }: { defaultDate: string }) {
 
 function ByOwnerView({ workstreams }: { workstreams: Workstream100[] }) {
   const [search, setSearch] = useState("");
+  const [sortByDate, setSortByDate] = useState<"asc" | "desc" | null>(null);
   type OwnerTask = { owner: string; workstream: string; description: string; dueDate: string; status: Status100 };
 
   const rows: OwnerTask[] = workstreams.flatMap((ws) =>
@@ -544,10 +545,23 @@ function ByOwnerView({ workstreams }: { workstreams: Workstream100[] }) {
             <span>#</span>
             <span>Work Item</span>
             <span>Workstream</span>
-            <span>Due Date</span>
+            <button
+              onClick={() => setSortByDate((s) => s === "asc" ? "desc" : s === "desc" ? null : "asc")}
+              className="text-left flex items-center gap-1"
+              style={{ background: "none", border: "none", cursor: "pointer", color: sortByDate ? "#1a5c3a" : "#9ca3af", fontFamily: "var(--font-geist-mono)", fontSize: "inherit", fontWeight: "inherit", letterSpacing: "inherit", textTransform: "inherit", padding: 0 }}
+            >
+              Due Date {sortByDate === "asc" ? "↑" : sortByDate === "desc" ? "↓" : "↕"}
+            </button>
             <span>Status</span>
           </div>
-          {grouped[owner].map((row, i) => (
+          {(sortByDate
+            ? [...grouped[owner]].sort((a, b) => {
+                const da = a.dueDate && a.dueDate !== "—" ? new Date(a.dueDate).getTime() : Infinity;
+                const db = b.dueDate && b.dueDate !== "—" ? new Date(b.dueDate).getTime() : Infinity;
+                return sortByDate === "asc" ? da - db : db - da;
+              })
+            : grouped[owner]
+          ).map((row, i) => (
             <div key={i} className="grid px-5 py-3 hover:bg-stone-50 transition-colors"
               style={{
                 gridTemplateColumns: "32px 1fr 180px 110px 100px",

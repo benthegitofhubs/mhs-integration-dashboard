@@ -30,10 +30,13 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
   const [tasks, setTasks] = useState<Task100[]>(workstream.tasks);
   const [expanded, setExpanded] = useState(false);
   const [saving, setSaving] = useState<string | null>(null);
+  const [sortByDate, setSortByDate] = useState<"asc" | "desc" | null>(null);
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [noteValues, setNoteValues] = useState<Record<string, string>>(
     Object.fromEntries(workstream.tasks.map((t) => [t.id, t.notes]))
   );
+  const [editingField, setEditingField] = useState<{ taskId: string; field: "dueDate" | "owner" } | null>(null);
+  const [fieldDraft, setFieldDraft] = useState("");
   const [imNotes, setImNotes] = useState<IMNote[]>([]);
   const [imDraft, setImDraft] = useState("");
   const [imHistoryOpen, setImHistoryOpen] = useState(false);
@@ -76,6 +79,32 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
   const overdueCount = tasks.filter(isOverdue).length;
   const stuckCount   = tasks.filter((t) => t.status === "Blocked" || t.status === "At Risk").length;
 
+
+  const startEditField = (taskId: string, field: "dueDate" | "owner") => {
+    const task = tasks.find((t) => t.id === taskId);
+    setFieldDraft(field === "dueDate" ? (task?.dueDate || "") : (task?.owner || ""));
+    setEditingField({ taskId, field });
+  };
+
+  const saveField = async (taskId: string, field: "dueDate" | "owner") => {
+    setEditingField(null);
+    const value = fieldDraft.trim();
+    setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, [field]: value } : t));
+    const task = tasks.find((t) => t.id === taskId);
+    await fetch("/api/update-field", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ taskId, taskDescription: task?.description, workstreamId: workstream.id, field, value }),
+    });
+  };
+
+  const sortedTasks = sortByDate
+    ? [...tasks].sort((a, b) => {
+        const da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+        const db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+        return sortByDate === "asc" ? da - db : db - da;
+      })
+    : tasks;
 
   const handleStatusChange = async (taskId: string, newStatus: Status100) => {
     setSaving(taskId);
@@ -187,13 +216,19 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
               borderBottom: "1px solid #e5e3de",
             }}>
             <span>Task</span>
-            <span>Due Date</span>
+            <button
+              onClick={() => setSortByDate((s) => s === "asc" ? "desc" : s === "desc" ? null : "asc")}
+              className="text-left flex items-center gap-1"
+              style={{ background: "none", border: "none", cursor: "pointer", color: sortByDate ? "#1a5c3a" : "#9ca3af", fontFamily: "var(--font-geist-mono)", fontSize: "inherit", fontWeight: "inherit", letterSpacing: "inherit", textTransform: "inherit", padding: 0 }}
+            >
+              Due Date {sortByDate === "asc" ? "↑" : sortByDate === "desc" ? "↓" : "↕"}
+            </button>
             <span>Owner</span>
             <span>Health</span>
             <span>Status</span>
           </div>
 
-          {tasks.map((task, idx) => {
+          {sortedTasks.map((task, idx) => {
             const health = calcTaskHealth(task);
             const hMeta  = HEALTH_META[health.status];
             return (
@@ -233,15 +268,53 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
               </div>
 
               <div className="pt-0.5">
-                <span className="text-xs" style={{ color: isOverdue(task) ? "#b91c1c" : task.dueDate ? "#57534e" : "#c0bdb8", fontFamily: "var(--font-geist-mono)", fontWeight: isOverdue(task) ? 600 : undefined }}>
-                  {task.dueDate || "—"}
-                </span>
+                {editingField?.taskId === task.id && editingField.field === "dueDate" ? (
+                  <input
+                    autoFocus
+                    type="text"
+                    value={fieldDraft}
+                    onChange={(e) => setFieldDraft(e.target.value)}
+                    onBlur={() => saveField(task.id, "dueDate")}
+                    onKeyDown={(e) => { if (e.key === "Enter") saveField(task.id, "dueDate"); if (e.key === "Escape") setEditingField(null); }}
+                    placeholder="MMM D, YYYY"
+                    className="text-xs rounded px-1 py-0.5 focus:outline-none w-full"
+                    style={{ border: "1px solid #1a5c3a", fontFamily: "var(--font-geist-mono)", color: "#374151" }}
+                  />
+                ) : (
+                  <span
+                    onClick={() => startEditField(task.id, "dueDate")}
+                    className="text-xs cursor-pointer hover:underline"
+                    style={{ color: isOverdue(task) ? "#b91c1c" : task.dueDate ? "#57534e" : "#c0bdb8", fontFamily: "var(--font-geist-mono)", fontWeight: isOverdue(task) ? 600 : undefined }}
+                    title="Click to edit"
+                  >
+                    {task.dueDate || "—"}
+                  </span>
+                )}
               </div>
 
               <div className="pt-0.5">
-                <span className="text-xs" style={{ color: task.owner ? "#78716c" : "#c0bdb8" }}>
-                  {task.owner || "—"}
-                </span>
+                {editingField?.taskId === task.id && editingField.field === "owner" ? (
+                  <input
+                    autoFocus
+                    type="text"
+                    value={fieldDraft}
+                    onChange={(e) => setFieldDraft(e.target.value)}
+                    onBlur={() => saveField(task.id, "owner")}
+                    onKeyDown={(e) => { if (e.key === "Enter") saveField(task.id, "owner"); if (e.key === "Escape") setEditingField(null); }}
+                    placeholder="Name"
+                    className="text-xs rounded px-1 py-0.5 focus:outline-none w-full"
+                    style={{ border: "1px solid #1a5c3a", color: "#374151" }}
+                  />
+                ) : (
+                  <span
+                    onClick={() => startEditField(task.id, "owner")}
+                    className="text-xs cursor-pointer hover:underline"
+                    style={{ color: task.owner ? "#78716c" : "#c0bdb8" }}
+                    title="Click to edit"
+                  >
+                    {task.owner || "—"}
+                  </span>
+                )}
               </div>
 
               <div className="pt-0.5">
