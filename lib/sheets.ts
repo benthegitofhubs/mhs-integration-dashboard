@@ -57,7 +57,7 @@ export async function fetchWorkstreams(): Promise<Workstream100[]> {
         try {
           const res = await sheets.spreadsheets.values.get({
             spreadsheetId: SPREADSHEET_ID,
-            range: `'${tab}'!A:F`,
+            range: `'${tab}'!A:N`,
           });
           rows = (res.data.values ?? []) as string[][];
         } catch {
@@ -77,27 +77,31 @@ export async function fetchWorkstreams(): Promise<Workstream100[]> {
         const ownerCol  = header.findIndex((h) => h === "owner");
         const statusCol = header.findIndex((h) => h === "status");
         const notesCol  = header.findIndex((h) => h.includes("notes"));
+        const idCol     = header.findIndex((h) => h === "task id");
 
         if (descCol === -1) return ws;
 
-        // Build a map of description → sheet row index (1-based for API)
-        const descToRow: Record<string, number> = {};
         const dataRows = rows.slice(headerIdx + 1);
-        dataRows.forEach((r, i) => {
+
+        // Build lookup: taskId → row data (preferred) or fall back to description match
+        const idToRow: Record<string, string[]> = {};
+        const descToRow: Record<string, string[]> = {};
+        dataRows.forEach((r) => {
+          if (idCol !== -1 && r[idCol]?.trim()) {
+            idToRow[r[idCol].trim()] = r;
+          }
           const desc = r[descCol]?.trim();
-          if (desc) descToRow[desc] = headerIdx + 2 + i; // 1-based sheet row
+          if (desc) descToRow[desc.slice(0, 40)] = r;
         });
 
         // Merge sheet data into static task definitions (preserving id, description)
         const updatedTasks: Task100[] = ws.tasks.map((task) => {
-          // Find matching row by description substring match
-          const matchDesc = Object.keys(descToRow).find(
-            (d) => d.slice(0, 40) === task.description.slice(0, 40)
-          );
-          if (!matchDesc) return task;
-
-          const rowIdx = descToRow[matchDesc] - headerIdx - 2;
-          const row = dataRows[rowIdx] ?? [];
+          // Prefer stable ID match; fall back to description substring
+          const row =
+            idToRow[task.id] ??
+            descToRow[task.description.slice(0, 40)] ??
+            null;
+          if (!row) return task;
 
           return {
             ...task,
@@ -120,10 +124,12 @@ export async function fetchWorkstreams(): Promise<Workstream100[]> {
 }
 
 // Write a status change back to the sheet.
+// Matches by task ID in column N first; falls back to description match.
 export async function writeStatus(
   workstreamId: string,
   taskDescription: string,
-  newStatus: Status100
+  newStatus: Status100,
+  taskId?: string
 ): Promise<void> {
   const tab = WS_TAB_MAP[workstreamId];
   if (!tab) return;
@@ -131,10 +137,9 @@ export async function writeStatus(
   const auth = getAuth();
   const sheets = google.sheets({ version: "v4", auth });
 
-  // Read the tab to find the row
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
-    range: `'${tab}'!A:F`,
+    range: `'${tab}'!A:N`,
   });
   const rows = (res.data.values ?? []) as string[][];
 
@@ -146,23 +151,27 @@ export async function writeStatus(
   const header = rows[headerIdx].map((c) => c?.toLowerCase().trim());
   const descCol   = header.findIndex((h) => h.includes("work item"));
   const statusCol = header.findIndex((h) => h === "status");
+  const idCol     = header.findIndex((h) => h === "task id");
   if (descCol === -1 || statusCol === -1) return;
 
-  // Find the matching row
-  const rowIdx = rows.findIndex(
-    (r, i) =>
-      i > headerIdx &&
-      r[descCol]?.trim().slice(0, 40) === taskDescription.slice(0, 40)
-  );
+  // Find matching row: prefer ID column, fall back to description
+  let rowIdx = -1;
+  if (taskId && idCol !== -1) {
+    rowIdx = rows.findIndex((r, i) => i > headerIdx && r[idCol]?.trim() === taskId);
+  }
+  if (rowIdx === -1) {
+    rowIdx = rows.findIndex(
+      (r, i) =>
+        i > headerIdx &&
+        r[descCol]?.trim().slice(0, 40) === taskDescription.slice(0, 40)
+    );
+  }
   if (rowIdx === -1) return;
 
-  // Convert column index to letter (A=0, B=1, ...)
   const colLetter = String.fromCharCode(65 + statusCol);
-  const range = `'${tab}'!${colLetter}${rowIdx + 1}`;
-
   await sheets.spreadsheets.values.update({
     spreadsheetId: SPREADSHEET_ID,
-    range,
+    range: `'${tab}'!${colLetter}${rowIdx + 1}`,
     valueInputOption: "RAW",
     requestBody: { values: [[newStatus]] },
   });

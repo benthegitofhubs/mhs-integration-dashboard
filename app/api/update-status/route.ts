@@ -11,8 +11,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    if (taskDescription) {
-      await writeStatus(workstreamId, taskDescription, status as Status100);
+    if (taskDescription || taskId) {
+      await writeStatus(workstreamId, taskDescription ?? "", status as Status100, taskId);
     }
     return NextResponse.json({ ok: true });
   } catch (err) {
