@@ -815,9 +815,45 @@ function NeedsActionView({ workstreams, autoHealth }: { workstreams: Workstream1
 
   return (
     <div className="pb-20 space-y-4">
-      <p className="text-xs mb-4" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
-        {flaggedWorkstreams.length} workstream{flaggedWorkstreams.length !== 1 ? "s" : ""} with tasks that are off track, at risk, blocked, or not started.
-      </p>
+
+      {/* At-a-glance summary table */}
+      <div className="rounded-lg overflow-hidden mb-6" style={{ border: "1px solid #fecaca", backgroundColor: "white" }}>
+        <div className="px-5 py-3" style={{ backgroundColor: "#fff5f5", borderBottom: "1px solid #fecaca" }}>
+          <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#b91c1c", fontFamily: "var(--font-geist-mono)" }}>
+            Needs Action — At a Glance
+          </p>
+        </div>
+        <div className="grid text-xs uppercase tracking-widest font-semibold px-5 py-2"
+          style={{ gridTemplateColumns: "1fr 140px 80px 70px 70px 90px", color: "#9ca3af", fontFamily: "var(--font-geist-mono)", borderBottom: "1px solid #fecaca", backgroundColor: "#fafafa" }}>
+          <span>Workstream</span>
+          <span>Owner</span>
+          <span style={{ color: "#b91c1c" }}>Off Track</span>
+          <span style={{ color: "#854d0e" }}>At Risk</span>
+          <span style={{ color: "#b91c1c" }}>Blocked</span>
+          <span style={{ color: "#374151" }}>Not Started</span>
+        </div>
+        {flaggedWorkstreams.map(({ ws, flaggedTasks }, i) => {
+          const offTrack   = flaggedTasks.filter((t) => calcTaskHealth(t).status === "Off Track").length;
+          const atRisk     = flaggedTasks.filter((t) => t.status === "At Risk").length;
+          const blocked    = flaggedTasks.filter((t) => t.status === "Blocked").length;
+          const notStarted = flaggedTasks.filter((t) => t.status === "Not Started").length;
+          return (
+            <div key={ws.id} className="grid px-5 py-2.5 hover:bg-red-50 transition-colors"
+              style={{
+                gridTemplateColumns: "1fr 140px 80px 70px 70px 90px",
+                borderBottom: i < flaggedWorkstreams.length - 1 ? "1px solid #fef2f2" : "none",
+                alignItems: "center",
+              }}>
+              <span className="text-xs font-semibold" style={{ color: "#1a1a1a" }}>{ws.name}</span>
+              <span className="text-xs" style={{ color: "#6b7280", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ws.leader}</span>
+              <span className="text-xs font-semibold" style={{ color: offTrack > 0 ? "#b91c1c" : "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>{offTrack > 0 ? offTrack : "—"}</span>
+              <span className="text-xs font-semibold" style={{ color: atRisk > 0 ? "#854d0e" : "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>{atRisk > 0 ? atRisk : "—"}</span>
+              <span className="text-xs font-semibold" style={{ color: blocked > 0 ? "#b91c1c" : "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>{blocked > 0 ? blocked : "—"}</span>
+              <span className="text-xs font-semibold" style={{ color: notStarted > 0 ? "#374151" : "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>{notStarted > 0 ? notStarted : "—"}</span>
+            </div>
+          );
+        })}
+      </div>
 
       {flaggedWorkstreams.map(({ ws, wsHealth, flaggedTasks }) => {
         const hMeta = wsHealth ? HEALTH_META[wsHealth] : null;
