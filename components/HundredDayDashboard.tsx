@@ -824,7 +824,7 @@ function NeedsActionView({ workstreams, autoHealth }: { workstreams: Workstream1
           </p>
         </div>
         <div className="grid text-xs uppercase tracking-widest font-semibold px-5 py-2"
-          style={{ gridTemplateColumns: "1fr 140px 80px 70px 70px 90px", color: "#9ca3af", fontFamily: "var(--font-geist-mono)", borderBottom: "1px solid #fecaca", backgroundColor: "#fafafa" }}>
+          style={{ gridTemplateColumns: "2fr 1fr 96px 80px 88px 108px", color: "#9ca3af", fontFamily: "var(--font-geist-mono)", borderBottom: "1px solid #fecaca", backgroundColor: "#fafafa" }}>
           <span>Workstream</span>
           <span>Owner</span>
           <span style={{ color: "#b91c1c" }}>Off Track</span>
@@ -840,7 +840,7 @@ function NeedsActionView({ workstreams, autoHealth }: { workstreams: Workstream1
           return (
             <div key={ws.id} className="grid px-5 py-2.5 hover:bg-red-50 transition-colors"
               style={{
-                gridTemplateColumns: "1fr 140px 80px 70px 70px 90px",
+                gridTemplateColumns: "2fr 1fr 96px 80px 88px 108px",
                 borderBottom: i < flaggedWorkstreams.length - 1 ? "1px solid #fef2f2" : "none",
                 alignItems: "center",
               }}>
