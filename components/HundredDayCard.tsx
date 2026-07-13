@@ -166,11 +166,18 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
                   {overdueCount} Off Track
                 </span>
               )}
-              {stuckCount > 0 && (
+              {atRisk > 0 && (
                 <span className="text-xs font-semibold px-2 py-0.5 rounded"
                   style={{ backgroundColor: "#fef9c3", color: "#854d0e", fontFamily: "var(--font-geist-mono)" }}
-                  title="Blocked or At Risk tasks">
-                  {stuckCount} At Risk / Blocked
+                  title="At Risk tasks">
+                  {atRisk} At Risk
+                </span>
+              )}
+              {blocked > 0 && (
+                <span className="text-xs font-semibold px-2 py-0.5 rounded"
+                  style={{ backgroundColor: "#ffedd5", color: "#c2410c", fontFamily: "var(--font-geist-mono)" }}
+                  title="Blocked tasks">
+                  {blocked} Blocked
                 </span>
               )}
 

@@ -65,6 +65,7 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
   const autoHealthCounts: Record<TaskHealth, number> = {
     "On Track":  workstreams.filter((ws) => autoHealth[ws.id] === "On Track").length,
     "At Risk":   workstreams.filter((ws) => autoHealth[ws.id] === "At Risk").length,
+    "Blocked":   workstreams.filter((ws) => autoHealth[ws.id] === "Blocked").length,
     "Off Track": workstreams.filter((ws) => autoHealth[ws.id] === "Off Track").length,
   };
 
@@ -232,12 +233,13 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
             </div>
             {/* Vertical separator */}
             <div style={{ width: "1px", backgroundColor: "#e5e3de", margin: "8px 0" }} />
-            {/* Health group — 3 cols */}
-            <div style={{ flex: "3" }}>
+            {/* Health group — 4 cols */}
+            <div style={{ flex: "4" }}>
               <div className="text-xs font-semibold uppercase tracking-widest px-5 pt-2 pb-1" style={{ color: "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>Health</div>
-              <div className="grid grid-cols-3">
+              <div className="grid grid-cols-4">
                 <StatCell value={autoHealthCounts["On Track"]}  label="On Track"  color="#15803d" />
-                <StatCell value={autoHealthCounts["At Risk"]}   label="At Risk"   color="#eab308" />
+                <StatCell value={autoHealthCounts["At Risk"]}   label="At Risk"   color="#854d0e" />
+                <StatCell value={autoHealthCounts["Blocked"]}   label="Blocked"   color="#c2410c" />
                 <StatCell value={autoHealthCounts["Off Track"]} label="Off Track" color="#b91c1c" />
               </div>
             </div>
@@ -249,7 +251,8 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
             <div style={{ backgroundColor: "white" }}>
               {([
                 { label: "On Track",  bg: "#dcfce7", color: "#15803d", desc: "Due date has not passed and no manual flag — progressing normally." },
-                { label: "At Risk",   bg: "#fef9c3", color: "#854d0e", desc: "Manually flagged At Risk or Blocked, but due date has not yet passed." },
+                { label: "At Risk",   bg: "#fef9c3", color: "#854d0e", desc: "Manually flagged At Risk — falling behind but not yet stopped." },
+                { label: "Blocked",   bg: "#ffedd5", color: "#c2410c", desc: "Manually flagged Blocked — stopped, needs external action to proceed." },
                 { label: "Off Track", bg: "#fee2e2", color: "#b91c1c", desc: "Due date has passed and the task is not yet complete." },
               ]).map((row, i, arr) => (
                 <div key={row.label} className="grid px-5 py-2.5 items-center gap-4"
@@ -772,31 +775,31 @@ function NeedsActionView({ workstreams, autoHealth }: { workstreams: Workstream1
           </p>
         </div>
         <div className="grid text-xs uppercase tracking-widest font-semibold px-5 py-2"
-          style={{ gridTemplateColumns: "2fr 1fr 96px 80px 88px 108px", color: "#9ca3af", fontFamily: "var(--font-geist-mono)", borderBottom: "1px solid #fecaca", backgroundColor: "#fafafa" }}>
+          style={{ gridTemplateColumns: "2fr 1fr 80px 80px 80px 108px", color: "#9ca3af", fontFamily: "var(--font-geist-mono)", borderBottom: "1px solid #fecaca", backgroundColor: "#fafafa" }}>
           <span>Workstream</span>
           <span>Owner</span>
-          <span style={{ color: "#b91c1c" }}>Off Track</span>
           <span style={{ color: "#854d0e" }}>At Risk</span>
-          <span style={{ color: "#b91c1c" }}>Blocked</span>
+          <span style={{ color: "#c2410c" }}>Blocked</span>
+          <span style={{ color: "#b91c1c" }}>Off Track</span>
           <span style={{ color: "#374151" }}>Not Started</span>
         </div>
         {flaggedWorkstreams.map(({ ws, flaggedTasks }, i) => {
+          const atRisk     = flaggedTasks.filter((t) => calcTaskHealth(t).status === "At Risk").length;
+          const blocked    = flaggedTasks.filter((t) => calcTaskHealth(t).status === "Blocked").length;
           const offTrack   = flaggedTasks.filter((t) => calcTaskHealth(t).status === "Off Track").length;
-          const atRisk     = flaggedTasks.filter((t) => t.status === "At Risk").length;
-          const blocked    = flaggedTasks.filter((t) => t.status === "Blocked").length;
           const notStarted = flaggedTasks.filter((t) => t.status === "Not Started").length;
           return (
             <div key={ws.id} className="grid px-5 py-2.5 hover:bg-red-50 transition-colors"
               style={{
-                gridTemplateColumns: "2fr 1fr 96px 80px 88px 108px",
+                gridTemplateColumns: "2fr 1fr 80px 80px 80px 108px",
                 borderBottom: i < flaggedWorkstreams.length - 1 ? "1px solid #fef2f2" : "none",
                 alignItems: "center",
               }}>
               <a href={`#na-${ws.id}`} className="text-xs font-semibold hover:underline" style={{ color: "#1a1a1a", textDecoration: "none" }}>{ws.name}</a>
               <span className="text-xs" style={{ color: "#6b7280", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ws.leader}</span>
-              <span className="text-xs font-semibold" style={{ color: offTrack > 0 ? "#b91c1c" : "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>{offTrack > 0 ? offTrack : "—"}</span>
               <span className="text-xs font-semibold" style={{ color: atRisk > 0 ? "#854d0e" : "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>{atRisk > 0 ? atRisk : "—"}</span>
-              <span className="text-xs font-semibold" style={{ color: blocked > 0 ? "#b91c1c" : "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>{blocked > 0 ? blocked : "—"}</span>
+              <span className="text-xs font-semibold" style={{ color: blocked > 0 ? "#c2410c" : "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>{blocked > 0 ? blocked : "—"}</span>
+              <span className="text-xs font-semibold" style={{ color: offTrack > 0 ? "#b91c1c" : "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>{offTrack > 0 ? offTrack : "—"}</span>
               <span className="text-xs font-semibold" style={{ color: notStarted > 0 ? "#374151" : "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>{notStarted > 0 ? notStarted : "—"}</span>
             </div>
           );
