@@ -222,8 +222,8 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
 
           {/* Summary counts: operational state + pace health */}
           <div className="flex mb-3" style={{ borderTop: "1px solid #e5e3de" }}>
-            {/* Progress group */}
-            <div className="flex-1">
+            {/* Progress group — 2 cols */}
+            <div style={{ flex: "2" }}>
               <div className="text-xs font-semibold uppercase tracking-widest px-5 pt-2 pb-1" style={{ color: "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>Progress</div>
               <div className="grid grid-cols-2">
                 <StatCell value={wsCounts["Not Started"]} label="Not Started" color="#374151" />
@@ -232,8 +232,8 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
             </div>
             {/* Vertical separator */}
             <div style={{ width: "1px", backgroundColor: "#e5e3de", margin: "8px 0" }} />
-            {/* Health group */}
-            <div className="flex-1">
+            {/* Health group — 3 cols */}
+            <div style={{ flex: "3" }}>
               <div className="text-xs font-semibold uppercase tracking-widest px-5 pt-2 pb-1" style={{ color: "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>Health</div>
               <div className="grid grid-cols-3">
                 <StatCell value={autoHealthCounts["On Track"]}  label="On Track"  color="#15803d" />
