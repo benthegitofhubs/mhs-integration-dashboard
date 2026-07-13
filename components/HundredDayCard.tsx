@@ -10,16 +10,6 @@ interface IMNote {
   note: string;
 }
 
-function loadIMNotes(workstreamId: string): IMNote[] {
-  try {
-    return JSON.parse(localStorage.getItem(`im-notes-${workstreamId}`) ?? "[]");
-  } catch { return []; }
-}
-
-function saveIMNotes(workstreamId: string, notes: IMNote[]) {
-  localStorage.setItem(`im-notes-${workstreamId}`, JSON.stringify(notes));
-}
-
 const STATUS_DOT: Record<Status100, string> = {
   "Not Started": "#374151",
   "In Progress": "#1d4ed8",
@@ -49,15 +39,22 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
   const [imHistoryOpen, setImHistoryOpen] = useState(false);
 
   useEffect(() => {
-    setImNotes(loadIMNotes(workstream.id));
+    fetch(`/api/im-notes?workstreamId=${workstream.id}`)
+      .then((r) => r.json())
+      .then((data) => setImNotes(data.notes ?? []))
+      .catch(() => {});
   }, [workstream.id]);
 
-  const saveImNote = () => {
+  const saveImNote = async () => {
     if (!imDraft.trim()) return;
-    const updated = [...imNotes, { timestamp: new Date().toISOString(), note: imDraft.trim() }];
-    setImNotes(updated);
-    saveIMNotes(workstream.id, updated);
+    const entry: IMNote = { timestamp: new Date().toISOString(), note: imDraft.trim() };
+    setImNotes((prev) => [...prev, entry]);
     setImDraft("");
+    await fetch("/api/im-notes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ workstreamId: workstream.id, ...entry }),
+    });
   };
 
   const total      = tasks.length;
