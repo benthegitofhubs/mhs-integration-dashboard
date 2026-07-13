@@ -168,32 +168,33 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
         </div>
 
         {/* Tab switcher */}
-        <div className="flex gap-1 mb-8" style={{ borderBottom: "2px solid #e5e3de" }}>
+        <div className="flex gap-1 mb-8 p-1 rounded-lg" style={{ backgroundColor: "#eeede9", width: "fit-content" }}>
           {([
             { id: "workstreams",    label: "Workstreams",   red: false },
             { id: "needs-action",   label: "Needs Action",  red: true  },
             { id: "by-owner",       label: "By Owner",      red: false },
             { id: "ai-automations", label: "AI Automations",red: false },
-          ] as const).map((tab) => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className="text-xs font-semibold uppercase tracking-widest px-4 transition-colors"
-              style={{
-                fontFamily: "var(--font-geist-mono)",
-                color: activeTab === tab.id
-                  ? (tab.red ? "#b91c1c" : "#1a5c3a")
-                  : (tab.red ? "#f87171" : "#9ca3af"),
-                borderBottom: activeTab === tab.id
-                  ? `2px solid ${tab.red ? "#b91c1c" : "#1a5c3a"}`
-                  : "2px solid transparent",
-                marginBottom: "-2px",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                paddingBottom: "8px",
-              }}>
-              {tab.label}
-            </button>
-          ))}
+          ] as const).map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                className="text-xs font-semibold uppercase tracking-widest px-4 py-2 rounded-md transition-all"
+                style={{
+                  fontFamily: "var(--font-geist-mono)",
+                  color: isActive
+                    ? (tab.red ? "#b91c1c" : "#1a5c3a")
+                    : (tab.red ? "#e06060" : "#9ca3af"),
+                  backgroundColor: isActive ? "white" : "transparent",
+                  boxShadow: isActive ? "0 1px 3px rgba(0,0,0,0.10)" : "none",
+                  border: "none",
+                  cursor: "pointer",
+                  letterSpacing: "0.07em",
+                  whiteSpace: "nowrap",
+                }}>
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
 
         {activeTab === "ai-automations" && <AIAutomationsView />}
