@@ -83,34 +83,33 @@ export async function fetchWorkstreams(): Promise<Workstream100[]> {
 
         const dataRows = rows.slice(headerIdx + 1);
 
-        // Build lookup: taskId → row data (preferred) or fall back to description match
-        const idToRow: Record<string, string[]> = {};
-        const descToRow: Record<string, string[]> = {};
-        dataRows.forEach((r) => {
-          if (idCol !== -1 && r[idCol]?.trim()) {
-            idToRow[r[idCol].trim()] = r;
-          }
-          const desc = r[descCol]?.trim();
-          if (desc) descToRow[desc.slice(0, 40)] = r;
+        // Build lookup: taskId → static task (for stable id/description)
+        const staticById: Record<string, Task100> = {};
+        const staticByDesc: Record<string, Task100> = {};
+        ws.tasks.forEach((t) => {
+          staticById[t.id] = t;
+          staticByDesc[t.description.slice(0, 40)] = t;
         });
 
-        // Merge sheet data into static task definitions (preserving id, description)
-        const updatedTasks: Task100[] = ws.tasks.map((task) => {
-          // Prefer stable ID match; fall back to description substring
-          const row =
-            idToRow[task.id] ??
-            descToRow[task.description.slice(0, 40)] ??
-            null;
-          if (!row) return task;
-
-          return {
-            ...task,
-            dueDate: row[dateCol]?.trim() || task.dueDate,
-            owner:   row[ownerCol]?.trim() || task.owner,
-            status:  toStatus(row[statusCol]?.trim()),
-            notes:   row[notesCol]?.trim() || task.notes,
-          };
-        });
+        // Drive task list from sheet rows — rows deleted from sheet disappear from app
+        const updatedTasks: Task100[] = dataRows
+          .filter((r) => r[descCol]?.trim())
+          .map((r, i) => {
+            const sheetId = idCol !== -1 ? r[idCol]?.trim() : "";
+            const desc = r[descCol].trim();
+            const staticTask =
+              (sheetId ? staticById[sheetId] : null) ??
+              staticByDesc[desc.slice(0, 40)] ??
+              null;
+            return {
+              id:          sheetId || staticTask?.id || `${ws.id}-row${i}`,
+              description: desc,
+              dueDate:     r[dateCol]?.trim() || staticTask?.dueDate || "",
+              owner:       r[ownerCol]?.trim() || staticTask?.owner || "",
+              status:      toStatus(r[statusCol]?.trim()),
+              notes:       r[notesCol]?.trim() || staticTask?.notes || "",
+            };
+          });
 
         return { ...ws, tasks: updatedTasks };
       })
