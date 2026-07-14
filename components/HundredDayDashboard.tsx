@@ -778,9 +778,9 @@ function NeedsActionView({ workstreams, autoHealth }: { workstreams: Workstream1
           style={{ gridTemplateColumns: "2fr 1fr 80px 80px 80px 108px", color: "#9ca3af", fontFamily: "var(--font-geist-mono)", borderBottom: "1px solid #fecaca", backgroundColor: "#fafafa" }}>
           <span>Workstream</span>
           <span>Owner</span>
-          <span style={{ color: "#854d0e" }}>At Risk</span>
-          <span style={{ color: "#c2410c" }}>Blocked</span>
-          <span style={{ color: "#b91c1c" }}>Off Track</span>
+          <span style={{ color: HEALTH_META["At Risk"].color }}>At Risk</span>
+          <span style={{ color: HEALTH_META["Blocked"].color }}>Blocked</span>
+          <span style={{ color: HEALTH_META["Off Track"].color }}>Off Track</span>
           <span style={{ color: "#374151" }}>Not Started</span>
         </div>
         {flaggedWorkstreams.map(({ ws, flaggedTasks }, i) => {
@@ -797,9 +797,9 @@ function NeedsActionView({ workstreams, autoHealth }: { workstreams: Workstream1
               }}>
               <a href={`#na-${ws.id}`} className="text-xs font-semibold hover:underline" style={{ color: "#1a1a1a", textDecoration: "none" }}>{ws.name}</a>
               <span className="text-xs" style={{ color: "#6b7280", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ws.leader}</span>
-              <span className="text-xs font-semibold" style={{ color: atRisk > 0 ? "#854d0e" : "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>{atRisk > 0 ? atRisk : "—"}</span>
-              <span className="text-xs font-semibold" style={{ color: blocked > 0 ? "#c2410c" : "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>{blocked > 0 ? blocked : "—"}</span>
-              <span className="text-xs font-semibold" style={{ color: offTrack > 0 ? "#b91c1c" : "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>{offTrack > 0 ? offTrack : "—"}</span>
+              <span className="text-xs font-semibold" style={{ color: atRisk > 0 ? HEALTH_META["At Risk"].color : "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>{atRisk > 0 ? atRisk : "—"}</span>
+              <span className="text-xs font-semibold" style={{ color: blocked > 0 ? HEALTH_META["Blocked"].color : "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>{blocked > 0 ? blocked : "—"}</span>
+              <span className="text-xs font-semibold" style={{ color: offTrack > 0 ? HEALTH_META["Off Track"].color : "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>{offTrack > 0 ? offTrack : "—"}</span>
               <span className="text-xs font-semibold" style={{ color: notStarted > 0 ? "#374151" : "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>{notStarted > 0 ? notStarted : "—"}</span>
             </div>
           );
