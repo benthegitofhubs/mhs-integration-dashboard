@@ -54,6 +54,9 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
   const [fieldDraft, setFieldDraft] = useState("");
   const [subtasksOpen, setSubtasksOpen] = useState<Record<string, boolean>>({});
   const [newSubtaskDraft, setNewSubtaskDraft] = useState<Record<string, string>>({});
+  const [leader, setLeader] = useState(workstream.leader);
+  const [editingLeader, setEditingLeader] = useState(false);
+  const [leaderDraft, setLeaderDraft] = useState(workstream.leader);
   const [imNotes, setImNotes] = useState<IMNote[]>([]);
   const [imDraft, setImDraft] = useState("");
   const [imHistoryOpen, setImHistoryOpen] = useState(false);
@@ -197,7 +200,40 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
               <span style={{ color: "#d1cfc9" }}>·</span>
               <h2 className="text-sm font-bold" style={{ color: "#111" }}>{workstream.name}</h2>
               <span style={{ color: "#d1cfc9" }}>·</span>
-              <span className="text-xs" style={{ color: "#9ca3af" }}>{workstream.leader}</span>
+              {editingLeader ? (
+                <input
+                  autoFocus
+                  type="text"
+                  value={leaderDraft}
+                  onChange={(e) => setLeaderDraft(e.target.value)}
+                  onBlur={async () => {
+                    setEditingLeader(false);
+                    const trimmed = leaderDraft.trim();
+                    if (!trimmed || trimmed === leader) return;
+                    setLeader(trimmed);
+                    await fetch("/api/update-leader", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ workstreamId: workstream.id, leader: trimmed }),
+                    });
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                    if (e.key === "Escape") { setLeaderDraft(leader); setEditingLeader(false); }
+                  }}
+                  className="text-xs rounded px-1 py-0.5 focus:outline-none"
+                  style={{ border: "1px solid #1a5c3a", color: "#374151", width: "160px" }}
+                />
+              ) : (
+                <span
+                  className="text-xs cursor-pointer hover:underline"
+                  style={{ color: "#9ca3af" }}
+                  onClick={() => { setLeaderDraft(leader); setEditingLeader(true); }}
+                  title="Click to edit leader"
+                >
+                  {leader || "—"}
+                </span>
+              )}
 
               {/* Warning badges */}
               {overdueCount > 0 && (

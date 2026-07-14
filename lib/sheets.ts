@@ -264,6 +264,34 @@ export async function writeStatus(
   });
 }
 
+// Update the Leader name in the "Leader: X | Supporting: ..." header row.
+export async function writeLeader(workstreamId: string, newLeader: string): Promise<void> {
+  const tab = WS_TAB_MAP[workstreamId];
+  if (!tab) return;
+
+  const auth = getAuth();
+  const sheets = google.sheets({ version: "v4", auth });
+
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `'${tab}'!A1:A10`,
+  });
+  const rows = (res.data.values ?? []) as string[][];
+  const leaderRowIdx = rows.findIndex((r) => r[0]?.toLowerCase().startsWith("leader:"));
+  if (leaderRowIdx === -1) return;
+
+  const current = rows[leaderRowIdx][0];
+  const supporting = current.match(/\|(.*)$/)?.[1]?.trim() || "";
+  const updated = supporting ? `Leader: ${newLeader}  |  ${supporting}` : `Leader: ${newLeader}`;
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `'${tab}'!A${leaderRowIdx + 1}`,
+    valueInputOption: "RAW",
+    requestBody: { values: [[updated]] },
+  });
+}
+
 // Write subtasks back to the sheet for a given task.
 export async function writeSubtasks(
   workstreamId: string,
