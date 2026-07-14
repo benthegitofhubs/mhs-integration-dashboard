@@ -233,14 +233,17 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
             </div>
             {/* Vertical separator */}
             <div style={{ width: "1px", backgroundColor: "#e5e3de", margin: "8px 0" }} />
-            {/* Health group — 4 cols */}
+            {/* Health group — pill badges */}
             <div style={{ flex: "4" }}>
               <div className="text-xs font-semibold uppercase tracking-widest px-5 pt-2 pb-1" style={{ color: "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>Health</div>
-              <div className="grid grid-cols-4">
-                <StatCell value={autoHealthCounts["On Track"]}  label="On Track"  color={HEALTH_META["On Track"].dot} />
-                <StatCell value={autoHealthCounts["At Risk"]}   label="At Risk"   color={HEALTH_META["At Risk"].dot} />
-                <StatCell value={autoHealthCounts["Blocked"]}   label="Blocked"   color={HEALTH_META["Blocked"].dot} />
-                <StatCell value={autoHealthCounts["Off Track"]} label="Off Track" color={HEALTH_META["Off Track"].dot} />
+              <div className="grid grid-cols-2 gap-2 px-5 pb-4">
+                {(["On Track", "At Risk", "Blocked", "Off Track"] as TaskHealth[]).map((h) => (
+                  <div key={h} className="flex items-center justify-between px-3 py-1.5 rounded"
+                    style={{ backgroundColor: HEALTH_META[h].bg }}>
+                    <span className="text-xs font-semibold" style={{ color: HEALTH_META[h].color, fontFamily: "var(--font-geist-mono)" }}>{h}</span>
+                    <span className="text-xs font-bold" style={{ color: HEALTH_META[h].color, fontFamily: "var(--font-geist-mono)" }}>{autoHealthCounts[h]}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
