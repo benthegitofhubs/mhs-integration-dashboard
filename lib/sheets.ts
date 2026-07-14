@@ -100,13 +100,16 @@ export async function fetchWorkstreams(): Promise<Workstream100[]> {
 
         if (descCol === -1) return ws;
 
-        // Parse leader from "Leader: X | Supporting: ..." header row above the column headers
-        const leaderRow = rows.slice(0, headerIdx).find(r =>
-          r[0]?.toLowerCase().startsWith("leader:")
-        );
+        // Parse leader and status override from header rows above the column headers
+        const headerRows = rows.slice(0, headerIdx);
+        const leaderRow = headerRows.find(r => r[0]?.toLowerCase().startsWith("leader:"));
         const leaderFromSheet = leaderRow
           ? (leaderRow[0].match(/^Leader:\s*([^|]+)/i)?.[1]?.trim() || "")
           : "";
+        const statusRow = headerRows.find(r => r[0]?.toLowerCase().startsWith("status:"));
+        const statusOverride = statusRow
+          ? (statusRow[0].match(/^Status:\s*(.+)/i)?.[1]?.trim() || null)
+          : null;
 
         const dataRows = rows.slice(headerIdx + 1);
 
@@ -142,7 +145,7 @@ export async function fetchWorkstreams(): Promise<Workstream100[]> {
             };
           });
 
-        return { ...ws, tasks: updatedTasks, leader: leaderFromSheet || ws.leader };
+        return { ...ws, tasks: updatedTasks, leader: leaderFromSheet || ws.leader, statusOverride: statusOverride ?? ws.statusOverride };
       })
     );
 
@@ -289,6 +292,57 @@ export async function writeLeader(workstreamId: string, newLeader: string): Prom
     range: `'${tab}'!A${leaderRowIdx + 1}`,
     valueInputOption: "RAW",
     requestBody: { values: [[updated]] },
+  });
+}
+
+// Write or clear the manual status override in the sheet header.
+export async function writeStatusOverride(workstreamId: string, status: string | null): Promise<void> {
+  const tab = WS_TAB_MAP[workstreamId];
+  if (!tab) return;
+
+  const auth = getAuth();
+  const sheets = google.sheets({ version: "v4", auth });
+
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `'${tab}'!A1:A10`,
+  });
+  const rows = (res.data.values ?? []) as string[][];
+  const headerIdx = rows.findIndex((r) =>
+    r.some((c) => c?.toLowerCase().includes("work item") || c?.toLowerCase() === "ranking #")
+  );
+  const statusRowIdx = rows.findIndex((r) => r[0]?.toLowerCase().startsWith("status:"));
+
+  if (status === null) {
+    // Clear the override — blank the cell
+    if (statusRowIdx !== -1) {
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `'${tab}'!A${statusRowIdx + 1}`,
+        valueInputOption: "RAW",
+        requestBody: { values: [[""]] },
+      });
+    }
+    return;
+  }
+
+  // Find where to write: existing Status row, or first empty row before header
+  let targetRow = statusRowIdx !== -1
+    ? statusRowIdx + 1
+    : (headerIdx > 1 ? headerIdx : 5); // fallback to row 5 if no empty slot found
+
+  if (statusRowIdx === -1 && headerIdx !== -1) {
+    // Find first empty row before the header
+    for (let i = headerIdx - 1; i >= 0; i--) {
+      if (!rows[i]?.[0]?.trim()) { targetRow = i + 1; break; }
+    }
+  }
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `'${tab}'!A${targetRow}`,
+    valueInputOption: "RAW",
+    requestBody: { values: [[`Status: ${status}`]] },
   });
 }
 

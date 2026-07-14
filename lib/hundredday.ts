@@ -25,6 +25,7 @@ export interface Workstream100 {
   id: string;
   name: string;
   leader: string;
+  statusOverride: string | null; // manual health override stored in sheet header
   goal: string;
   flagshipGoal: string;
   tasks: Task100[];
@@ -52,7 +53,7 @@ export const WORKSTREAMS_100: Workstream100[] = [
   {
     id: "ai-brain-medicine",
     name: "AI-native Brain Medicine Operating Model",
-    leader: "Carlene / Steph / John / Leah",
+    leader: "Carlene / Steph / John / Leah", statusOverride: null,
     flagshipGoal: "1 · Growth",
     goal: "We have become an AI-native Brain Medicine platform — centralizing data, defining deployment safeguards, and deploying our first cohort of ≥3 production AI agents to drive improvement across named KPIs.",
     tasks: [
@@ -67,7 +68,7 @@ export const WORKSTREAMS_100: Workstream100[] = [
   {
     id: "dtc",
     name: "Growth — DTC",
-    leader: "Derek",
+    leader: "Derek", statusOverride: null,
     flagshipGoal: "1 · Growth",
     goal: "Our combined network is acquiring ≥550 new customers/month by Day 100 (≥20 per clinic/month) while holding blended CAC ≤$450 and LTV:CAC ≥3:1, with >70% of new customer cohorts interventional.",
     tasks: [
@@ -91,7 +92,7 @@ export const WORKSTREAMS_100: Workstream100[] = [
   {
     id: "b2b",
     name: "Growth — B2B Provider Referrals",
-    leader: "Sydney / Jonathan",
+    leader: "Sydney / Jonathan", statusOverride: null,
     flagshipGoal: "1 · Growth",
     goal: "Our combined BD team is unified under one leader with one compensation program, with all BD activity tracked in a single CRM instance and with a consolidated performance dashboard in place.",
     tasks: [
@@ -113,7 +114,7 @@ export const WORKSTREAMS_100: Workstream100[] = [
   {
     id: "ltc",
     name: "Growth — Lead to Consult Conversion",
-    leader: "Dulce / Sydney",
+    leader: "Dulce / Sydney", statusOverride: null,
     flagshipGoal: "1 · Growth",
     goal: "Our combined network is converting completed discovery calls to completed intake at ≥60% and completed intake to interventional treatment start at ≥65%, driven by clearer post-intake workflows and more transparent customer-facing information on benefits, pricing, and next steps.",
     tasks: [
@@ -136,7 +137,7 @@ export const WORKSTREAMS_100: Workstream100[] = [
   {
     id: "ops-excellence",
     name: "Growth — Operational Excellence",
-    leader: "Mark",
+    leader: "Mark", statusOverride: null,
     flagshipGoal: "1 · Growth",
     goal: "All clinics are managed under one governance process with a single clinic-level ops/financial analytics and monitoring dashboard across the network, and a growth/profitability plan in place for every clinic.",
     tasks: [
@@ -151,7 +152,7 @@ export const WORKSTREAMS_100: Workstream100[] = [
   {
     id: "product-data",
     name: "Product, Data & Clinical Innovation",
-    leader: "Carlene",
+    leader: "Carlene", statusOverride: null,
     flagshipGoal: "1 · Growth",
     goal: "Both organizations are consolidated onto RadialOS — covering discovery, interventional procedure ordering, AI Scribe, and measurement-informed care in an EHR-agnostic fashion — with consolidated analytics and agentic worklist dashboards live across RCM, ClinOps, and clinical care.",
     tasks: [
@@ -167,7 +168,7 @@ export const WORKSTREAMS_100: Workstream100[] = [
   {
     id: "finance",
     name: "Finance & Accounting",
-    leader: "Mark / Chris / John",
+    leader: "Mark / Chris / John", statusOverride: null,
     flagshipGoal: "2 · One Team",
     goal: "We have hired a permanent CFO and built a full financial consolidation roadmap through EOY '26 covering budget, model, unified reporting, treasury, accounting, and tax.",
     tasks: [
@@ -184,7 +185,7 @@ export const WORKSTREAMS_100: Workstream100[] = [
   {
     id: "it-security",
     name: "IT & Security",
-    leader: "Elliot",
+    leader: "Elliot", statusOverride: null,
     flagshipGoal: "2 · One Team",
     goal: "We have fully assessed MHS/Radial IT infrastructure with a prioritized remediation roadmap for hardware/software/security; all low-hanging-fruit security items are resolved.",
     tasks: [
@@ -202,7 +203,7 @@ export const WORKSTREAMS_100: Workstream100[] = [
   {
     id: "people",
     name: "People Services",
-    leader: "Abbe",
+    leader: "Abbe", statusOverride: null,
     flagshipGoal: "2 · One Team",
     goal: "We have built a unified people and organization foundation — org design, recruiting, policies, and performance management standardized across entities — with total rewards parity underway, benefits renewal in motion for both entities, and a baseline employee NPS for both entities in place.",
     tasks: [
@@ -220,7 +221,7 @@ export const WORKSTREAMS_100: Workstream100[] = [
   {
     id: "legal",
     name: "Legal & Regulatory",
-    leader: "Dan / Abbe",
+    leader: "Dan / Abbe", statusOverride: null,
     flagshipGoal: "2 · One Team",
     goal: "We have reviewed all identified diligence issues to identify an assigned owner, a remediation plan, a cost estimate and a target resolution date. We have evaluated legal, regulatory and compliance priorities for the combined entities.",
     tasks: [
@@ -239,7 +240,7 @@ export const WORKSTREAMS_100: Workstream100[] = [
   {
     id: "comms",
     name: "Communications",
-    leader: "John / Derek",
+    leader: "John / Derek", statusOverride: null,
     flagshipGoal: "2 · One Team",
     goal: "The acquisition announcement launches Brain Medicine as a category — not a roll-up — with Tier 1 exclusive secured (STAT target) and ≥3 Tier 1 placements carrying the Brain Medicine framing with Owen/John as the category voice.",
     tasks: [
@@ -253,7 +254,7 @@ export const WORKSTREAMS_100: Workstream100[] = [
   {
     id: "clinical-perf",
     name: "Clinical Excellence",
-    leader: "Toby",
+    leader: "Toby", statusOverride: null,
     flagshipGoal: "3 · Remission",
     goal: "We have launched a combined medical leadership structure, standardized scheduling and recruitment practices across the combined entity, and defined a single set of clinical/clinical-ops KPIs — with accountability built cross-functionally toward a target of 80% mature clinician utilization — alongside a roadmap for new treatment modalities.",
     tasks: [
@@ -279,7 +280,7 @@ export const WORKSTREAMS_100: Workstream100[] = [
   {
     id: "payer",
     name: "Payer Strategy",
-    leader: "Jonathan",
+    leader: "Jonathan", statusOverride: null,
     flagshipGoal: "4 · MSO",
     goal: "We have engaged with five strategic health plans and validated the product-market fit for the MSO Network's aTMS/Spravato repricing/billing solution, with substantive discussions underway on a national contract and/or alternative payment models.",
     tasks: [
@@ -296,7 +297,7 @@ export const WORKSTREAMS_100: Workstream100[] = [
   {
     id: "brain-medicine",
     name: "Brain Medicine Brand & Research",
-    leader: "Owen",
+    leader: "Owen", statusOverride: null,
     flagshipGoal: "5 · Category Leadership",
     goal: "We have established Brain Medicine as an externally-facing category for Radial, with a defined mandate and operating model, an aligned research roadmap and budget, and an active 6-protocol research portfolio across our NY flagship, with at minimum 3 additional sites identified.",
     tasks: [
@@ -326,7 +327,7 @@ export const WORKSTREAMS_100: Workstream100[] = [
   {
     id: "misc",
     name: "Service Experience",
-    leader: "Ben",
+    leader: "Ben", statusOverride: null,
     flagshipGoal: "5 · Category Leadership",
     goal: "Every clinic has been visited and assessed against Radial's service experience standards. Gaps are identified, a site improvement plan exists for each location in need, and remediation is underway at ≥50% of those sites.",
     tasks: [

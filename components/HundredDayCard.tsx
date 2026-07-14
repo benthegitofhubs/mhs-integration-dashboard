@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Workstream100, Task100, Status100, Subtask } from "@/lib/hundredday";
 import { STATUS_BG, STATUS_COLOR } from "./HundredDayDashboard";
-import { calcTaskHealth, HEALTH_META } from "@/lib/taskHealth";
+import { calcTaskHealth, HEALTH_META, TaskHealth } from "@/lib/taskHealth";
 
 interface IMNote {
   timestamp: string;
@@ -57,6 +57,7 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
   const [leader, setLeader] = useState(workstream.leader);
   const [editingLeader, setEditingLeader] = useState(false);
   const [leaderDraft, setLeaderDraft] = useState(workstream.leader);
+  const [statusOverride, setStatusOverride] = useState<string | null>(workstream.statusOverride);
   const [imNotes, setImNotes] = useState<IMNote[]>([]);
   const [imDraft, setImDraft] = useState("");
   const [imHistoryOpen, setImHistoryOpen] = useState(false);
@@ -258,16 +259,41 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
                 </span>
               )}
 
-              {/* Derived status badge */}
-              {derivedStatus && (
-                <>
-                  <span style={{ color: "#d1cfc9" }}>·</span>
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded"
-                    style={{ backgroundColor: STATUS_BG[derivedStatus], color: STATUS_COLOR[derivedStatus], fontFamily: "var(--font-geist-mono)" }}>
-                    {derivedStatus}
-                  </span>
-                </>
-              )}
+              {/* Workstream health — shows override if set, otherwise derived; click to override */}
+              {(() => {
+                const HEALTH_OPTIONS: TaskHealth[] = ["On Track", "At Risk", "Blocked", "Off Track"];
+                const displayHealth = (statusOverride as TaskHealth | null) ?? derivedStatus;
+                if (!displayHealth) return null;
+                const hm = HEALTH_META[displayHealth as TaskHealth];
+                return (
+                  <>
+                    <span style={{ color: "#d1cfc9" }}>·</span>
+                    <select
+                      value={statusOverride ?? ""}
+                      onChange={async (e) => {
+                        const val = e.target.value || null;
+                        setStatusOverride(val);
+                        await fetch("/api/update-workstream-status", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ workstreamId: workstream.id, status: val }),
+                        });
+                      }}
+                      className="text-xs font-semibold px-2 py-0.5 rounded cursor-pointer focus:outline-none"
+                      style={{ backgroundColor: hm.bg, color: hm.color, border: "none", fontFamily: "var(--font-geist-mono)" }}
+                      title={statusOverride ? "Manual override — click to change or clear" : "Auto-computed — click to override"}
+                    >
+                      <option value="">Auto: {derivedStatus ?? "—"}</option>
+                      {HEALTH_OPTIONS.map((h) => (
+                        <option key={h} value={h}>{h}</option>
+                      ))}
+                    </select>
+                    {statusOverride && (
+                      <span className="text-xs" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }} title="Manual override active">⚙</span>
+                    )}
+                  </>
+                );
+              })()}
             </div>
 
             <p className="text-xs leading-relaxed" style={{ color: "#78716c", paddingLeft: "22px" }}>
