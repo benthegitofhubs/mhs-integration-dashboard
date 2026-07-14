@@ -233,7 +233,7 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
                 <span
                   className="text-xs cursor-pointer hover:underline"
                   style={{ color: "#9ca3af" }}
-                  onClick={() => { setLeaderDraft(leader); setEditingLeader(true); }}
+                  onClick={(e) => { e.stopPropagation(); setLeaderDraft(leader); setEditingLeader(true); }}
                   title="Click to edit leader"
                 >
                   {leader || "—"}
