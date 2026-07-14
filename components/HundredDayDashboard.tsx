@@ -32,7 +32,7 @@ function deriveWorkstreamStatus(ws: Workstream100): Status100 | null {
   return "Not Started";
 }
 
-export default function HundredDayDashboard({ workstreams }: { workstreams: Workstream100[] }) {
+export default function HundredDayDashboard({ workstreams, loadedAt }: { workstreams: Workstream100[]; loadedAt?: string }) {
   const [activeTab, setActiveTab] = useState<"workstreams" | "by-owner" | "ai-automations" | "needs-action">("workstreams");
   const allTasks   = workstreams.flatMap((ws) => ws.tasks);
   const total      = allTasks.length;
@@ -164,7 +164,7 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
           <p className="text-xs leading-relaxed" style={{ color: "#78716c", fontFamily: "var(--font-geist-mono)" }}>
             <span className="font-semibold" style={{ color: "#15803d" }}>Live sync with the Google Sheet.</span>{" "}
             Status, due date, and owner changes made here write back to the sheet immediately. Data refreshes every 5 minutes.{" "}
-            <span className="font-semibold" style={{ color: "#57534e" }}>Last loaded: {process.env.NEXT_PUBLIC_BUILD_TIME ?? LAST_SYNCED}.</span>
+            <span className="font-semibold" style={{ color: "#57534e" }}>Last loaded: {loadedAt ?? LAST_SYNCED}.</span>
           </p>
         </div>
 

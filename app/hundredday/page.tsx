@@ -5,5 +5,10 @@ export const dynamic = "force-dynamic"; // always fetch fresh data from sheet
 
 export default async function HundredDayPage() {
   const workstreams = await fetchWorkstreams();
-  return <HundredDayDashboard workstreams={workstreams} />;
+  const loadedAt = new Date().toLocaleString("en-US", {
+    timeZone: "America/New_York",
+    month: "short", day: "numeric", year: "numeric",
+    hour: "numeric", minute: "2-digit", hour12: true,
+  }) + " ET";
+  return <HundredDayDashboard workstreams={workstreams} loadedAt={loadedAt} />;
 }
