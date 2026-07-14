@@ -435,21 +435,39 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
                     <p className="text-xs italic" style={{ color: "#c0bdb8" }}>No subtasks yet — add one below.</p>
                   )}
                   {task.subtasks.map((sub, si) => (
-                    <label key={si} className="flex items-center gap-2 cursor-pointer group">
+                    <div key={si} className="flex items-center gap-2 group">
                       <input
                         type="checkbox"
                         checked={sub.done}
                         onChange={(e) => toggleSubtask(task.id, si, e.target.checked)}
                         className="rounded"
-                        style={{ accentColor: "#1a5c3a", width: "14px", height: "14px", flexShrink: 0 }}
+                        style={{ accentColor: "#1a5c3a", width: "14px", height: "14px", flexShrink: 0, cursor: "pointer" }}
                       />
-                      <span className="text-xs leading-relaxed" style={{
+                      <span className="text-xs leading-relaxed flex-1" style={{
                         color: sub.done ? "#c0bdb8" : "#57534e",
                         textDecoration: sub.done ? "line-through" : "none",
                       }}>
                         {sub.text}
                       </span>
-                    </label>
+                      <button
+                        onClick={async () => {
+                          const t = tasks.find((t) => t.id === task.id);
+                          if (!t) return;
+                          const updated = t.subtasks.filter((_, i) => i !== si);
+                          setTasks((prev) => prev.map((t) => t.id === task.id ? { ...t, subtasks: updated } : t));
+                          await fetch("/api/update-subtasks", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ taskId: task.id, taskDescription: task.description, workstreamId: workstream.id, subtasks: updated }),
+                          });
+                        }}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-xs rounded px-1"
+                        style={{ border: "none", background: "none", color: "#b91c1c", cursor: "pointer", flexShrink: 0 }}
+                        title="Delete subtask"
+                      >
+                        ✕
+                      </button>
+                    </div>
                   ))}
                 </div>
                 <div className="flex gap-2 mt-3">
