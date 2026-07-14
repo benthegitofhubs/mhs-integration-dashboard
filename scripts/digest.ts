@@ -78,21 +78,28 @@ async function main() {
       continue;
     }
 
+    // Parse leader from the "Leader: X | Supporting: ..." header row
+    const leaderRow = sheetRows.slice(0, headerIdx).find(r =>
+      r[0]?.toLowerCase().startsWith("leader:")
+    );
+    const leaderFromSheet = leaderRow
+      ? (leaderRow[0].match(/^Leader:\s*([^|]+)/i)?.[1]?.trim() || "")
+      : "";
+
     const header = sheetRows[headerIdx].map(c => c?.toLowerCase().trim());
     const descCol   = header.findIndex(h => h.includes("work item"));
     const statusCol = header.findIndex(h => h === "status");
-    const ownerCol  = header.findIndex(h => h === "owner");
     const dueCol    = header.findIndex(h => h.includes("due date"));
     const notesCol  = header.findIndex(h => h.includes("notes"));
 
     if (descCol === -1) {
-      results.push({ name: ws.name, health: staticHealth(), leader: ws.leader || "" });
+      results.push({ name: ws.name, health: staticHealth(), leader: leaderFromSheet || ws.leader || "" });
       continue;
     }
 
     const dataRows = sheetRows.slice(headerIdx + 1).filter(r => r[descCol]?.trim());
     if (dataRows.length === 0) {
-      results.push({ name: ws.name, health: staticHealth(), leader: ws.leader || "" });
+      results.push({ name: ws.name, health: staticHealth(), leader: leaderFromSheet || ws.leader || "" });
       continue;
     }
 
@@ -101,11 +108,11 @@ async function main() {
       description: r[descCol]?.trim() ?? "",
       status:      toStatus(r[statusCol]?.trim()),
       dueDate:     dueCol !== -1 ? (r[dueCol]?.trim() || "") : "",
-      owner:       ownerCol !== -1 ? (r[ownerCol]?.trim() || "") : "",
+      owner:       "",
       notes:       notesCol !== -1 ? (r[notesCol]?.trim() || "") : "",
     }));
 
-    const leader = tasks.map(t => t.owner).find(Boolean) || ws.leader || "";
+    const leader = leaderFromSheet || ws.leader || "";
     const health = rollupWorkstreamHealth(tasks.map(t => calcTaskHealth(t, today))) ?? "On Track";
     results.push({ name: ws.name, health, leader });
   }

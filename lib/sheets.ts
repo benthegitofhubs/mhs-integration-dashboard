@@ -81,6 +81,14 @@ export async function fetchWorkstreams(): Promise<Workstream100[]> {
 
         if (descCol === -1) return ws;
 
+        // Parse leader from "Leader: X | Supporting: ..." header row above the column headers
+        const leaderRow = rows.slice(0, headerIdx).find(r =>
+          r[0]?.toLowerCase().startsWith("leader:")
+        );
+        const leaderFromSheet = leaderRow
+          ? (leaderRow[0].match(/^Leader:\s*([^|]+)/i)?.[1]?.trim() || "")
+          : "";
+
         const dataRows = rows.slice(headerIdx + 1);
 
         // Build lookup: taskId → static task (for stable id/description)
@@ -111,7 +119,7 @@ export async function fetchWorkstreams(): Promise<Workstream100[]> {
             };
           });
 
-        return { ...ws, tasks: updatedTasks };
+        return { ...ws, tasks: updatedTasks, leader: leaderFromSheet || ws.leader };
       })
     );
 
