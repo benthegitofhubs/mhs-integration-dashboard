@@ -34,6 +34,11 @@ function deriveWorkstreamStatus(ws: Workstream100): Status100 | null {
 
 export default function HundredDayDashboard({ workstreams, loadedAt }: { workstreams: Workstream100[]; loadedAt?: string }) {
   const [activeTab, setActiveTab] = useState<"workstreams" | "by-owner" | "ai-automations" | "needs-action">("workstreams");
+  const [leaders, setLeaders] = useState<Record<string, string>>(
+    Object.fromEntries(workstreams.map((ws) => [ws.id, ws.leader]))
+  );
+  const [editingLeader, setEditingLeader] = useState<string | null>(null);
+  const [leaderDraft, setLeaderDraft] = useState("");
   const allTasks   = workstreams.flatMap((ws) => ws.tasks);
   const total      = allTasks.length;
   const complete   = allTasks.filter((t) => t.status === "Complete").length;
@@ -316,7 +321,40 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
                     </span>
                   </a>
                   <span className="text-xs" style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ws.flagshipGoal.replace(/^\d+\s*·\s*/, "")}</span>
-                  <span className="text-xs" style={{ color: "#6b7280", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ws.leader}</span>
+                  {editingLeader === ws.id ? (
+                    <input
+                      autoFocus
+                      type="text"
+                      value={leaderDraft}
+                      onChange={(e) => setLeaderDraft(e.target.value)}
+                      onBlur={async () => {
+                        setEditingLeader(null);
+                        const trimmed = leaderDraft.trim();
+                        if (!trimmed || trimmed === leaders[ws.id]) return;
+                        setLeaders((prev) => ({ ...prev, [ws.id]: trimmed }));
+                        await fetch("/api/update-leader", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ workstreamId: ws.id, leader: trimmed }),
+                        });
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                        if (e.key === "Escape") setEditingLeader(null);
+                      }}
+                      className="text-xs rounded px-1 py-0.5 focus:outline-none"
+                      style={{ border: "1px solid #1a5c3a", color: "#374151", width: "140px" }}
+                    />
+                  ) : (
+                    <span
+                      className="text-xs cursor-pointer hover:underline"
+                      style={{ color: "#6b7280", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+                      onClick={() => { setLeaderDraft(leaders[ws.id] || ""); setEditingLeader(ws.id); }}
+                      title="Click to edit leader"
+                    >
+                      {leaders[ws.id] || "—"}
+                    </span>
+                  )}
                   {/* Derived status from task statuses */}
                   <div>
                     {st ? (
