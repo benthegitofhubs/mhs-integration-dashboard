@@ -249,12 +249,12 @@ export default function HundredDayDashboard({ workstreams }: { workstreams: Work
           {/* Health legend */}
           <div className="mb-6 rounded-lg overflow-hidden" style={{ border: "1px solid #e5e3de" }}>
             <div style={{ backgroundColor: "white" }}>
-              {([
-                { label: "On Track",  bg: "#dcfce7", color: "#15803d", desc: "Due date has not passed and no manual flag — progressing normally." },
-                { label: "At Risk",   bg: "#fef9c3", color: "#854d0e", desc: "Manually flagged At Risk — falling behind but not yet stopped." },
-                { label: "Blocked",   bg: "#ffedd5", color: "#c2410c", desc: "Manually flagged Blocked — stopped, needs external action to proceed." },
-                { label: "Off Track", bg: "#fee2e2", color: "#b91c1c", desc: "Due date has passed and the task is not yet complete." },
-              ]).map((row, i, arr) => (
+              {(([
+                { label: "On Track"  as TaskHealth, desc: "Due date has not passed and no manual flag — progressing normally." },
+                { label: "At Risk"   as TaskHealth, desc: "Manually flagged At Risk — falling behind but not yet stopped." },
+                { label: "Blocked"   as TaskHealth, desc: "Manually flagged Blocked — stopped, needs external action to proceed." },
+                { label: "Off Track" as TaskHealth, desc: "Due date has passed and the task is not yet complete." },
+              ]).map((row) => ({ ...row, ...HEALTH_META[row.label] }))).map((row, i, arr) => (
                 <div key={row.label} className="grid px-5 py-2.5 items-center gap-4"
                   style={{ gridTemplateColumns: "110px 1fr", borderBottom: i < arr.length - 1 ? "1px solid #f0efe9" : "none" }}>
                   <span className="text-xs font-semibold px-2 py-0.5 rounded"
