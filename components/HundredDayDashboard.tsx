@@ -282,7 +282,7 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
           <div className="overflow-x-auto" style={{ border: "1px solid #e5e3de", borderRadius: "6px", backgroundColor: "white" }}>
             <div className="grid text-xs uppercase tracking-widest font-semibold px-5 py-2.5"
               style={{
-                gridTemplateColumns: "28px 1fr 130px 160px 100px 110px 80px 44px",
+                gridTemplateColumns: "28px 1fr 120px 150px 150px 110px 80px 44px",
                 backgroundColor: "#f7f6f3",
                 color: "#9ca3af",
                 fontFamily: "var(--font-geist-mono)",
@@ -309,7 +309,7 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
               return (
                 <div key={ws.id} className="grid px-5 py-2.5 hover:bg-stone-50 transition-colors"
                   style={{
-                    gridTemplateColumns: "28px 1fr 130px 160px 100px 110px 80px 44px",
+                    gridTemplateColumns: "28px 1fr 120px 150px 150px 110px 80px 44px",
                     borderBottom: i < workstreams.length - 1 ? "1px solid #f0efe9" : "none",
                     alignItems: "center",
                     gap: "8px",
