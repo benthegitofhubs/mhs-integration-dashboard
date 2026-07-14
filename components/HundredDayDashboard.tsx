@@ -393,7 +393,7 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
                           }}
                           title={override ? "Manual override — select Auto to clear" : "Auto-computed — select to override"}
                         >
-                          <option value="">Auto{st ? `: ${st}` : ""}</option>
+                          <option value="">{st ?? "—"}</option>
                           {HEALTH_OPTIONS.map((h) => (
                             <option key={h} value={h}>{h}</option>
                           ))}

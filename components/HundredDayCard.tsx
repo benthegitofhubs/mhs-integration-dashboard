@@ -294,7 +294,7 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
                       style={{ backgroundColor: bg, color, border: "none", fontFamily: "var(--font-geist-mono)" }}
                       title={isOverride ? "Manual override — select Auto to clear" : "Auto-computed — select to override"}
                     >
-                      <option value="">Auto: {derivedStatus ?? "—"}</option>
+                      <option value="">{derivedStatus ?? "—"}</option>
                       {HEALTH_OPTIONS.map((h) => (
                         <option key={h} value={h}>{h}</option>
                       ))}
