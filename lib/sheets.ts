@@ -17,7 +17,7 @@ const WS_TAB_MAP: Record<string, string> = {
   "people":             "People Services",
   "legal":              "Legal & Regulatory",
   "comms":              "Communications",
-  "misc":               "Miscellaneous",
+  "misc":               "Service Experience",
 };
 
 const SPREADSHEET_ID = "1Gm5NDC6wpi2TlejZ5Om3065QeXVHevZ7";

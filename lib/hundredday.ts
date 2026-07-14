@@ -315,10 +315,10 @@ export const WORKSTREAMS_100: Workstream100[] = [
     ],
   },
 
-  // ── MISCELLANEOUS ─────────────────────────────────────────────────────────
+  // ── SERVICE EXPERIENCE ────────────────────────────────────────────────────
   {
     id: "misc",
-    name: "Miscellaneous",
+    name: "Service Experience",
     leader: "TBD",
     flagshipGoal: "5 · Category Leadership",
     goal: "TBD",
