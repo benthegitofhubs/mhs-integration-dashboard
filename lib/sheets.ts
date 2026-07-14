@@ -1,5 +1,22 @@
 import { google } from "googleapis";
-import { Workstream100, Task100, Status100, WORKSTREAMS_100 } from "./hundredday";
+import { Workstream100, Task100, Status100, Subtask, WORKSTREAMS_100 } from "./hundredday";
+
+function parseSubtasks(raw: string | undefined): Subtask[] {
+  if (!raw?.trim()) return [];
+  return raw
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const done = /^\[x\]/i.test(line);
+      const text = line.replace(/^\[[x ]\]\s*/i, "").trim();
+      return { text, done };
+    });
+}
+
+function serializeSubtasks(subtasks: Subtask[]): string {
+  return subtasks.map((s) => `${s.done ? "[x]" : "[ ]"} ${s.text}`).join("\n");
+}
 
 // Map workstream id → sheet tab name
 const WS_TAB_MAP: Record<string, string> = {
@@ -72,12 +89,14 @@ export async function fetchWorkstreams(): Promise<Workstream100[]> {
 
         // Detect column positions from header
         const header = rows[headerIdx].map((c) => c?.toLowerCase().trim());
-        const descCol   = header.findIndex((h) => h.includes("work item"));
-        const dateCol   = header.findIndex((h) => h.includes("due date"));
-        const ownerCol  = header.findIndex((h) => h === "owner");
-        const statusCol = header.findIndex((h) => h === "status");
-        const notesCol  = header.findIndex((h) => h.includes("notes"));
-        const idCol     = header.findIndex((h) => h === "task id");
+        const rankCol    = header.findIndex((h) => h.includes("ranking"));
+        const descCol    = header.findIndex((h) => h.includes("work item"));
+        const subtaskCol = header.findIndex((h) => h.includes("subtask"));
+        const dateCol    = header.findIndex((h) => h.includes("due date"));
+        const ownerCol   = header.findIndex((h) => h === "owner");
+        const statusCol  = header.findIndex((h) => h === "status");
+        const notesCol   = header.findIndex((h) => h.includes("notes"));
+        const idCol      = header.findIndex((h) => h === "task id");
 
         if (descCol === -1) return ws;
 
@@ -109,9 +128,13 @@ export async function fetchWorkstreams(): Promise<Workstream100[]> {
               (sheetId ? staticById[sheetId] : null) ??
               staticByDesc[desc.slice(0, 40)] ??
               null;
+            const rankRaw = rankCol !== -1 ? r[rankCol]?.trim() : "";
+            const rankNum = rankRaw ? parseInt(rankRaw, 10) : NaN;
             return {
               id:          sheetId || staticTask?.id || `${ws.id}-row${i}`,
               description: desc,
+              ranking:     isNaN(rankNum) ? null : rankNum,
+              subtasks:    parseSubtasks(subtaskCol !== -1 ? r[subtaskCol] : ""),
               dueDate:     r[dateCol]?.trim() || staticTask?.dueDate || "",
               owner:       r[ownerCol]?.trim() || staticTask?.owner || "",
               status:      toStatus(r[statusCol]?.trim()),
@@ -238,5 +261,55 @@ export async function writeStatus(
     range: `'${tab}'!${colLetter}${rowIdx + 1}`,
     valueInputOption: "RAW",
     requestBody: { values: [[newStatus]] },
+  });
+}
+
+// Write subtasks back to the sheet for a given task.
+export async function writeSubtasks(
+  workstreamId: string,
+  taskDescription: string,
+  subtasks: Subtask[],
+  taskId?: string
+): Promise<void> {
+  const tab = WS_TAB_MAP[workstreamId];
+  if (!tab) return;
+
+  const auth = getAuth();
+  const sheets = google.sheets({ version: "v4", auth });
+
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `'${tab}'!A:P`,
+  });
+  const rows = (res.data.values ?? []) as string[][];
+
+  const headerIdx = rows.findIndex((r) =>
+    r.some((c) => c?.toLowerCase().includes("work item"))
+  );
+  if (headerIdx === -1) return;
+
+  const header = rows[headerIdx].map((c) => c?.toLowerCase().trim());
+  const descCol     = header.findIndex((h) => h.includes("work item"));
+  const subtaskCol  = header.findIndex((h) => h.includes("subtask"));
+  const idCol       = header.findIndex((h) => h === "task id");
+  if (descCol === -1 || subtaskCol === -1) return;
+
+  let rowIdx = -1;
+  if (taskId && idCol !== -1) {
+    rowIdx = rows.findIndex((r, i) => i > headerIdx && r[idCol]?.trim() === taskId);
+  }
+  if (rowIdx === -1) {
+    rowIdx = rows.findIndex(
+      (r, i) => i > headerIdx && r[descCol]?.trim().slice(0, 40) === taskDescription.slice(0, 40)
+    );
+  }
+  if (rowIdx === -1) return;
+
+  const colLetter = String.fromCharCode(65 + subtaskCol);
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `'${tab}'!${colLetter}${rowIdx + 1}`,
+    valueInputOption: "RAW",
+    requestBody: { values: [[serializeSubtasks(subtasks)]] },
   });
 }

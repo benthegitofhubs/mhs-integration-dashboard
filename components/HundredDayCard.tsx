@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Workstream100, Task100, Status100 } from "@/lib/hundredday";
+import { Workstream100, Task100, Status100, Subtask } from "@/lib/hundredday";
 import { STATUS_BG, STATUS_COLOR } from "./HundredDayDashboard";
 import { calcTaskHealth, HEALTH_META } from "@/lib/taskHealth";
 
@@ -51,6 +51,8 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
   );
   const [editingField, setEditingField] = useState<{ taskId: string; field: "dueDate" | "owner" } | null>(null);
   const [fieldDraft, setFieldDraft] = useState("");
+  const [subtasksOpen, setSubtasksOpen] = useState<Record<string, boolean>>({});
+  const [newSubtaskDraft, setNewSubtaskDraft] = useState<Record<string, string>>({});
   const [imNotes, setImNotes] = useState<IMNote[]>([]);
   const [imDraft, setImDraft] = useState("");
   const [imHistoryOpen, setImHistoryOpen] = useState(false);
@@ -110,6 +112,33 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ taskId, taskDescription: task?.description, workstreamId: workstream.id, field, value }),
+    });
+  };
+
+  const toggleSubtask = async (taskId: string, subtaskIdx: number, done: boolean) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+    const updated = task.subtasks.map((s, i) => i === subtaskIdx ? { ...s, done } : s);
+    setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, subtasks: updated } : t));
+    await fetch("/api/update-subtasks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ taskId, taskDescription: task.description, workstreamId: workstream.id, subtasks: updated }),
+    });
+  };
+
+  const addSubtask = async (taskId: string) => {
+    const text = (newSubtaskDraft[taskId] || "").trim();
+    if (!text) return;
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+    const updated: Subtask[] = [...task.subtasks, { text, done: false }];
+    setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, subtasks: updated } : t));
+    setNewSubtaskDraft((prev) => ({ ...prev, [taskId]: "" }));
+    await fetch("/api/update-subtasks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ taskId, taskDescription: task.description, workstreamId: workstream.id, subtasks: updated }),
     });
   };
 
@@ -231,12 +260,13 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
         <div style={{ borderTop: "1px solid #e5e3de" }}>
           <div className="grid text-xs uppercase tracking-widest font-semibold px-6 py-2.5"
             style={{
-              gridTemplateColumns: "1fr 110px 110px 90px 120px",
+              gridTemplateColumns: "36px 1fr 110px 110px 90px 120px",
               backgroundColor: "#f7f6f3",
               color: "#9ca3af",
               fontFamily: "var(--font-geist-mono)",
               borderBottom: "1px solid #e5e3de",
             }}>
+            <span>#</span>
             <span>Task</span>
             <button
               onClick={() => setSortByDate((s) => s === "asc" ? "desc" : s === "desc" ? null : "asc")}
@@ -253,16 +283,49 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
           {sortedTasks.map((task, idx) => {
             const health = calcTaskHealth(task);
             const hMeta  = HEALTH_META[health.status];
+            const hasSubtasks = task.subtasks.length > 0;
+            const subtaskOpen = !!subtasksOpen[task.id];
+            const doneCount = task.subtasks.filter((s) => s.done).length;
             return (
-            <div key={task.id} className="grid px-6 py-4 hover:bg-stone-50 transition-colors"
+            <div key={task.id}
+              style={{ borderBottom: idx < tasks.length - 1 ? "1px solid #f0efe9" : "none" }}>
+            <div className="grid px-6 py-4 hover:bg-stone-50 transition-colors"
               style={{
-                gridTemplateColumns: "1fr 110px 110px 90px 120px",
-                borderBottom: idx < tasks.length - 1 ? "1px solid #f0efe9" : "none",
+                gridTemplateColumns: "36px 1fr 110px 110px 90px 120px",
                 alignItems: "start",
                 gap: "12px",
               }}>
+
+              {/* Ranking */}
+              <div className="pt-0.5 flex items-center justify-center">
+                {task.ranking != null ? (
+                  <span className="text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center"
+                    style={{ backgroundColor: "#f0efe9", color: "#78716c", fontFamily: "var(--font-geist-mono)" }}>
+                    {task.ranking}
+                  </span>
+                ) : (
+                  <span style={{ color: "#d6d3cd", fontFamily: "var(--font-geist-mono)", fontSize: "11px" }}>—</span>
+                )}
+              </div>
+
               <div>
-                <p className="text-sm leading-relaxed" style={{ color: "#1a1a1a" }}>{task.description}</p>
+                <div className="flex items-start gap-2">
+                  <p className="text-sm leading-relaxed flex-1" style={{ color: "#1a1a1a" }}>{task.description}</p>
+                  <button
+                    onClick={() => setSubtasksOpen((prev) => ({ ...prev, [task.id]: !prev[task.id] }))}
+                    className="flex-shrink-0 flex items-center gap-1 text-xs rounded px-1.5 py-0.5 mt-0.5 transition-colors"
+                    style={{
+                      border: "1px solid #e5e3de",
+                      color: hasSubtasks ? "#57534e" : "#c0bdb8",
+                      backgroundColor: subtaskOpen ? "#f0efe9" : "transparent",
+                      cursor: "pointer",
+                      fontFamily: "var(--font-geist-mono)",
+                    }}
+                    title={subtaskOpen ? "Hide subtasks" : "Show subtasks"}
+                  >
+                    {hasSubtasks ? `${doneCount}/${task.subtasks.length}` : "+"} ☰
+                  </button>
+                </div>
                 {editingNote === task.id ? (
                   <textarea
                     autoFocus
@@ -362,6 +425,53 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
                   {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
+            </div>
+
+            {/* Subtasks panel */}
+            {subtaskOpen && (
+              <div className="px-6 pb-4" style={{ backgroundColor: "#fafaf8", borderTop: "1px solid #f0efe9" }}>
+                <div className="pt-3 space-y-1">
+                  {task.subtasks.length === 0 && (
+                    <p className="text-xs italic" style={{ color: "#c0bdb8" }}>No subtasks yet — add one below.</p>
+                  )}
+                  {task.subtasks.map((sub, si) => (
+                    <label key={si} className="flex items-center gap-2 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={sub.done}
+                        onChange={(e) => toggleSubtask(task.id, si, e.target.checked)}
+                        className="rounded"
+                        style={{ accentColor: "#1a5c3a", width: "14px", height: "14px", flexShrink: 0 }}
+                      />
+                      <span className="text-xs leading-relaxed" style={{
+                        color: sub.done ? "#c0bdb8" : "#57534e",
+                        textDecoration: sub.done ? "line-through" : "none",
+                      }}>
+                        {sub.text}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                <div className="flex gap-2 mt-3">
+                  <input
+                    type="text"
+                    value={newSubtaskDraft[task.id] || ""}
+                    onChange={(e) => setNewSubtaskDraft((prev) => ({ ...prev, [task.id]: e.target.value }))}
+                    onKeyDown={(e) => { if (e.key === "Enter") addSubtask(task.id); }}
+                    placeholder="Add subtask…"
+                    className="flex-1 text-xs rounded px-2 py-1 focus:outline-none"
+                    style={{ border: "1px solid #d1cfc9", backgroundColor: "white", color: "#374151" }}
+                  />
+                  <button
+                    onClick={() => addSubtask(task.id)}
+                    className="text-xs rounded px-3 py-1 font-semibold"
+                    style={{ backgroundColor: "#1a5c3a", color: "white", border: "none", cursor: "pointer" }}
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+            )}
             </div>
             );
           })}

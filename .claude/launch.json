@@ -2,10 +2,11 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "mhs-dashboard",
+      "name": "mhs-integration-dashboard",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
-      "port": 3000
+      "runtimeArgs": ["run", "dev", "--", "--port", "3111"],
+      "port": 3111,
+      "cwd": "/Users/benjamingreenzweig/Sites/mhs-integration-dashboard"
     }
   ]
 }
