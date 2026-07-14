@@ -46,6 +46,7 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
   const [saving, setSaving] = useState<string | null>(null);
   const [sortByDate, setSortByDate] = useState<"asc" | "desc" | null>(null);
   const [sortByRank, setSortByRank] = useState(false);
+  const [sortByOwner, setSortByOwner] = useState(false);
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [noteValues, setNoteValues] = useState<Record<string, string>>(
     Object.fromEntries(workstream.tasks.map((t) => [t.id, t.notes]))
@@ -155,6 +156,9 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
         if (b.ranking == null) return -1;
         return a.ranking - b.ranking;
       });
+    }
+    if (sortByOwner) {
+      return [...tasks].sort((a, b) => (a.owner || "zzz").localeCompare(b.owner || "zzz"));
     }
     if (sortByDate) {
       return [...tasks].sort((a, b) => {
@@ -359,7 +363,16 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
             >
               Due Date {sortByDate === "asc" ? "↑" : sortByDate === "desc" ? "↓" : "↕"}
             </button>
-            <span>Owner</span>
+            <button
+              onClick={() => {
+                setSortByOwner((o) => !o);
+                if (!sortByOwner) { setSortByDate(null); setSortByRank(false); }
+              }}
+              className="text-left flex items-center gap-1"
+              style={{ background: "none", border: "none", cursor: "pointer", color: sortByOwner ? "#1a5c3a" : "#9ca3af", fontFamily: "var(--font-geist-mono)", fontSize: "inherit", fontWeight: "inherit", letterSpacing: "inherit", textTransform: "inherit", padding: 0 }}
+            >
+              Owner{sortByOwner ? " ↑" : ""}
+            </button>
             <span>Health</span>
             <span>Status</span>
           </div>
