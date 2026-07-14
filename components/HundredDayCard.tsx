@@ -45,6 +45,7 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
   const [expanded, setExpanded] = useState(false);
   const [saving, setSaving] = useState<string | null>(null);
   const [sortByDate, setSortByDate] = useState<"asc" | "desc" | null>(null);
+  const [sortByRank, setSortByRank] = useState(false);
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [noteValues, setNoteValues] = useState<Record<string, string>>(
     Object.fromEntries(workstream.tasks.map((t) => [t.id, t.notes]))
@@ -142,13 +143,24 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
     });
   };
 
-  const sortedTasks = sortByDate
-    ? [...tasks].sort((a, b) => {
+  const sortedTasks = (() => {
+    if (sortByRank) {
+      return [...tasks].sort((a, b) => {
+        if (a.ranking == null && b.ranking == null) return 0;
+        if (a.ranking == null) return 1;
+        if (b.ranking == null) return -1;
+        return a.ranking - b.ranking;
+      });
+    }
+    if (sortByDate) {
+      return [...tasks].sort((a, b) => {
         const da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
         const db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
         return sortByDate === "asc" ? da - db : db - da;
-      })
-    : tasks;
+      });
+    }
+    return tasks;
+  })();
 
   const handleStatusChange = async (taskId: string, newStatus: Status100) => {
     setSaving(taskId);
@@ -266,7 +278,17 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
               fontFamily: "var(--font-geist-mono)",
               borderBottom: "1px solid #e5e3de",
             }}>
-            <span>#</span>
+            <button
+              onClick={() => {
+                setSortByRank((r) => !r);
+                if (!sortByRank) setSortByDate(null);
+              }}
+              className="text-left flex items-center"
+              style={{ background: "none", border: "none", cursor: "pointer", color: sortByRank ? "#1a5c3a" : "#9ca3af", fontFamily: "var(--font-geist-mono)", fontSize: "inherit", fontWeight: "inherit", letterSpacing: "inherit", textTransform: "inherit", padding: 0 }}
+              title="Sort by ranking"
+            >
+              #{sortByRank ? " ↑" : ""}
+            </button>
             <span>Task</span>
             <button
               onClick={() => setSortByDate((s) => s === "asc" ? "desc" : s === "desc" ? null : "asc")}
