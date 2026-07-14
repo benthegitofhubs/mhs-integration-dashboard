@@ -39,6 +39,9 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
   );
   const [editingLeader, setEditingLeader] = useState<string | null>(null);
   const [leaderDraft, setLeaderDraft] = useState("");
+  const [statusOverrides, setStatusOverrides] = useState<Record<string, string | null>>(
+    Object.fromEntries(workstreams.map((ws) => [ws.id, ws.statusOverride ?? null]))
+  );
   const allTasks   = workstreams.flatMap((ws) => ws.tasks);
   const total      = allTasks.length;
   const complete   = allTasks.filter((t) => t.status === "Complete").length;
@@ -355,16 +358,42 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
                       {leaders[ws.id] || "—"}
                     </span>
                   )}
-                  {/* Derived status from task statuses */}
+                  {/* Derived status — dropdown to override */}
                   <div>
-                    {st ? (
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded"
-                        style={{ backgroundColor: STATUS_BG[st], color: STATUS_COLOR[st], fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap" }}>
-                        {st}
-                      </span>
-                    ) : (
-                      <span className="text-xs" style={{ color: "#d1d5db", fontFamily: "var(--font-geist-mono)" }}>—</span>
-                    )}
+                    {(() => {
+                      const HEALTH_OPTIONS: TaskHealth[] = ["On Track", "At Risk", "Blocked", "Off Track"];
+                      const override = statusOverrides[ws.id];
+                      const display = (override ?? st) as TaskHealth | null;
+                      const hm = display ? HEALTH_META[display] : null;
+                      return (
+                        <select
+                          value={override ?? ""}
+                          onChange={async (e) => {
+                            const val = e.target.value || null;
+                            setStatusOverrides((prev) => ({ ...prev, [ws.id]: val }));
+                            await fetch("/api/update-workstream-status", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ workstreamId: ws.id, status: val }),
+                            });
+                          }}
+                          className="text-xs font-semibold px-2 py-0.5 rounded cursor-pointer focus:outline-none"
+                          style={{
+                            backgroundColor: hm ? hm.bg : "#f3f4f6",
+                            color: hm ? hm.color : "#9ca3af",
+                            border: "none",
+                            fontFamily: "var(--font-geist-mono)",
+                            whiteSpace: "nowrap",
+                          }}
+                          title={override ? "Manual override — select Auto to clear" : "Auto-computed — select to override"}
+                        >
+                          <option value="">Auto{st ? `: ${st}` : ""}</option>
+                          {HEALTH_OPTIONS.map((h) => (
+                            <option key={h} value={h}>{h}</option>
+                          ))}
+                        </select>
+                      );
+                    })()}
                   </div>
                   {/* Pace-gap health */}
                   <div>
