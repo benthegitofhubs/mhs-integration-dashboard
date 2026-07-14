@@ -319,9 +319,9 @@ export const WORKSTREAMS_100: Workstream100[] = [
   {
     id: "misc",
     name: "Service Experience",
-    leader: "TBD",
+    leader: "Ben",
     flagshipGoal: "5 · Category Leadership",
-    goal: "TBD",
+    goal: "Every clinic has been visited and assessed against Radial's service experience standards. Gaps are identified, a site improvement plan exists for each location in need, and remediation is underway at ≥50% of those sites.",
     tasks: [
       { id: "misc-1", description: "Align financial hardship policy across the network", dueDate: "TBD", owner: "", status: "Not Started", notes: "Discussions to be scheduled." },
       { id: "misc-2", description: "Conduct in-person clinic aesthetic assessment and audit full customer journey at all 21 MHS locations; score each site on cleanliness, signage, furniture condition, brand alignment, and patient-facing environment quality; develop improvement plan/budget if necessary", dueDate: "TBD", owner: "", status: "Not Started", notes: "" },
