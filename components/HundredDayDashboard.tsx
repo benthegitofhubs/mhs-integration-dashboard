@@ -363,8 +363,14 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
                     {(() => {
                       const HEALTH_OPTIONS: TaskHealth[] = ["On Track", "At Risk", "Blocked", "Off Track"];
                       const override = statusOverrides[ws.id];
-                      const display = (override ?? st) as TaskHealth | null;
-                      const hm = display ? HEALTH_META[display] : null;
+                      // Override is a TaskHealth (HEALTH_META); derived `st` is a Status100 (STATUS_BG).
+                      const isOverride = override != null && override !== "";
+                      const bg = isOverride
+                        ? (HEALTH_META[override as TaskHealth]?.bg ?? "#f3f4f6")
+                        : (st ? STATUS_BG[st] : "#f3f4f6");
+                      const color = isOverride
+                        ? (HEALTH_META[override as TaskHealth]?.color ?? "#9ca3af")
+                        : (st ? STATUS_COLOR[st] : "#9ca3af");
                       return (
                         <select
                           value={override ?? ""}
@@ -379,8 +385,8 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
                           }}
                           className="text-xs font-semibold px-2 py-0.5 rounded cursor-pointer focus:outline-none"
                           style={{
-                            backgroundColor: hm ? hm.bg : "#f3f4f6",
-                            color: hm ? hm.color : "#9ca3af",
+                            backgroundColor: bg,
+                            color,
                             border: "none",
                             fontFamily: "var(--font-geist-mono)",
                             whiteSpace: "nowrap",

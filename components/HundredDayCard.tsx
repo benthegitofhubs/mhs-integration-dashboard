@@ -266,9 +266,16 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
               {/* Workstream health — shows override if set, otherwise derived; click to override */}
               {(() => {
                 const HEALTH_OPTIONS: TaskHealth[] = ["On Track", "At Risk", "Blocked", "Off Track"];
-                const displayHealth = (statusOverride as TaskHealth | null) ?? derivedStatus;
-                if (!displayHealth) return null;
-                const hm = HEALTH_META[displayHealth as TaskHealth];
+                // Override values are TaskHealth (HEALTH_META); derived is a Status100 (STATUS_BG).
+                const isOverride = statusOverride != null && statusOverride !== "";
+                const display = isOverride ? statusOverride : derivedStatus;
+                if (!display) return null;
+                const bg = isOverride
+                  ? (HEALTH_META[display as TaskHealth]?.bg ?? "#f3f4f6")
+                  : (STATUS_BG[display as Status100] ?? "#f3f4f6");
+                const color = isOverride
+                  ? (HEALTH_META[display as TaskHealth]?.color ?? "#374151")
+                  : (STATUS_COLOR[display as Status100] ?? "#374151");
                 return (
                   <>
                     <span style={{ color: "#d1cfc9" }}>·</span>
@@ -284,15 +291,15 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
                         });
                       }}
                       className="text-xs font-semibold px-2 py-0.5 rounded cursor-pointer focus:outline-none"
-                      style={{ backgroundColor: hm.bg, color: hm.color, border: "none", fontFamily: "var(--font-geist-mono)" }}
-                      title={statusOverride ? "Manual override — click to change or clear" : "Auto-computed — click to override"}
+                      style={{ backgroundColor: bg, color, border: "none", fontFamily: "var(--font-geist-mono)" }}
+                      title={isOverride ? "Manual override — select Auto to clear" : "Auto-computed — select to override"}
                     >
                       <option value="">Auto: {derivedStatus ?? "—"}</option>
                       {HEALTH_OPTIONS.map((h) => (
                         <option key={h} value={h}>{h}</option>
                       ))}
                     </select>
-                    {statusOverride && (
+                    {isOverride && (
                       <span className="text-xs" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }} title="Manual override active">⚙</span>
                     )}
                   </>
