@@ -1,7 +1,7 @@
 import { fetchWorkstreams } from "@/lib/sheets";
 import HundredDayDashboard from "@/components/HundredDayDashboard";
 
-export const revalidate = 300; // re-fetch from sheet every 5 minutes
+export const dynamic = "force-dynamic"; // always fetch fresh data from sheet
 
 export default async function HundredDayPage() {
   const workstreams = await fetchWorkstreams();
