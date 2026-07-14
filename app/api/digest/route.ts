@@ -4,7 +4,13 @@ import { calcTaskHealth, rollupWorkstreamHealth } from "@/lib/taskHealth";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const token = searchParams.get("token");
+  const expected = process.env.DIGEST_API_TOKEN;
+  if (expected && token !== expected) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const workstreams = await fetchWorkstreams();
 
   const today = new Date();
