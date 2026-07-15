@@ -56,12 +56,12 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
     workstreams.map((ws) => [ws.id, deriveWorkstreamStatus(ws)])
   ) as Record<string, Status100>;
 
-  const wsCounts: Record<Status100, number> = {
-    "Not Started": workstreams.filter((ws) => wsDerived[ws.id] === "Not Started").length,
-    "In Progress": workstreams.filter((ws) => wsDerived[ws.id] === "In Progress").length,
-    "At Risk":     workstreams.filter((ws) => wsDerived[ws.id] === "At Risk").length,
-    "Blocked":     workstreams.filter((ws) => wsDerived[ws.id] === "Blocked").length,
-    "Complete":    workstreams.filter((ws) => wsDerived[ws.id] === "Complete").length,
+  // PROGRESS = "has work started?" — a workstream counts as In Progress if any
+  // task has moved past Not Started (incl. At Risk / Blocked / Complete), so
+  // Not Started + In Progress always covers all workstreams.
+  const progressCounts = {
+    "Not Started": workstreams.filter((ws) => !ws.tasks.some((t) => t.status !== "Not Started")).length,
+    "In Progress": workstreams.filter((ws) => ws.tasks.some((t) => t.status !== "Not Started")).length,
   };
 
   // Effective workstream health: manual override wins, else task rollup, else
@@ -242,11 +242,11 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
             <div style={{ flex: "2" }}>
               <div className="text-xs font-semibold uppercase tracking-widest px-5 pt-2 pb-1" style={{ color: "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>Progress</div>
               <div className="grid grid-cols-1 gap-2 px-5 pb-4">
-                {(["Not Started", "In Progress"] as Status100[]).map((s) => (
+                {(["Not Started", "In Progress"] as const).map((s) => (
                   <div key={s} className="flex items-center justify-between px-3 py-1.5 rounded"
                     style={{ backgroundColor: STATUS_BG[s] }}>
                     <span className="text-xs font-semibold" style={{ color: STATUS_COLOR[s], fontFamily: "var(--font-geist-mono)" }}>{s}</span>
-                    <span className="text-xs font-bold" style={{ color: STATUS_COLOR[s], fontFamily: "var(--font-geist-mono)" }}>{wsCounts[s]}</span>
+                    <span className="text-xs font-bold" style={{ color: STATUS_COLOR[s], fontFamily: "var(--font-geist-mono)" }}>{progressCounts[s]}</span>
                   </div>
                 ))}
               </div>
