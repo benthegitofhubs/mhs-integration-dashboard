@@ -242,7 +242,7 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
             <div style={{ flex: "2" }}>
               <div className="text-xs font-semibold uppercase tracking-widest px-5 pt-2 pb-1" style={{ color: "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>Progress</div>
               <div className="grid grid-cols-1 gap-2 px-5 pb-4">
-                {(["Not Started", "In Progress", "At Risk", "Blocked", "Complete"] as Status100[]).map((s) => (
+                {(["Not Started", "In Progress"] as Status100[]).map((s) => (
                   <div key={s} className="flex items-center justify-between px-3 py-1.5 rounded"
                     style={{ backgroundColor: STATUS_BG[s] }}>
                     <span className="text-xs font-semibold" style={{ color: STATUS_COLOR[s], fontFamily: "var(--font-geist-mono)" }}>{s}</span>
