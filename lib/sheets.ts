@@ -67,30 +67,34 @@ const DASHBOARD_ID_ORDER = [
   "payer", "brain-medicine", "misc",
 ];
 
-// Read canonical workstream names from Dashboard!B (source of truth).
-// Returns id → name. Positional match anchored to the "Workstream" header row.
-async function fetchDashboardNames(
+// Read canonical workstream name + 100-Day Goal from the Dashboard tab
+// (source of truth): column B = name, column E = "Final - 100-Day Goal"
+// (falls back to column D "Draft" if E is blank). Positional match anchored
+// to the "Workstream" header row.
+async function fetchDashboardMeta(
   sheets: ReturnType<typeof google.sheets>
-): Promise<Record<string, string>> {
-  const map: Record<string, string> = {};
+): Promise<Record<string, { name: string; goal: string }>> {
+  const map: Record<string, { name: string; goal: string }> = {};
   try {
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: "'Dashboard'!A1:B40",
+      range: "'Dashboard'!A1:E40",
     });
     const rows = (res.data.values ?? []) as string[][];
     const headerIdx = rows.findIndex((r) => r[1]?.toLowerCase().trim() === "workstream");
     if (headerIdx === -1) return map;
     const dataRows = rows
       .slice(headerIdx + 1)
-      .map((r) => r[1]?.trim() || "")
-      .filter((name) => name && name.toUpperCase() !== "TOTAL");
-    dataRows.forEach((name, i) => {
+      .filter((r) => r[1]?.trim() && r[1].trim().toUpperCase() !== "TOTAL");
+    dataRows.forEach((r, i) => {
       const id = DASHBOARD_ID_ORDER[i];
-      if (id) map[id] = name;
+      if (!id) return;
+      const name = r[1]?.trim() || "";
+      const goal = r[4]?.trim() || r[3]?.trim() || ""; // E (Final), fall back to D (Draft)
+      map[id] = { name, goal };
     });
   } catch {
-    // Dashboard unreadable — fall back to static names
+    // Dashboard unreadable — fall back to static values
   }
   return map;
 }
@@ -102,7 +106,7 @@ export async function fetchWorkstreams(): Promise<Workstream100[]> {
     const auth = getAuth();
     const sheets = google.sheets({ version: "v4", auth });
 
-    const dashboardNames = await fetchDashboardNames(sheets);
+    const dashboardMeta = await fetchDashboardMeta(sheets);
 
     const results = await Promise.all(
       WORKSTREAMS_100.map(async (ws) => {
@@ -194,8 +198,12 @@ export async function fetchWorkstreams(): Promise<Workstream100[]> {
       })
     );
 
-    // Apply canonical workstream names from the Dashboard tab (source of truth)
-    return results.map((ws) => ({ ...ws, name: dashboardNames[ws.id] || ws.name }));
+    // Apply canonical workstream name + goal from the Dashboard tab (source of truth)
+    return results.map((ws) => ({
+      ...ws,
+      name: dashboardMeta[ws.id]?.name || ws.name,
+      goal: dashboardMeta[ws.id]?.goal || ws.goal,
+    }));
   } catch (err) {
     console.error("Sheet fetch failed, using static data:", err);
     return WORKSTREAMS_100;
