@@ -8,8 +8,8 @@ const SPREADSHEET_ID = "1FzP8ePYCDHoBxx8bW0Ft2mbLEqfzYNmf2zobBF8pbvA";
 const WS_TAB_MAP: Record<string, string> = {
   "ai-brain-medicine":  "AI-native Brain Medicine Model",
   "dtc":                "Growth - DTC",
-  "b2b":                "Growth - B2B Referral Developme",
-  "ltc":                "Growth - Lead to Consult Conver",
+  "b2b":                "Growth - B2B Referral Development",
+  "ltc":                "Growth - Lead to Consult Conversion",
   "ops-excellence":     "Growth - Operational Excellence",
   "product-data":       "Product-Data-Innovation",
   "clinical-perf":      "Clinical Excellence",
