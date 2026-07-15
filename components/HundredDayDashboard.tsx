@@ -21,10 +21,12 @@ export const STATUS_COLOR: Record<Status100, string> = {
   "Complete":    "#15803d",
 };
 
-// Derives workstream status from its tasks: worst task status wins
-function deriveWorkstreamStatus(ws: Workstream100): Status100 | null {
+// Derives workstream status from its tasks: worst task status wins.
+// A workstream with no tasks is treated as "Not Started" so all workstreams
+// are represented in the totals.
+function deriveWorkstreamStatus(ws: Workstream100): Status100 {
   const tasks = ws.tasks;
-  if (tasks.length === 0) return null;
+  if (tasks.length === 0) return "Not Started";
   if (tasks.every((t) => t.status === "Complete"))  return "Complete";
   if (tasks.some((t) => t.status === "Blocked"))    return "Blocked";
   if (tasks.some((t) => t.status === "At Risk"))    return "At Risk";
@@ -52,7 +54,7 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
   // Derived workstream statuses (no manual input needed)
   const wsDerived = Object.fromEntries(
     workstreams.map((ws) => [ws.id, deriveWorkstreamStatus(ws)])
-  ) as Record<string, Status100 | null>;
+  ) as Record<string, Status100>;
 
   const wsCounts: Record<Status100, number> = {
     "Not Started": workstreams.filter((ws) => wsDerived[ws.id] === "Not Started").length,
@@ -62,13 +64,18 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
     "Complete":    workstreams.filter((ws) => wsDerived[ws.id] === "Complete").length,
   };
 
-  // Pace-gap health rollup (separate from status)
+  // Effective workstream health: manual override wins, else task rollup, else
+  // "On Track" (a task-less workstream still counts so all 15 are represented).
+  const VALID_HEALTH = new Set<TaskHealth>(["On Track", "At Risk", "Blocked", "Off Track"]);
   const autoHealth = Object.fromEntries(
-    workstreams.map((ws) => [
-      ws.id,
-      rollupWorkstreamHealth(ws.tasks.map((t) => calcTaskHealth(t))),
-    ])
-  ) as Record<string, TaskHealth | null>;
+    workstreams.map((ws) => {
+      const override = ws.statusOverride;
+      const health = override && VALID_HEALTH.has(override as TaskHealth)
+        ? (override as TaskHealth)
+        : rollupWorkstreamHealth(ws.tasks.map((t) => calcTaskHealth(t))) ?? "On Track";
+      return [ws.id, health];
+    })
+  ) as Record<string, TaskHealth>;
 
   const autoHealthCounts: Record<TaskHealth, number> = {
     "On Track":  workstreams.filter((ws) => autoHealth[ws.id] === "On Track").length,
