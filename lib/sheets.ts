@@ -64,7 +64,7 @@ function getAuth() {
 const DASHBOARD_ID_ORDER = [
   "ai-brain-medicine", "dtc", "b2b", "ltc", "ops-excellence", "product-data",
   "finance", "it-security", "people", "legal", "comms", "clinical-perf",
-  "payer", "brain-medicine",
+  "payer", "brain-medicine", "misc",
 ];
 
 // Read canonical workstream names from Dashboard!B (source of truth).
