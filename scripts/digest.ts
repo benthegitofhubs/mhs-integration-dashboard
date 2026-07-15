@@ -38,8 +38,8 @@ async function main() {
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const start = new Date("2026-07-02");
-  const end   = new Date("2026-10-09");
+  const start = new Date("2026-06-23");
+  const end   = new Date("2026-10-01");
   const dayElapsed   = Math.floor((today.getTime() - start.getTime()) / 86400000);
   const dayRemaining = Math.max(0, Math.ceil((end.getTime() - today.getTime()) / 86400000));
 

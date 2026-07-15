@@ -58,12 +58,51 @@ function getAuth() {
   });
 }
 
+// Order of workstreams as they appear (top to bottom) in the "Dashboard" tab,
+// which is the source of truth for workstream display names (column B).
+// Workstreams not listed here (e.g. Service Experience) keep their static name.
+const DASHBOARD_ID_ORDER = [
+  "ai-brain-medicine", "dtc", "b2b", "ltc", "ops-excellence", "product-data",
+  "finance", "it-security", "people", "legal", "comms", "clinical-perf",
+  "payer", "brain-medicine",
+];
+
+// Read canonical workstream names from Dashboard!B (source of truth).
+// Returns id → name. Positional match anchored to the "Workstream" header row.
+async function fetchDashboardNames(
+  sheets: ReturnType<typeof google.sheets>
+): Promise<Record<string, string>> {
+  const map: Record<string, string> = {};
+  try {
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: "'Dashboard'!A1:B40",
+    });
+    const rows = (res.data.values ?? []) as string[][];
+    const headerIdx = rows.findIndex((r) => r[1]?.toLowerCase().trim() === "workstream");
+    if (headerIdx === -1) return map;
+    const dataRows = rows
+      .slice(headerIdx + 1)
+      .map((r) => r[1]?.trim() || "")
+      .filter((name) => name && name.toUpperCase() !== "TOTAL");
+    dataRows.forEach((name, i) => {
+      const id = DASHBOARD_ID_ORDER[i];
+      if (id) map[id] = name;
+    });
+  } catch {
+    // Dashboard unreadable — fall back to static names
+  }
+  return map;
+}
+
 // Fetch all workstreams live from the sheet.
 // Falls back to static data if the sheet is unreachable.
 export async function fetchWorkstreams(): Promise<Workstream100[]> {
   try {
     const auth = getAuth();
     const sheets = google.sheets({ version: "v4", auth });
+
+    const dashboardNames = await fetchDashboardNames(sheets);
 
     const results = await Promise.all(
       WORKSTREAMS_100.map(async (ws) => {
@@ -155,7 +194,8 @@ export async function fetchWorkstreams(): Promise<Workstream100[]> {
       })
     );
 
-    return results;
+    // Apply canonical workstream names from the Dashboard tab (source of truth)
+    return results.map((ws) => ({ ...ws, name: dashboardNames[ws.id] || ws.name }));
   } catch (err) {
     console.error("Sheet fetch failed, using static data:", err);
     return WORKSTREAMS_100;

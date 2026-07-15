@@ -14,8 +14,8 @@ export async function GET(req: Request) {
   const workstreams = await fetchWorkstreams();
 
   const today = new Date();
-  const start = new Date("2026-07-02");
-  const end = new Date("2026-10-09");
+  const start = new Date("2026-06-23");
+  const end = new Date("2026-10-01");
   const dayElapsed = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
   const dayRemaining = Math.max(0, Math.ceil((end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
 
