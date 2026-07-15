@@ -171,7 +171,7 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
         <div className="mb-6 px-4 py-3 rounded" style={{ backgroundColor: "#f0fdf4", border: "1px solid #bbf7d0" }}>
           <p className="text-xs leading-relaxed" style={{ color: "#78716c", fontFamily: "var(--font-geist-mono)" }}>
             <span className="font-semibold" style={{ color: "#15803d" }}>Live sync with the Google Sheet.</span>{" "}
-            Status, due date, and owner changes made here write back to the sheet immediately. Data refreshes every 5 minutes.{" "}
+            Status, due date, and RACI (Accountable / Responsible / Consulted / Informed) changes made here write back to the sheet immediately. Data refreshes every 5 minutes.{" "}
             <span className="font-semibold" style={{ color: "#57534e" }}>Last loaded: {loadedAt ?? LAST_SYNCED}.</span>
           </p>
         </div>
@@ -181,7 +181,7 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
           {([
             { id: "workstreams",    label: "Workstreams",   red: false },
             { id: "needs-action",   label: "Needs Action",  red: true  },
-            { id: "by-owner",       label: "By Owner",      red: false },
+            { id: "by-owner",       label: "By Accountable", red: false },
             { id: "ai-automations", label: "AI Automations",red: false },
           ] as const).map((tab) => {
             const isActive = activeTab === tab.id;
@@ -510,7 +510,7 @@ function ByOwnerView({ workstreams }: { workstreams: Workstream100[] }) {
 
   const rows: OwnerTask[] = workstreams.flatMap((ws) =>
     ws.tasks.flatMap((t) => {
-      const owners = t.owner ? t.owner.split(/[/,]/).map((o) => o.trim()).filter(Boolean) : ["Unassigned Tasks"];
+      const owners = t.accountable ? t.accountable.split(/[/,]/).map((o) => o.trim()).filter(Boolean) : ["Unassigned Tasks"];
       return owners.map((owner) => ({
         owner,
         workstream: ws.name,
@@ -911,7 +911,7 @@ function NeedsActionView({ workstreams, autoHealth }: { workstreams: Workstream1
               style={{ gridTemplateColumns: "1fr 110px 110px 90px 120px", color: "#9ca3af", fontFamily: "var(--font-geist-mono)", borderBottom: "1px solid #fecaca", backgroundColor: "#fafafa" }}>
               <span>Task</span>
               <span>Due Date</span>
-              <span>Owner</span>
+              <span>Accountable</span>
               <span>Health</span>
               <span>Status</span>
             </div>
@@ -932,8 +932,8 @@ function NeedsActionView({ workstreams, autoHealth }: { workstreams: Workstream1
                   <span className="text-xs pt-0.5" style={{ color: overdue ? "#b91c1c" : task.dueDate ? "#57534e" : "#c0bdb8", fontFamily: "var(--font-geist-mono)", fontWeight: overdue ? 600 : undefined }}>
                     {task.dueDate || "—"}
                   </span>
-                  <span className="text-xs pt-0.5" style={{ color: task.owner ? "#78716c" : "#c0bdb8" }}>
-                    {task.owner || "—"}
+                  <span className="text-xs pt-0.5" style={{ color: task.accountable ? "#78716c" : "#c0bdb8" }}>
+                    {task.accountable || "—"}
                   </span>
                   <span className="text-xs font-semibold px-2 py-0.5 rounded pt-0.5"
                     style={{ backgroundColor: hm.bg, color: hm.color, fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap", display: "inline-block" }}>

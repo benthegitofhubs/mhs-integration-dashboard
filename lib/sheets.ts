@@ -93,7 +93,10 @@ export async function fetchWorkstreams(): Promise<Workstream100[]> {
         const descCol    = header.findIndex((h) => h.includes("work item"));
         const subtaskCol = header.findIndex((h) => h.includes("subtask"));
         const dateCol    = header.findIndex((h) => h.includes("due date"));
-        const ownerCol   = header.findIndex((h) => h === "owner");
+        const acctCol    = header.findIndex((h) => h === "accountable" || h === "owner");
+        const respCol    = header.findIndex((h) => h === "responsible");
+        const consCol    = header.findIndex((h) => h === "consulted");
+        const infoCol    = header.findIndex((h) => h === "informed");
         const statusCol  = header.findIndex((h) => h === "status");
         const notesCol   = header.findIndex((h) => h.includes("notes"));
         const idCol      = header.findIndex((h) => h === "task id");
@@ -139,7 +142,10 @@ export async function fetchWorkstreams(): Promise<Workstream100[]> {
               ranking:     isNaN(rankNum) ? null : rankNum,
               subtasks:    parseSubtasks(subtaskCol !== -1 ? r[subtaskCol] : ""),
               dueDate:     r[dateCol]?.trim() || staticTask?.dueDate || "",
-              owner:       r[ownerCol]?.trim() || staticTask?.owner || "",
+              accountable: (acctCol !== -1 ? r[acctCol]?.trim() : "") || staticTask?.accountable || "",
+              responsible: (respCol !== -1 ? r[respCol]?.trim() : "") || staticTask?.responsible || "",
+              consulted:   (consCol !== -1 ? r[consCol]?.trim() : "") || staticTask?.consulted || "",
+              informed:    (infoCol !== -1 ? r[infoCol]?.trim() : "") || staticTask?.informed || "",
               status:      toStatus(r[statusCol]?.trim()),
               notes:       r[notesCol]?.trim() || staticTask?.notes || "",
             };
@@ -161,13 +167,16 @@ export async function writeField(
   workstreamId: string,
   taskId: string,
   taskDescription: string,
-  field: "status" | "dueDate" | "owner",
+  field: "status" | "dueDate" | "accountable" | "responsible" | "consulted" | "informed",
   value: string
 ): Promise<void> {
   const fieldHeader: Record<string, string> = {
-    status:  "status",
-    dueDate: "due date",
-    owner:   "owner",
+    status:      "status",
+    dueDate:     "due date",
+    accountable: "accountable",
+    responsible: "responsible",
+    consulted:   "consulted",
+    informed:    "informed",
   };
 
   const tab = WS_TAB_MAP[workstreamId];

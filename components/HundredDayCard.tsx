@@ -34,6 +34,16 @@ const STATUS_DOT: Record<Status100, string> = {
 
 const STATUSES: Status100[] = ["Not Started", "In Progress", "At Risk", "Blocked", "Complete"];
 
+type RaciField = "dueDate" | "accountable" | "responsible" | "consulted" | "informed";
+
+// RACI roles rendered below each task
+const RACI: { key: "accountable" | "responsible" | "consulted" | "informed"; label: string }[] = [
+  { key: "accountable", label: "A" },
+  { key: "responsible", label: "R" },
+  { key: "consulted",   label: "C" },
+  { key: "informed",    label: "I" },
+];
+
 interface Props {
   workstream: Workstream100;
   index: number;
@@ -46,12 +56,11 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
   const [saving, setSaving] = useState<string | null>(null);
   const [sortByDate, setSortByDate] = useState<"asc" | "desc" | null>(null);
   const [sortByRank, setSortByRank] = useState(false);
-  const [sortByOwner, setSortByOwner] = useState(false);
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [noteValues, setNoteValues] = useState<Record<string, string>>(
     Object.fromEntries(workstream.tasks.map((t) => [t.id, t.notes]))
   );
-  const [editingField, setEditingField] = useState<{ taskId: string; field: "dueDate" | "owner" } | null>(null);
+  const [editingField, setEditingField] = useState<{ taskId: string; field: RaciField } | null>(null);
   const [fieldDraft, setFieldDraft] = useState("");
   const [subtasksOpen, setSubtasksOpen] = useState<Record<string, boolean>>({});
   const [newSubtaskDraft, setNewSubtaskDraft] = useState<Record<string, string>>({});
@@ -102,14 +111,14 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
   const stuckCount   = tasks.filter((t) => t.status === "Blocked" || t.status === "At Risk").length;
 
 
-  const startEditField = (taskId: string, field: "dueDate" | "owner") => {
+  const startEditField = (taskId: string, field: RaciField) => {
     const task = tasks.find((t) => t.id === taskId);
-    const raw = field === "dueDate" ? (task?.dueDate || "") : (task?.owner || "");
+    const raw = field === "dueDate" ? (task?.dueDate || "") : ((task?.[field] as string) || "");
     setFieldDraft(field === "dueDate" ? toInputDate(raw) : raw);
     setEditingField({ taskId, field });
   };
 
-  const saveField = async (taskId: string, field: "dueDate" | "owner") => {
+  const saveField = async (taskId: string, field: RaciField) => {
     setEditingField(null);
     const value = field === "dueDate" && fieldDraft ? toDisplayDate(fieldDraft) : fieldDraft.trim();
     setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, [field]: value } : t));
@@ -156,9 +165,6 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
         if (b.ranking == null) return -1;
         return a.ranking - b.ranking;
       });
-    }
-    if (sortByOwner) {
-      return [...tasks].sort((a, b) => (a.owner || "zzz").localeCompare(b.owner || "zzz"));
     }
     if (sortByDate) {
       return [...tasks].sort((a, b) => {
@@ -345,7 +351,7 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
         <div style={{ borderTop: "1px solid #e5e3de" }}>
           <div className="grid text-xs uppercase tracking-widest font-semibold px-6 py-2.5"
             style={{
-              gridTemplateColumns: "36px 1fr 110px 110px 90px 120px",
+              gridTemplateColumns: "36px 1fr 110px 90px 120px",
               backgroundColor: "#f7f6f3",
               color: "#9ca3af",
               fontFamily: "var(--font-geist-mono)",
@@ -370,16 +376,6 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
             >
               Due Date {sortByDate === "asc" ? "↑" : sortByDate === "desc" ? "↓" : "↕"}
             </button>
-            <button
-              onClick={() => {
-                setSortByOwner((o) => !o);
-                if (!sortByOwner) { setSortByDate(null); setSortByRank(false); }
-              }}
-              className="text-left flex items-center gap-1"
-              style={{ background: "none", border: "none", cursor: "pointer", color: sortByOwner ? "#1a5c3a" : "#9ca3af", fontFamily: "var(--font-geist-mono)", fontSize: "inherit", fontWeight: "inherit", letterSpacing: "inherit", textTransform: "inherit", padding: 0 }}
-            >
-              Owner{sortByOwner ? " ↑" : ""}
-            </button>
             <span>Health</span>
             <span>Status</span>
           </div>
@@ -395,7 +391,7 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
               style={{ borderBottom: idx < tasks.length - 1 ? "1px solid #f0efe9" : "none" }}>
             <div className="grid px-6 py-4 hover:bg-stone-50 transition-colors"
               style={{
-                gridTemplateColumns: "36px 1fr 110px 110px 90px 120px",
+                gridTemplateColumns: "36px 1fr 110px 90px 120px",
                 alignItems: "start",
                 gap: "12px",
               }}>
@@ -430,6 +426,44 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
                     {hasSubtasks ? `${doneCount}/${task.subtasks.length}` : "+"} ☰
                   </button>
                 </div>
+
+                {/* RACI — Accountable / Responsible / Consulted / Informed */}
+                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+                  {RACI.map(({ key, label }) => (
+                    <span key={key} className="inline-flex items-center gap-1 text-xs">
+                      <span
+                        className="font-bold rounded-full w-4 h-4 flex items-center justify-center flex-shrink-0"
+                        style={{ backgroundColor: "#f0efe9", color: "#78716c", fontFamily: "var(--font-geist-mono)", fontSize: "10px" }}
+                        title={key.charAt(0).toUpperCase() + key.slice(1)}
+                      >
+                        {label}
+                      </span>
+                      {editingField?.taskId === task.id && editingField.field === key ? (
+                        <input
+                          autoFocus
+                          type="text"
+                          value={fieldDraft}
+                          onChange={(e) => setFieldDraft(e.target.value)}
+                          onBlur={() => saveField(task.id, key)}
+                          onKeyDown={(e) => { if (e.key === "Enter") saveField(task.id, key); if (e.key === "Escape") setEditingField(null); }}
+                          placeholder="Name"
+                          className="text-xs rounded px-1 py-0.5 focus:outline-none"
+                          style={{ border: "1px solid #1a5c3a", color: "#374151", width: "120px" }}
+                        />
+                      ) : (
+                        <span
+                          onClick={() => startEditField(task.id, key)}
+                          className="cursor-pointer hover:underline"
+                          style={{ color: (task[key] as string) ? "#57534e" : "#c0bdb8" }}
+                          title="Click to edit"
+                        >
+                          {(task[key] as string) || "—"}
+                        </span>
+                      )}
+                    </span>
+                  ))}
+                </div>
+
                 {editingNote === task.id ? (
                   <textarea
                     autoFocus
@@ -476,31 +510,6 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
                     title="Click to edit"
                   >
                     {task.dueDate || "—"}
-                  </span>
-                )}
-              </div>
-
-              <div className="pt-0.5">
-                {editingField?.taskId === task.id && editingField.field === "owner" ? (
-                  <input
-                    autoFocus
-                    type="text"
-                    value={fieldDraft}
-                    onChange={(e) => setFieldDraft(e.target.value)}
-                    onBlur={() => saveField(task.id, "owner")}
-                    onKeyDown={(e) => { if (e.key === "Enter") saveField(task.id, "owner"); if (e.key === "Escape") setEditingField(null); }}
-                    placeholder="Name"
-                    className="text-xs rounded px-1 py-0.5 focus:outline-none w-full"
-                    style={{ border: "1px solid #1a5c3a", color: "#374151" }}
-                  />
-                ) : (
-                  <span
-                    onClick={() => startEditField(task.id, "owner")}
-                    className="text-xs cursor-pointer hover:underline"
-                    style={{ color: task.owner ? "#78716c" : "#c0bdb8" }}
-                    title="Click to edit"
-                  >
-                    {task.owner || "—"}
                   </span>
                 )}
               </div>
