@@ -606,6 +606,26 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
             </div>
             );
           })}
+
+          {/* RACI legend */}
+          <div className="px-6 py-3" style={{ borderTop: "1px solid #f0efe9", backgroundColor: "#fafaf8" }}>
+            <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs" style={{ color: "#9ca3af" }}>
+              {[
+                { l: "A", t: "Accountable", d: "owns the outcome" },
+                { l: "R", t: "Responsible", d: "does the work" },
+                { l: "C", t: "Consulted",   d: "gives input" },
+                { l: "I", t: "Informed",    d: "kept in the loop" },
+              ].map(({ l, t, d }) => (
+                <span key={l} className="inline-flex items-center gap-1.5">
+                  <span className="font-bold rounded-full w-4 h-4 flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: "#f0efe9", color: "#78716c", fontFamily: "var(--font-geist-mono)", fontSize: "10px" }}>
+                    {l}
+                  </span>
+                  <span><strong style={{ color: "#6b7280" }}>{t}</strong> — {d}</span>
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
