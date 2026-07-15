@@ -373,16 +373,14 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
                   {/* Derived status — dropdown to override */}
                   <div>
                     {(() => {
-                      const HEALTH_OPTIONS: TaskHealth[] = ["On Track", "At Risk", "Blocked", "Off Track"];
+                      const OVERRIDE_OPTIONS = ["On Track", "In Progress", "At Risk", "Blocked", "Off Track"];
                       const override = statusOverrides[ws.id];
-                      // Override is a TaskHealth (HEALTH_META); derived `st` is a Status100 (STATUS_BG).
+                      // A value may be a health (HEALTH_META) or a status (STATUS_BG) — try both.
+                      const bgOf = (v: string) => HEALTH_META[v as TaskHealth]?.bg ?? STATUS_BG[v as Status100] ?? "#f3f4f6";
+                      const colorOf = (v: string) => HEALTH_META[v as TaskHealth]?.color ?? STATUS_COLOR[v as Status100] ?? "#9ca3af";
                       const isOverride = override != null && override !== "";
-                      const bg = isOverride
-                        ? (HEALTH_META[override as TaskHealth]?.bg ?? "#f3f4f6")
-                        : (st ? STATUS_BG[st] : "#f3f4f6");
-                      const color = isOverride
-                        ? (HEALTH_META[override as TaskHealth]?.color ?? "#9ca3af")
-                        : (st ? STATUS_COLOR[st] : "#9ca3af");
+                      const bg = isOverride ? bgOf(override) : (st ? STATUS_BG[st] : "#f3f4f6");
+                      const color = isOverride ? colorOf(override) : (st ? STATUS_COLOR[st] : "#9ca3af");
                       return (
                         <select
                           value={override ?? ""}
@@ -406,7 +404,7 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
                           title={override ? "Manual override — select Auto to clear" : "Auto-computed — select to override"}
                         >
                           <option value="">{st ?? "—"}</option>
-                          {HEALTH_OPTIONS.map((h) => (
+                          {OVERRIDE_OPTIONS.map((h) => (
                             <option key={h} value={h}>{h}</option>
                           ))}
                         </select>

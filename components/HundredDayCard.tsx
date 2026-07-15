@@ -248,17 +248,15 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
 
               {/* Workstream health — shows override if set, otherwise derived; click to override */}
               {(() => {
-                const HEALTH_OPTIONS: TaskHealth[] = ["On Track", "At Risk", "Blocked", "Off Track"];
-                // Override values are TaskHealth (HEALTH_META); derived is a Status100 (STATUS_BG).
+                const OVERRIDE_OPTIONS = ["On Track", "In Progress", "At Risk", "Blocked", "Off Track"];
+                // A value may be a health (HEALTH_META) or a status (STATUS_BG) — try both.
+                const bgOf = (v: string) => HEALTH_META[v as TaskHealth]?.bg ?? STATUS_BG[v as Status100] ?? "#f3f4f6";
+                const colorOf = (v: string) => HEALTH_META[v as TaskHealth]?.color ?? STATUS_COLOR[v as Status100] ?? "#374151";
                 const isOverride = statusOverride != null && statusOverride !== "";
                 const display = isOverride ? statusOverride : derivedStatus;
                 if (!display) return null;
-                const bg = isOverride
-                  ? (HEALTH_META[display as TaskHealth]?.bg ?? "#f3f4f6")
-                  : (STATUS_BG[display as Status100] ?? "#f3f4f6");
-                const color = isOverride
-                  ? (HEALTH_META[display as TaskHealth]?.color ?? "#374151")
-                  : (STATUS_COLOR[display as Status100] ?? "#374151");
+                const bg = bgOf(display);
+                const color = colorOf(display);
                 return (
                   <>
                     <span style={{ color: "#d1cfc9" }}>·</span>
@@ -278,7 +276,7 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
                       title={isOverride ? "Manual override — select Auto to clear" : "Auto-computed — select to override"}
                     >
                       <option value="">{derivedStatus ?? "—"}</option>
-                      {HEALTH_OPTIONS.map((h) => (
+                      {OVERRIDE_OPTIONS.map((h) => (
                         <option key={h} value={h}>{h}</option>
                       ))}
                     </select>
