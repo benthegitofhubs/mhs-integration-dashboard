@@ -246,29 +246,6 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
                 </span>
               )}
 
-              {/* Warning badges */}
-              {overdueCount > 0 && (
-                <span className="text-xs font-semibold px-2 py-0.5 rounded"
-                  style={{ backgroundColor: "#fee2e2", color: "#b91c1c", fontFamily: "var(--font-geist-mono)" }}
-                  title="Tasks past due date">
-                  {overdueCount} Off Track
-                </span>
-              )}
-              {atRisk > 0 && (
-                <span className="text-xs font-semibold px-2 py-0.5 rounded"
-                  style={{ backgroundColor: "#fef9c3", color: "#854d0e", fontFamily: "var(--font-geist-mono)" }}
-                  title="At Risk tasks">
-                  {atRisk} At Risk
-                </span>
-              )}
-              {blocked > 0 && (
-                <span className="text-xs font-semibold px-2 py-0.5 rounded"
-                  style={{ backgroundColor: "#ffedd5", color: "#c2410c", fontFamily: "var(--font-geist-mono)" }}
-                  title="Blocked tasks">
-                  {blocked} Blocked
-                </span>
-              )}
-
               {/* Workstream health — shows override if set, otherwise derived; click to override */}
               {(() => {
                 const HEALTH_OPTIONS: TaskHealth[] = ["On Track", "At Risk", "Blocked", "Off Track"];
@@ -324,8 +301,9 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
             <div className="hidden sm:flex items-center gap-5 text-xs" style={{ fontFamily: "var(--font-geist-mono)" }}>
               <span style={{ color: "#1a5c3a" }}>{complete}<span style={{ color: "#9ca3af" }}> done</span></span>
               <span style={{ color: "#1d4ed8" }}>{inProgress}<span style={{ color: "#9ca3af" }}> active</span></span>
-              {atRisk > 0  && <span style={{ color: "#c2410c" }}>{atRisk}<span style={{ color: "#9ca3af" }}> at risk</span></span>}
-              {blocked > 0 && <span style={{ color: "#b91c1c" }}>{blocked}<span style={{ color: "#9ca3af" }}> blocked</span></span>}
+              {atRisk > 0      && <span style={{ color: "#c2410c" }}>{atRisk}<span style={{ color: "#9ca3af" }}> at risk</span></span>}
+              {blocked > 0     && <span style={{ color: "#ea580c" }}>{blocked}<span style={{ color: "#9ca3af" }}> blocked</span></span>}
+              {overdueCount > 0 && <span style={{ color: "#b91c1c" }}>{overdueCount}<span style={{ color: "#9ca3af" }}> off track</span></span>}
             </div>
 
             <div style={{ width: "140px" }}>
