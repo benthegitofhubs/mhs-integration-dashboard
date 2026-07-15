@@ -238,12 +238,17 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
 
           {/* Summary counts: operational state + pace health */}
           <div className="flex mb-3" style={{ borderTop: "1px solid #e5e3de" }}>
-            {/* Progress group — 2 cols */}
+            {/* Progress group — all statuses as pills so it sums to all 15 */}
             <div style={{ flex: "2" }}>
               <div className="text-xs font-semibold uppercase tracking-widest px-5 pt-2 pb-1" style={{ color: "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>Progress</div>
-              <div className="grid grid-cols-2">
-                <StatCell value={wsCounts["Not Started"]} label="Not Started" color="#374151" />
-                <StatCell value={wsCounts["In Progress"]} label="In Progress" color="#1d4ed8" />
+              <div className="grid grid-cols-1 gap-2 px-5 pb-4">
+                {(["Not Started", "In Progress", "At Risk", "Blocked", "Complete"] as Status100[]).map((s) => (
+                  <div key={s} className="flex items-center justify-between px-3 py-1.5 rounded"
+                    style={{ backgroundColor: STATUS_BG[s] }}>
+                    <span className="text-xs font-semibold" style={{ color: STATUS_COLOR[s], fontFamily: "var(--font-geist-mono)" }}>{s}</span>
+                    <span className="text-xs font-bold" style={{ color: STATUS_COLOR[s], fontFamily: "var(--font-geist-mono)" }}>{wsCounts[s]}</span>
+                  </div>
+                ))}
               </div>
             </div>
             {/* Vertical separator */}
@@ -827,17 +832,6 @@ function AIAutomationsView() {
           </div>
         ))}
       </div>
-    </div>
-  );
-}
-
-function StatCell({ value, label, color }: { value: number; label: string; color: string }) {
-  return (
-    <div className="pt-5 pb-4 px-5" style={{ borderBottom: "1px solid #e5e3de", minWidth: 0 }}>
-      <p className="text-3xl font-bold mb-0.5" style={{ color, letterSpacing: "-0.03em" }}>{value}</p>
-      <p className="text-xs uppercase tracking-widest" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap" }}>
-        {label}
-      </p>
     </div>
   );
 }
