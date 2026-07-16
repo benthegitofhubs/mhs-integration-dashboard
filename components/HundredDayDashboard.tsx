@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Workstream100, KEY_DATES, Status100, LAST_SYNCED } from "@/lib/hundredday";
 import HundredDayCard from "./HundredDayCard";
+import NavBar from "./NavBar";
 import { calcTaskHealth, rollupWorkstreamHealth, HEALTH_META, TaskHealth } from "@/lib/taskHealth";
 
 export const STATUS_BG: Record<Status100, string> = {
@@ -79,6 +80,12 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
   };
 
   return (
+    <>
+    <NavBar
+      search={taskSearch}
+      onSearchChange={setTaskSearch}
+      showSearch={activeTab === "workstreams"}
+    />
     <main className="min-h-screen" style={{ backgroundColor: "#f7f6f3", color: "#1a1a1a" }}>
       <div className="max-w-6xl mx-auto px-8 pt-12 pb-8">
 
@@ -455,25 +462,6 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
       {/* Workstream cards — only on workstreams tab */}
       {activeTab === "workstreams" && (
         <div className="max-w-6xl mx-auto px-8 pb-20 space-y-2">
-          {/* Task keyword search */}
-          <div className="relative mb-2">
-            <input
-              type="text"
-              value={taskSearch}
-              onChange={(e) => setTaskSearch(e.target.value)}
-              placeholder="Search tasks by keyword…"
-              className="w-full text-sm rounded-lg focus:outline-none"
-              style={{ border: "1px solid #e5e3de", backgroundColor: "white", color: "#1a1a1a", padding: "10px 32px 10px 12px" }}
-            />
-            {taskSearch && (
-              <button onClick={() => setTaskSearch("")} aria-label="Clear search"
-                className="hover:text-stone-600"
-                style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#9ca3af", fontSize: "14px", lineHeight: 1 }}>
-                ✕
-              </button>
-            )}
-          </div>
-
           {workstreams.map((ws, i) => (
             <HundredDayCard
               key={ws.id}
@@ -497,6 +485,7 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
         </div>
       )}
     </main>
+    </>
   );
 }
 
