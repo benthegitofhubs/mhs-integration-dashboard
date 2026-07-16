@@ -423,6 +423,24 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
       {/* Workstream cards — only on workstreams tab */}
       {activeTab === "workstreams" && (
         <div className="max-w-6xl mx-auto px-8 pb-20 space-y-2">
+          {/* Column headers — mirror the Overview row so the card numbers are labeled */}
+          <div className="grid text-xs uppercase tracking-widest font-semibold px-5 py-2 items-center"
+            style={{
+              gridTemplateColumns: "28px 1fr 120px 150px 52px 90px 1.6fr",
+              gap: "8px",
+              border: "1px solid transparent",
+              color: "#9ca3af",
+              fontFamily: "var(--font-geist-mono)",
+            }}>
+            <span>#</span>
+            <span>Workstream</span>
+            <span>Flagship Goal</span>
+            <span>Leader</span>
+            <span>Tasks</span>
+            <span>Completion</span>
+            <span>Task Health</span>
+          </div>
+
           {workstreams.map((ws, i) => (
             <HundredDayCard
               key={ws.id}
