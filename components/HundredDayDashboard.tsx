@@ -22,7 +22,7 @@ export const STATUS_COLOR: Record<Status100, string> = {
   "Complete":    "#15803d",
 };
 
-export default function HundredDayDashboard({ workstreams, loadedAt, nowMs }: { workstreams: Workstream100[]; loadedAt?: string; nowMs: number }) {
+export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live = true }: { workstreams: Workstream100[]; loadedAt?: string; nowMs: number; live?: boolean }) {
   const [activeTab, setActiveTab] = useState<"overview" | "workstreams" | "by-owner" | "ai-automations" | "needs-action">("overview");
   const [leaders, setLeaders] = useState<Record<string, string>>(
     Object.fromEntries(workstreams.map((ws) => [ws.id, ws.leader]))
@@ -163,14 +163,24 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs }: { 
         </div>
 
 
-        {/* Disclaimer */}
-        <div className="mb-6 px-4 py-3 rounded" style={{ backgroundColor: "#f0fdf4", border: "1px solid #bbf7d0" }}>
-          <p className="text-xs leading-relaxed" style={{ color: "#78716c", fontFamily: "var(--font-geist-mono)" }}>
-            <span className="font-semibold" style={{ color: "#15803d" }}>Live sync with the Google Sheet.</span>{" "}
-            Status, due date, and ARCI (Accountable / Responsible / Consulted / Informed) changes made here write back to the sheet immediately. Data refreshes every 5 minutes.{" "}
-            <span className="font-semibold" style={{ color: "#57534e" }}>Last loaded: {loadedAt ?? LAST_SYNCED}.</span>
-          </p>
-        </div>
+        {/* Disclaimer — live sync vs. cached-data fallback */}
+        {live ? (
+          <div className="mb-6 px-4 py-3 rounded" style={{ backgroundColor: "#f0fdf4", border: "1px solid #bbf7d0" }}>
+            <p className="text-xs leading-relaxed" style={{ color: "#78716c", fontFamily: "var(--font-geist-mono)" }}>
+              <span className="font-semibold" style={{ color: "#15803d" }}>Live sync with the Google Sheet.</span>{" "}
+              Status, due date, and ARCI (Accountable / Responsible / Consulted / Informed) changes made here write back to the sheet immediately. Data refreshes every 5 minutes.{" "}
+              <span className="font-semibold" style={{ color: "#57534e" }}>Last loaded: {loadedAt ?? LAST_SYNCED}.</span>
+            </p>
+          </div>
+        ) : (
+          <div className="mb-6 px-4 py-3 rounded" style={{ backgroundColor: "#fffbeb", border: "1px solid #fcd34d" }}>
+            <p className="text-xs leading-relaxed" style={{ color: "#78716c", fontFamily: "var(--font-geist-mono)" }}>
+              <span className="font-semibold" style={{ color: "#b45309" }}>⚠ Live sync unavailable — showing cached data.</span>{" "}
+              The Google Sheet couldn&apos;t be reached, so these figures are the last bundled snapshot and may be out of date. Edits made here will <span className="font-semibold">not</span> save until sync is restored.{" "}
+              <span className="font-semibold" style={{ color: "#57534e" }}>Page loaded: {loadedAt ?? LAST_SYNCED}.</span>
+            </p>
+          </div>
+        )}
         </>
         )}
 

@@ -44,11 +44,12 @@ Complete). Everything else is derived (`lib/taskHealth.ts` → `calcTaskHealth`)
 2. **Off Track** — due date passed and not Complete (automatic; takes precedence)
 3. **Blocked** — Status = Blocked
 4. **At Risk** — Status = At Risk
-5. **Not Started** — Status = Not Started (and not overdue)
-6. **On Track** — everything else (actively in progress, not overdue)
+5. **On Track (In Progress/Not Started)** — everything else, including both
+   In Progress and Not Started, when not overdue. Not Started is not broken
+   out as its own bucket.
 
-Bar segment colors: Complete `#15803d` · On track `#86efac` · Not started
-`#d1d5db` · At risk `#eab308` · Blocked `#ea580c` · Off track `#b91c1c`.
+Bar segment colors: Complete `#15803d` · On Track (In Progress/Not Started)
+`#86efac` · At risk `#eab308` · Blocked `#ea580c` · Off track `#b91c1c`.
 
 There is **no workstream-level status/override** anymore — the app is fully
 task-status-driven. (Leftover `Status:` rows in tab headers are ignored.)
@@ -102,8 +103,10 @@ Top nav is sticky ("frozen"). Location count = 20.
   to the Dashboard tab.
 - Rewrote all 15 Dashboard rollup formulas (correct tabs, ranges, status logic).
 - Reframed health reporting: dropped ambiguous workstream "status" rollup in
-  favor of per-workstream **task-badge stacked bars** with counts + Completion%;
-  split **Not Started** out of On Track.
+  favor of per-workstream **task-badge stacked bars** with counts + Completion%.
+  (Note: a later change folded **Not Started** back into On Track — the green
+  bucket is labeled "On Track (In Progress/Not Started)" and there is no
+  separate Not Started segment.)
 - 5-tab restructure; sticky nav; keyword search; Needs Action redesign with
   persistent Reason field.
 - Daily digest → live data, per-workstream, shortened format, 9 AM ET.

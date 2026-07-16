@@ -99,9 +99,16 @@ async function fetchDashboardMeta(
   return map;
 }
 
-// Fetch all workstreams live from the sheet.
-// Falls back to static data if the sheet is unreachable.
-export async function fetchWorkstreams(): Promise<Workstream100[]> {
+export interface WorkstreamsResult {
+  workstreams: Workstream100[];
+  // true = read live from the Sheet; false = fell back to bundled static data
+  // (e.g. missing/invalid service-account creds, Sheet unreachable).
+  live: boolean;
+}
+
+// Fetch all workstreams live from the sheet, reporting whether the read was live
+// or fell back to static data. Falls back to static data if the sheet is unreachable.
+export async function fetchWorkstreamsResult(): Promise<WorkstreamsResult> {
   try {
     const auth = getAuth();
     const sheets = google.sheets({ version: "v4", auth });
@@ -201,15 +208,22 @@ export async function fetchWorkstreams(): Promise<Workstream100[]> {
     );
 
     // Apply canonical workstream name + goal from the Dashboard tab (source of truth)
-    return results.map((ws) => ({
+    const workstreams = results.map((ws) => ({
       ...ws,
       name: dashboardMeta[ws.id]?.name || ws.name,
       goal: dashboardMeta[ws.id]?.goal || ws.goal,
     }));
+    return { workstreams, live: true };
   } catch (err) {
     console.error("Sheet fetch failed, using static data:", err);
-    return WORKSTREAMS_100;
+    return { workstreams: WORKSTREAMS_100, live: false };
   }
+}
+
+// Backward-compatible helper: returns just the workstream array (used by the
+// digest script/route, which don't need the liveness flag).
+export async function fetchWorkstreams(): Promise<Workstream100[]> {
+  return (await fetchWorkstreamsResult()).workstreams;
 }
 
 // Write any single field back to the sheet by task ID.
