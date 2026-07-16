@@ -200,6 +200,43 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
           </div>
         </div>
 
+        {/* Integration health — schedule adherence (Expected vs Actual tasks complete by today) */}
+        {(() => {
+          const now         = new Date();
+          const dueByNow    = allTasks.filter((t) => {
+            const d = new Date(t.dueDate);
+            return !isNaN(d.getTime()) && d <= now;
+          }).length;
+          const expectedPct = total > 0 ? Math.round((dueByNow / total) * 100) : 0;
+          const actualPct   = total > 0 ? Math.round((complete / total) * 100) : 0;
+          const verdict     = actualPct > expectedPct ? "Ahead of pace" : actualPct < expectedPct ? "Behind pace" : "At pace";
+          const vColor      = actualPct < expectedPct ? "#b45309" : "#15803d";
+          const todayLabel  = now.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+          return (
+            <div className="mb-6 overflow-hidden" style={{ border: "1px solid #e5e3de", borderRadius: "6px", backgroundColor: "white" }}>
+              <div className="px-5 pt-3 pb-2">
+                <span className="text-xs uppercase tracking-widest" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+                  Tasks completed by today, {todayLabel}
+                </span>
+              </div>
+              <div className="flex" style={{ borderTop: "1px solid #e5e3de" }}>
+                <div className="px-5 py-4" style={{ flex: 1, borderRight: "1px solid #e5e3de" }}>
+                  <div className="text-xs" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>Expected</div>
+                  <div className="font-bold" style={{ fontSize: "26px", color: "#111", fontVariantNumeric: "tabular-nums" }}>{expectedPct}%</div>
+                </div>
+                <div className="px-5 py-4" style={{ flex: 1 }}>
+                  <div className="text-xs" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>Actual</div>
+                  <div className="font-bold" style={{ fontSize: "26px", color: "#111", fontVariantNumeric: "tabular-nums" }}>{actualPct}%</div>
+                </div>
+              </div>
+              <div className="px-5 py-3 flex items-center gap-2 flex-wrap" style={{ borderTop: "1px solid #e5e3de", backgroundColor: "#fafaf8" }}>
+                <span className="text-sm font-bold" style={{ color: vColor }}>{verdict}</span>
+                <span className="text-xs" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>· {actualPct}% actual vs {expectedPct}% expected · counts completed tasks only</span>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Disclaimer */}
         <div className="mb-6 px-4 py-3 rounded" style={{ backgroundColor: "#f0fdf4", border: "1px solid #bbf7d0" }}>
           <p className="text-xs leading-relaxed" style={{ color: "#78716c", fontFamily: "var(--font-geist-mono)" }}>
