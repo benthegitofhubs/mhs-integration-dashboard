@@ -16,6 +16,12 @@ Jul 2026 build session. Live at https://mhsintegration.netlify.app/hundredday
   `radial-mhs-integration@radial-mhs-integration.iam.gserviceaccount.com`
   (shared as Editor). Credentials via `GOOGLE_SERVICE_ACCOUNT_JSON` env
   (Netlify) / `~/.mhs_service_account.json` (scripts).
+- **Cached-data fallback.** If the Sheet can't be read (missing/invalid creds,
+  quota, unreachable), `fetchWorkstreamsResult()` returns the bundled static
+  snapshot with `live: false`. The dashboard then swaps the green "Live sync"
+  banner for an amber "⚠ Live sync unavailable — showing cached data" warning,
+  so stale figures are never presented as live. `fetchWorkstreams()` remains a
+  thin wrapper (array only) for the digest route/script.
 
 ### What comes from where
 - **Workstream name** → Dashboard tab, **column B** (one-way, sheet → app),
@@ -58,11 +64,16 @@ task-status-driven. (Leftover `Status:` rows in tab headers are ignored.)
 
 ## Tabs
 
-1. **Overview** — eyebrow/headline/timeline/key dates (shown on every tab,
-   under the tab bar), plus the per-workstream table: `# · Workstream ·
-   Flagship Goal · Leader · Tasks · Completion% · Task Health (stacked bar)`.
-   Clicking a workstream name opens its tasks; clicking a flagged bar segment
-   opens Needs Action filtered to that workstream.
+1. **Overview** — executive summary. Eyebrow ("100-Day Integration Plan") /
+   headline / timeline / key dates / live-sync (or cached-data) banner at top,
+   then: **four KPI tiles** (overall % complete, on-track / need-attention /
+   off-track workstream counts, from `rollupWorkstreamHealth`), then
+   **workstreams grouped by flagship pillar** as compact rows
+   (`name · leader · mini health bar · completion%`). Grouping is dynamic off
+   the Sheet's flagship-goal field. Clicking a workstream name opens its tasks;
+   clicking a flagged bar segment opens Needs Action filtered to that
+   workstream; leader is inline-editable; the 100-Day goal shows on hover.
+   The full per-workstream table now lives in the Workstream Tasks tab.
 2. **Workstream Tasks** — keyword search (top), a column-header row + legend,
    then one card per workstream whose header **mirrors the Overview row** and
    drops down to the task table (Ranking · Task · Due Date · Status, with RACI
@@ -111,3 +122,20 @@ Top nav is sticky ("frozen"). Location count = 20.
   persistent Reason field.
 - Daily digest → live data, per-workstream, shortened format, 9 AM ET.
 - Removed the pace/Expected-vs-Actual card and redundant section dividers.
+
+## Later Jul 16, 2026 session
+
+- Folded **Not Started** into On Track across the legend and all task-health
+  bars; renamed the green bucket "On Track (In Progress/Not Started)". Health
+  logic is task-status-driven per leadership decision to trust workstream
+  leaders on what to start and when.
+- Fixed a React **hydration mismatch** on the progress timeline: the server
+  stamps `nowMs` once and passes it down; timeline %, Today marker, and date
+  string render from that single value with an explicit ET timezone; plan
+  start/end dates parsed with explicit `-04:00` offsets.
+- Fixed a "unique key" warning by keying the `KEY_DATES` mapped Fragment.
+- Added the **cached-data fallback banner** (see Source of truth).
+- Dropped "Mindful Health Solutions ·" from the Overview eyebrow (now just
+  "100-Day Integration Plan").
+- **Redesigned the Overview into an executive summary** (see Tabs → Overview):
+  KPI tiles + pillar-grouped compact rows, replacing the 15-row table.
