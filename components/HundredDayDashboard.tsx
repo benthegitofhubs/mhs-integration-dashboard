@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import { Workstream100, Task100, KEY_DATES, Status100, LAST_SYNCED } from "@/lib/hundredday";
 import HundredDayCard from "./HundredDayCard";
 import NavBar from "./NavBar";
@@ -22,7 +22,7 @@ export const STATUS_COLOR: Record<Status100, string> = {
   "Complete":    "#15803d",
 };
 
-export default function HundredDayDashboard({ workstreams, loadedAt }: { workstreams: Workstream100[]; loadedAt?: string }) {
+export default function HundredDayDashboard({ workstreams, loadedAt, nowMs }: { workstreams: Workstream100[]; loadedAt?: string; nowMs: number }) {
   const [activeTab, setActiveTab] = useState<"overview" | "workstreams" | "by-owner" | "ai-automations" | "needs-action">("overview");
   const [leaders, setLeaders] = useState<Record<string, string>>(
     Object.fromEntries(workstreams.map((ws) => [ws.id, ws.leader]))
@@ -87,9 +87,9 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
         <>
         {/* Progress timeline */}
         {(() => {
-          const start    = new Date("Jun 23, 2026").getTime();
-          const end      = new Date("Oct 1, 2026").getTime();
-          const now      = new Date().getTime();
+          const start    = Date.parse("2026-06-23T00:00:00-04:00");
+          const end      = Date.parse("2026-10-01T00:00:00-04:00");
+          const now      = nowMs;
           const pct      = Math.min(100, Math.max(0, ((now - start) / (end - start)) * 100));
           const daysLeft    = Math.max(0, Math.ceil((end - now) / 86400000));
           const daysElapsed = Math.max(0, Math.floor((now - start) / 86400000));
@@ -132,11 +132,11 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
         <div className="flex flex-wrap items-center mb-10 overflow-hidden"
           style={{ border: "1px solid #e5e3de", borderRadius: "6px", backgroundColor: "white" }}>
           {KEY_DATES.map((kd, i) => (
-            <>
+            <Fragment key={kd.label}>
               {kd.label === "Next Board Meeting" ? (
-                <BoardMeetingCell key={kd.label} defaultDate={kd.date} />
+                <BoardMeetingCell defaultDate={kd.date} />
               ) : (
-                <div key={kd.label} className="px-5 py-3 flex flex-col gap-0.5"
+                <div className="px-5 py-3 flex flex-col gap-0.5"
                   style={{ borderRight: "1px solid #e5e3de" }}>
                   <span className="text-xs uppercase tracking-widest" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
                     {kd.label}
@@ -151,11 +151,11 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
                     Today
                   </span>
                   <span className="text-sm font-semibold" style={{ color: "#1a5c3a" }}>
-                    {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                    {new Date(nowMs).toLocaleDateString("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", year: "numeric" })}
                   </span>
                 </div>
               )}
-            </>
+            </Fragment>
           ))}
           <div className="flex items-center justify-center" style={{ flex: 1 }}>
             <img src="/RadialMHS.png" alt="Radial × MHS" style={{ height: "56px", width: "auto", opacity: 0.85 }} />
@@ -200,8 +200,7 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
           <div className="flex flex-wrap gap-x-4 gap-y-1 mb-3 text-xs" style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)" }}>
             {[
               { l: "Complete", c: "#15803d" },
-              { l: "On track", c: "#86efac" },
-              { l: "Not started", c: "#d1d5db" },
+              { l: "On Track (In Progress/Not Started)", c: "#86efac" },
               { l: "At risk", c: "#eab308" },
               { l: "Blocked", c: "#ea580c" },
               { l: "Off track", c: "#b91c1c" },
@@ -297,18 +296,16 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
                     const total = ws.tasks.length;
                     const done = ws.tasks.filter((tk) => tk.status === "Complete").length;
                     const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-                    const cnt = { complete: 0, onTrack: 0, notStarted: 0, "At Risk": 0, "Blocked": 0, "Off Track": 0 };
+                    const cnt = { complete: 0, onTrack: 0, "At Risk": 0, "Blocked": 0, "Off Track": 0 };
                     ws.tasks.forEach((tk) => {
                       if (tk.status === "Complete") { cnt.complete++; return; }
                       const h = calcTaskHealth(tk).status;
                       if (h === "At Risk" || h === "Blocked" || h === "Off Track") cnt[h]++;
-                      else if (tk.status === "Not Started") cnt.notStarted++;
                       else cnt.onTrack++;
                     });
                     const segs: { key: string; n: number; label: string; color: string; text: string; flagged: boolean }[] = [
                       { key: "complete",   n: cnt.complete,     label: "complete",    color: "#15803d", text: "#ffffff", flagged: false },
                       { key: "ontrack",    n: cnt.onTrack,      label: "on track",    color: "#86efac", text: "#14532d", flagged: false },
-                      { key: "notstarted", n: cnt.notStarted,   label: "not started", color: "#d1d5db", text: "#374151", flagged: false },
                       { key: "atrisk",     n: cnt["At Risk"],   label: "at risk",     color: "#eab308", text: "#422006", flagged: true },
                       { key: "blocked",    n: cnt["Blocked"],   label: "blocked",     color: "#ea580c", text: "#ffffff", flagged: true },
                       { key: "offtrack",   n: cnt["Off Track"], label: "off track",   color: "#b91c1c", text: "#ffffff", flagged: true },
@@ -411,8 +408,7 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs" style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)" }}>
             {[
               { l: "Complete", c: "#15803d" },
-              { l: "On track", c: "#86efac" },
-              { l: "Not started", c: "#d1d5db" },
+              { l: "On Track (In Progress/Not Started)", c: "#86efac" },
               { l: "At risk", c: "#eab308" },
               { l: "Blocked", c: "#ea580c" },
               { l: "Off track", c: "#b91c1c" },
