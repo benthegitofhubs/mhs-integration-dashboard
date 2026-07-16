@@ -111,10 +111,7 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
           })}
         </div>
 
-        {/* TAB: Overview — top info + workstream health */}
-        {activeTab === "overview" && (
-        <>
-        {/* Eyebrow + headline */}
+        {/* Eyebrow + headline — shown on every tab, below the tabs */}
         <p className="text-xs font-semibold uppercase tracking-widest mb-2"
           style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
           Mindful Health Solutions · 100-Day Integration Plan
@@ -123,6 +120,9 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
           100 days to one team, one mission.
         </h1>
 
+        {/* TAB: Overview — top info + workstream health */}
+        {activeTab === "overview" && (
+        <>
         {/* Progress timeline */}
         {(() => {
           const start    = new Date("Jun 23, 2026").getTime();
