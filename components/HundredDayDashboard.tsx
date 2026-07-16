@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Fragment } from "react";
+import { useState } from "react";
 import { Workstream100, Task100, KEY_DATES, Status100, LAST_SYNCED } from "@/lib/hundredday";
 import HundredDayCard from "./HundredDayCard";
 import NavBar from "./NavBar";
@@ -79,88 +79,36 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
           100-Day Integration Plan
         </p>
         <h1 className="text-3xl font-bold leading-snug mb-6" style={{ letterSpacing: "-0.02em", color: "#111" }}>
-          100 days to one team, one mission.
+          One team, one mission
         </h1>
 
         {/* TAB: Overview — top info + workstream health */}
         {activeTab === "overview" && (
         <>
-        {/* Progress timeline */}
+        {/* Progress summary — day line + slim bar */}
         {(() => {
-          const start    = Date.parse("2026-06-23T00:00:00-04:00");
-          const end      = Date.parse("2026-10-01T00:00:00-04:00");
-          const now      = nowMs;
-          const pct      = Math.min(100, Math.max(0, ((now - start) / (end - start)) * 100));
+          const start       = Date.parse("2026-06-23T00:00:00-04:00");
+          const end         = Date.parse("2026-10-01T00:00:00-04:00");
+          const now         = nowMs;
+          const pct         = Math.min(100, Math.max(0, ((now - start) / (end - start)) * 100));
           const daysLeft    = Math.max(0, Math.ceil((end - now) / 86400000));
           const daysElapsed = Math.max(0, Math.floor((now - start) / 86400000));
+          const board       = KEY_DATES.find((k) => k.label === "Next Board Meeting");
+          const boardMs     = board ? Date.parse(`${board.date} 00:00:00 GMT-0400`) : NaN;
+          const daysToBoard = !isNaN(boardMs) ? Math.max(0, Math.ceil((boardMs - now) / 86400000)) : null;
+          const boardShort  = board ? board.date.replace(/,\s*\d{4}$/, "") : "";
           return (
-            <div className="mb-2" style={{ position: "relative" }}>
-              <div className="relative" style={{ height: "28px" }}>
-                <div className="absolute flex flex-col items-center" style={{ left: `${pct}%`, transform: "translateX(-50%)", top: 0 }}>
-                  <span className="text-xs font-semibold" style={{ color: "#1a5c3a", fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap" }}>
-                    {daysElapsed}d elapsed · Today · {daysLeft}d left
-                  </span>
-                  <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                    <path d="M5 8L0 0H10L5 8Z" fill="#1a5c3a" />
-                  </svg>
-                </div>
-              </div>
-              <div className="relative w-full" style={{ height: "4px", backgroundColor: "#e5e3de", borderRadius: "2px" }}>
-                {/* Filled progress */}
-                <div style={{ width: `${pct}%`, height: "100%", backgroundColor: "#1a5c3a", borderRadius: "2px" }} />
-                {/* 100 day tick marks */}
-                {Array.from({ length: 99 }, (_, i) => (
-                  <div key={i} className="absolute" style={{
-                    left: `${((i + 1) / 100) * 100}%`,
-                    top: "-3px",
-                    width: "1px",
-                    height: "10px",
-                    backgroundColor: (i + 1) / 100 * 100 <= pct ? "#0f4f2e" : "#c8c5be",
-                    opacity: 0.5,
-                  }} />
-                ))}
-                {/* Today marker */}
-                <div className="absolute" style={{ left: `${pct}%`, top: "50%", transform: "translate(-50%, -50%)", width: "10px", height: "10px", borderRadius: "50%", backgroundColor: "#1a5c3a", border: "2px solid white", boxShadow: "0 0 0 1px #1a5c3a" }} />
-                {/* Finish line */}
-                <div className="absolute" style={{ right: 0, top: "-6px", width: "2px", height: "16px", backgroundColor: "#9ca3af" }} />
+            <div className="mb-8">
+              <p className="text-sm mb-3" style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)" }}>
+                Day {daysElapsed} of 100 · {daysLeft} days left
+                {board && ` · next board meeting ${boardShort}${daysToBoard != null ? ` (${daysToBoard} days)` : ""}`}
+              </p>
+              <div className="w-full" style={{ height: "6px", backgroundColor: "#e5e3de", borderRadius: "3px", overflow: "hidden" }}>
+                <div style={{ width: `${pct}%`, height: "100%", backgroundColor: "#1a5c3a" }} />
               </div>
             </div>
           );
         })()}
-
-        {/* Key dates */}
-        <div className="flex flex-wrap items-center mb-10 overflow-hidden"
-          style={{ border: "1px solid #e5e3de", borderRadius: "6px", backgroundColor: "white" }}>
-          {KEY_DATES.map((kd, i) => (
-            <Fragment key={kd.label}>
-              {kd.label === "Next Board Meeting" ? (
-                <BoardMeetingCell defaultDate={kd.date} />
-              ) : (
-                <div className="px-5 py-3 flex flex-col gap-0.5"
-                  style={{ borderRight: "1px solid #e5e3de" }}>
-                  <span className="text-xs uppercase tracking-widest" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
-                    {kd.label}
-                  </span>
-                  <span className="text-sm font-semibold" style={{ color: "#1a1a1a" }}>{kd.date}</span>
-                </div>
-              )}
-              {i === 0 && (
-                <div key="today" className="px-5 py-3 flex flex-col gap-0.5"
-                  style={{ borderRight: "1px solid #e5e3de", backgroundColor: "#f7faf8" }}>
-                  <span className="text-xs uppercase tracking-widest" style={{ color: "#1a5c3a", fontFamily: "var(--font-geist-mono)" }}>
-                    Today
-                  </span>
-                  <span className="text-sm font-semibold" style={{ color: "#1a5c3a" }}>
-                    {new Date(nowMs).toLocaleDateString("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", year: "numeric" })}
-                  </span>
-                </div>
-              )}
-            </Fragment>
-          ))}
-          <div className="flex items-center justify-center" style={{ flex: 1 }}>
-            <img src="/RadialMHS.png" alt="Radial × MHS" style={{ height: "56px", width: "auto", opacity: 0.85 }} />
-          </div>
-        </div>
 
 
         {/* Disclaimer — live sync vs. cached-data fallback */}
@@ -276,7 +224,7 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
                   ].filter((s) => s.n > 0);
                   return (
                     <div key={ws.id} className="grid px-5 py-2.5 hover:bg-stone-50 transition-colors"
-                      style={{ gridTemplateColumns: "1.5fr 110px 1fr 44px", gap: "12px", alignItems: "center", borderTop: i > 0 ? "1px solid #f0efe9" : "none" }}>
+                      style={{ gridTemplateColumns: "minmax(0, 2.2fr) 90px minmax(0, 1fr) 40px", gap: "12px", alignItems: "center", borderTop: i > 0 ? "1px solid #f0efe9" : "none" }}>
                       <span
                         onClick={() => { window.location.hash = `ws-${ws.id}`; setActiveTab("workstreams"); }}
                         className="relative group text-xs font-semibold cursor-pointer hover:underline"
@@ -477,49 +425,6 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
 
 
 
-function BoardMeetingCell({ defaultDate }: { defaultDate: string }) {
-  const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState(() => {
-    if (typeof window === "undefined") return defaultDate;
-    return localStorage.getItem("next-board-meeting") ?? defaultDate;
-  });
-  const [draft, setDraft] = useState(value);
-
-  const save = () => {
-    const trimmed = draft.trim() || defaultDate;
-    setValue(trimmed);
-    localStorage.setItem("next-board-meeting", trimmed);
-    setEditing(false);
-  };
-
-  return (
-    <div className="px-5 py-3 flex flex-col gap-0.5" style={{ borderRight: "1px solid #e5e3de" }}>
-      <span className="text-xs uppercase tracking-widest" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
-        Next Board Meeting
-      </span>
-      {editing ? (
-        <input
-          autoFocus
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={save}
-          onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") { setDraft(value); setEditing(false); } }}
-          className="text-sm font-semibold focus:outline-none bg-transparent border-b"
-          style={{ color: "#1a1a1a", borderColor: "#1a5c3a", width: "120px" }}
-        />
-      ) : (
-        <span
-          className="text-sm font-semibold cursor-pointer hover:text-green-800 transition-colors"
-          style={{ color: "#1a1a1a" }}
-          onClick={() => { setDraft(value); setEditing(true); }}
-          title="Click to edit"
-        >
-          {value}
-        </span>
-      )}
-    </div>
-  );
-}
 
 function ByOwnerView({ workstreams }: { workstreams: Workstream100[] }) {
   const [search, setSearch] = useState("");
