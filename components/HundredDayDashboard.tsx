@@ -532,20 +532,20 @@ function PaceCard({ tasks }: { tasks: Task100[] }) {
   const END = new Date("2026-10-01T00:00:00").getTime();
   const TOTAL_DAYS = Math.round((END - START) / 86400000);
 
-  const total = tasks.length;
-  const complete = tasks.filter((t) => t.status === "Complete").length;
-  const noDue = tasks.filter((t) => isNaN(new Date(t.dueDate).getTime())).length;
-  const actualPct = total > 0 ? Math.round((complete / total) * 100) : 0;
+  // Schedule adherence is measured against tasks that HAVE a due date —
+  // undated tasks aren't on a schedule, so they'd only dilute the numbers.
+  const dueDated = tasks.filter((t) => !isNaN(new Date(t.dueDate).getTime()));
+  const base = dueDated.length;
+  const noDue = tasks.length - base;
+  const completeDated = dueDated.filter((t) => t.status === "Complete").length;
+  const actualPct = base > 0 ? Math.round((completeDated / base) * 100) : 0;
 
   const todayDay = Math.min(TOTAL_DAYS, Math.max(0, Math.floor((Date.now() - START) / 86400000)));
   const [day, setDay] = useState(todayDay);
 
   const asOf = new Date(START + day * 86400000);
-  const dueByThen = tasks.filter((t) => {
-    const d = new Date(t.dueDate).getTime();
-    return !isNaN(d) && d <= asOf.getTime();
-  }).length;
-  const expectedPct = total > 0 ? Math.round((dueByThen / total) * 100) : 0;
+  const dueByThen = dueDated.filter((t) => new Date(t.dueDate).getTime() <= asOf.getTime()).length;
+  const expectedPct = base > 0 ? Math.round((dueByThen / base) * 100) : 0;
 
   const ahead = actualPct > expectedPct;
   const behind = actualPct < expectedPct;
@@ -620,7 +620,7 @@ function PaceCard({ tasks }: { tasks: Task100[] }) {
 
       <div className="px-5 py-3" style={{ borderTop: "1px solid #e5e3de" }}>
         <span className="text-xs leading-relaxed" style={{ color: "#9ca3af" }}>
-          Live task data — aggregated across the 15 workstreams ({total} tasks). {noDue} have no due date yet.
+          Live task data — measured against the {base} tasks that have a due date ({noDue} undated tasks are excluded).
         </span>
       </div>
     </div>
