@@ -227,6 +227,7 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
             <div className="grid text-xs uppercase tracking-widest font-semibold px-5 py-2.5"
               style={{
                 gridTemplateColumns: "28px 1fr 120px 150px 52px 90px 1.6fr",
+                gap: "8px",
                 backgroundColor: "#f7f6f3",
                 color: "#9ca3af",
                 fontFamily: "var(--font-geist-mono)",

@@ -356,7 +356,7 @@ export default function HundredDayCard({ workstream, index, search = "" }: Props
         <div style={{ borderTop: "1px solid #e5e3de" }}>
           <div className="grid text-xs uppercase tracking-widest font-semibold px-6 py-2.5"
             style={{
-              gridTemplateColumns: "36px 1fr 110px 90px 120px",
+              gridTemplateColumns: "36px 1fr 110px 120px",
               backgroundColor: "#f7f6f3",
               color: "#9ca3af",
               fontFamily: "var(--font-geist-mono)",
@@ -381,13 +381,10 @@ export default function HundredDayCard({ workstream, index, search = "" }: Props
             >
               Due Date {sortByDate === "asc" ? "↑" : sortByDate === "desc" ? "↓" : "↕"}
             </button>
-            <span>Health</span>
             <span>Status</span>
           </div>
 
           {sortedTasks.map((task, idx) => {
-            const health = calcTaskHealth(task);
-            const hMeta  = HEALTH_META[health.status];
             const hasSubtasks = task.subtasks.length > 0;
             const subtaskOpen = !!subtasksOpen[task.id];
             const doneCount = task.subtasks.filter((s) => s.done).length;
@@ -400,7 +397,7 @@ export default function HundredDayCard({ workstream, index, search = "" }: Props
               }}>
             <div className="grid px-6 py-4 hover:bg-stone-50 transition-colors"
               style={{
-                gridTemplateColumns: "36px 1fr 110px 90px 120px",
+                gridTemplateColumns: "36px 1fr 110px 120px",
                 alignItems: "start",
                 gap: "12px",
               }}>
@@ -544,13 +541,6 @@ export default function HundredDayCard({ workstream, index, search = "" }: Props
                     {task.dueDate || "—"}
                   </span>
                 )}
-              </div>
-
-              <div className="pt-0.5">
-                <span className="text-xs font-semibold px-2 py-0.5 rounded"
-                  style={{ backgroundColor: hMeta.bg, color: hMeta.color, fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap" }}>
-                  {health.status}
-                </span>
               </div>
 
               <div className="pt-0.5">
