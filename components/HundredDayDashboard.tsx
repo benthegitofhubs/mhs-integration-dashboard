@@ -44,9 +44,6 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
   const [leaderDraft, setLeaderDraft] = useState("");
   const [taskSearch, setTaskSearch] = useState("");
   const [naFilter, setNaFilter] = useState<string | null>(null);
-  const [statusOverrides, setStatusOverrides] = useState<Record<string, string | null>>(
-    Object.fromEntries(workstreams.map((ws) => [ws.id, ws.statusOverride ?? null]))
-  );
   const allTasks   = workstreams.flatMap((ws) => ws.tasks);
   const total      = allTasks.length;
   const complete   = allTasks.filter((t) => t.status === "Complete").length;
@@ -248,11 +245,27 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
             </div>
           </div>
 
+          {/* Task-health bar legend */}
+          <div className="flex flex-wrap gap-x-4 gap-y-1 mb-3 text-xs" style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)" }}>
+            {[
+              { l: "Complete", c: "#15803d" },
+              { l: "On track", c: "#86efac" },
+              { l: "At risk", c: "#eab308" },
+              { l: "Blocked", c: "#ea580c" },
+              { l: "Off track", c: "#b91c1c" },
+            ].map(({ l, c }) => (
+              <span key={l} className="inline-flex items-center gap-1.5">
+                <span style={{ width: "11px", height: "11px", borderRadius: "2px", backgroundColor: c, display: "inline-block" }} />
+                {l}
+              </span>
+            ))}
+          </div>
+
           {/* Per-workstream table */}
           <div className="overflow-x-auto" style={{ border: "1px solid #e5e3de", borderRadius: "6px", backgroundColor: "white" }}>
             <div className="grid text-xs uppercase tracking-widest font-semibold px-5 py-2.5"
               style={{
-                gridTemplateColumns: "28px 1fr 120px 150px 150px 56px 1.4fr",
+                gridTemplateColumns: "28px 1fr 120px 150px 56px 1.7fr",
                 backgroundColor: "#f7f6f3",
                 color: "#9ca3af",
                 fontFamily: "var(--font-geist-mono)",
@@ -262,18 +275,15 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
               <span style={{ whiteSpace: "nowrap" }}>Workstream</span>
               <span style={{ whiteSpace: "nowrap" }}>Flagship Goal</span>
               <span style={{ whiteSpace: "nowrap" }}>Leader</span>
-              <span style={{ whiteSpace: "nowrap" }}>Status</span>
               <span style={{ whiteSpace: "nowrap" }}>Tasks</span>
               <span style={{ whiteSpace: "nowrap" }}>Task Health</span>
             </div>
 
             {workstreams.map((ws, i) => {
-              const st  = wsDerived[ws.id];
-
               return (
                 <div key={ws.id} className="grid px-5 py-2.5 hover:bg-stone-50 transition-colors"
                   style={{
-                    gridTemplateColumns: "28px 1fr 120px 150px 150px 56px 1.4fr",
+                    gridTemplateColumns: "28px 1fr 120px 150px 56px 1.7fr",
                     borderBottom: i < workstreams.length - 1 ? "1px solid #f0efe9" : "none",
                     alignItems: "center",
                     gap: "8px",
@@ -325,86 +335,52 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
                       {leaders[ws.id] || "—"}
                     </span>
                   )}
-                  {/* Derived status — dropdown to override */}
-                  <div>
-                    {(() => {
-                      const OVERRIDE_OPTIONS = ["On Track", "In Progress", "At Risk", "Blocked", "Off Track", "Complete"];
-                      const override = statusOverrides[ws.id];
-                      // A value may be a health (HEALTH_META) or a status (STATUS_BG) — try both.
-                      const bgOf = (v: string) => HEALTH_META[v as TaskHealth]?.bg ?? STATUS_BG[v as Status100] ?? "#f3f4f6";
-                      const colorOf = (v: string) => HEALTH_META[v as TaskHealth]?.color ?? STATUS_COLOR[v as Status100] ?? "#9ca3af";
-                      const isOverride = override != null && override !== "";
-                      const bg = isOverride ? bgOf(override) : (st ? STATUS_BG[st] : "#f3f4f6");
-                      const color = isOverride ? colorOf(override) : (st ? STATUS_COLOR[st] : "#9ca3af");
-                      return (
-                        <select
-                          value={override ?? ""}
-                          onChange={async (e) => {
-                            const val = e.target.value || null;
-                            setStatusOverrides((prev) => ({ ...prev, [ws.id]: val }));
-                            await fetch("/api/update-workstream-status", {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ workstreamId: ws.id, status: val }),
-                            });
-                          }}
-                          className="text-xs font-semibold px-2 py-0.5 rounded cursor-pointer focus:outline-none"
-                          style={{
-                            backgroundColor: bg,
-                            color,
-                            border: "none",
-                            fontFamily: "var(--font-geist-mono)",
-                            whiteSpace: "nowrap",
-                          }}
-                          title={override ? "Manual override — select Auto to clear" : "Auto-computed — select to override"}
-                        >
-                          <option value="">{st ?? "—"}</option>
-                          {OVERRIDE_OPTIONS.map((h) => (
-                            <option key={h} value={h}>{h}</option>
-                          ))}
-                        </select>
-                      );
-                    })()}
-                  </div>
                   {/* Total tasks */}
                   <span className="text-xs font-semibold" style={{ color: "#374151", fontFamily: "var(--font-geist-mono)" }}>
                     {ws.tasks.length}
                   </span>
-                  {/* Task-health breakdown */}
-                  <div className="flex flex-wrap items-center" style={{ gap: "4px" }}>
-                    {(() => {
-                      if (ws.tasks.length === 0) {
-                        return <span className="text-xs" style={{ color: "#c0bdb8", fontStyle: "italic" }}>no tasks yet</span>;
-                      }
-                      const cnt = { onTrack: 0, complete: 0, "At Risk": 0, "Blocked": 0, "Off Track": 0 };
-                      ws.tasks.forEach((tk) => {
-                        if (tk.status === "Complete") { cnt.complete++; return; }
-                        const h = calcTaskHealth(tk).status;
-                        if (h === "At Risk" || h === "Blocked" || h === "Off Track") cnt[h]++;
-                        else cnt.onTrack++;
-                      });
-                      const pill = (n: number, label: string, bg: string, color: string, flagged: boolean) =>
-                        n > 0 ? (
-                          <span
-                            onClick={flagged ? () => { setNaFilter(ws.id); setActiveTab("needs-action"); } : undefined}
-                            className={"text-xs rounded px-2 py-0.5" + (flagged ? " cursor-pointer hover:opacity-80" : "")}
-                            style={{ backgroundColor: bg, color, fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap", display: "inline-block" }}
-                            title={flagged ? "See Needs Action" : undefined}
-                          >
-                            {n} {label}
-                          </span>
-                        ) : null;
-                      return (
-                        <>
-                          {pill(cnt.onTrack, "on track", "#dcfce7", "#15803d", false)}
-                          {pill(cnt.complete, "done", "#bbf7d0", "#166534", false)}
-                          {pill(cnt["At Risk"], "at risk", "#fef9c3", "#854d0e", true)}
-                          {pill(cnt["Blocked"], "blocked", "#ffedd5", "#c2410c", true)}
-                          {pill(cnt["Off Track"], "off track", "#fee2e2", "#b91c1c", true)}
-                        </>
-                      );
-                    })()}
-                  </div>
+                  {/* Task-health stacked bar (progress fill: complete → on track → at risk → blocked → off track) */}
+                  {(() => {
+                    const total = ws.tasks.length;
+                    if (total === 0) {
+                      return <span className="text-xs" style={{ color: "#c0bdb8", fontStyle: "italic" }}>no tasks yet</span>;
+                    }
+                    const cnt = { complete: 0, onTrack: 0, "At Risk": 0, "Blocked": 0, "Off Track": 0 };
+                    ws.tasks.forEach((tk) => {
+                      if (tk.status === "Complete") { cnt.complete++; return; }
+                      const h = calcTaskHealth(tk).status;
+                      if (h === "At Risk" || h === "Blocked" || h === "Off Track") cnt[h]++;
+                      else cnt.onTrack++;
+                    });
+                    const segs: { key: string; n: number; label: string; color: string; flagged: boolean }[] = [
+                      { key: "complete", n: cnt.complete,     label: "complete",  color: "#15803d", flagged: false },
+                      { key: "ontrack",  n: cnt.onTrack,      label: "on track",  color: "#86efac", flagged: false },
+                      { key: "atrisk",   n: cnt["At Risk"],   label: "at risk",   color: "#eab308", flagged: true },
+                      { key: "blocked",  n: cnt["Blocked"],   label: "blocked",   color: "#ea580c", flagged: true },
+                      { key: "offtrack", n: cnt["Off Track"], label: "off track", color: "#b91c1c", flagged: true },
+                    ].filter((s) => s.n > 0);
+                    return (
+                      <div className="flex w-full overflow-hidden" style={{ height: "16px", borderRadius: "4px" }}>
+                        {segs.map((s) => (
+                          <div
+                            key={s.key}
+                            onClick={
+                              s.flagged
+                                ? () => { setNaFilter(ws.id); setActiveTab("needs-action"); }
+                                : () => { window.location.hash = `ws-${ws.id}`; setActiveTab("workstreams"); }
+                            }
+                            title={`${s.n} ${s.label}${s.flagged ? " — see Needs Action" : ""}`}
+                            style={{
+                              width: `${(s.n / total) * 100}%`,
+                              minWidth: "8px",
+                              backgroundColor: s.color,
+                              cursor: "pointer",
+                            }}
+                          />
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
               );
             })}
