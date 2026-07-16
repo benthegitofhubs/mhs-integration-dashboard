@@ -56,13 +56,6 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
     workstreams.map((ws) => [ws.id, deriveWorkstreamStatus(ws)])
   ) as Record<string, Status100>;
 
-  // PROGRESS = "has work started?" — a workstream counts as In Progress if any
-  // task has moved past Not Started (incl. At Risk / Blocked / Complete), so
-  // Not Started + In Progress always covers all workstreams.
-  const progressCounts = {
-    "Not Started": workstreams.filter((ws) => !ws.tasks.some((t) => t.status !== "Not Started")).length,
-    "In Progress": workstreams.filter((ws) => ws.tasks.some((t) => t.status !== "Not Started")).length,
-  };
 
   // Effective workstream health: manual override wins, else task rollup, else
   // "On Track" (a task-less workstream still counts so all 15 are represented).
@@ -236,25 +229,10 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
             <div className="flex-1" style={{ height: "2px", backgroundColor: "#e5e3de" }} />
           </div>
 
-          {/* Summary counts: operational state + pace health */}
+          {/* Summary counts: pace health */}
           <div className="flex mb-3" style={{ borderTop: "1px solid #e5e3de" }}>
-            {/* Progress group — all statuses as pills so it sums to all 15 */}
-            <div style={{ flex: "2" }}>
-              <div className="text-xs font-semibold uppercase tracking-widest px-5 pt-2 pb-1" style={{ color: "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>Progress</div>
-              <div className="grid grid-cols-1 gap-2 px-5 pb-4">
-                {(["Not Started", "In Progress"] as const).map((s) => (
-                  <div key={s} className="flex items-center justify-between px-3 py-1.5 rounded"
-                    style={{ backgroundColor: STATUS_BG[s] }}>
-                    <span className="text-xs font-semibold" style={{ color: STATUS_COLOR[s], fontFamily: "var(--font-geist-mono)" }}>{s}</span>
-                    <span className="text-xs font-bold" style={{ color: STATUS_COLOR[s], fontFamily: "var(--font-geist-mono)" }}>{progressCounts[s]}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            {/* Vertical separator */}
-            <div style={{ width: "1px", backgroundColor: "#e5e3de", margin: "8px 0" }} />
             {/* Health group — pill badges */}
-            <div style={{ flex: "4" }}>
+            <div style={{ flex: "1" }}>
               <div className="text-xs font-semibold uppercase tracking-widest px-5 pt-2 pb-1" style={{ color: "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>Health</div>
               <div className="grid grid-cols-2 gap-2 px-5 pb-4">
                 {(["On Track", "At Risk", "Blocked", "Off Track"] as TaskHealth[]).map((h) => (
