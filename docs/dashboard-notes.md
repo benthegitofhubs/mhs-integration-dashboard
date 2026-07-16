@@ -65,7 +65,9 @@ task-status-driven. (Leftover `Status:` rows in tab headers are ignored.)
 ## Tabs
 
 1. **Overview** — executive summary. Eyebrow ("100-Day Integration Plan") /
-   headline / timeline / key dates / live-sync (or cached-data) banner at top,
+   headline ("One team, one mission") / a single **day-line** (Day N of 100 ·
+   days left · next board meeting) with a **slim progress bar** / live-sync (or
+   cached-data) banner at top,
    then: **four KPI tiles** (overall % complete, on-track / need-attention /
    off-track workstream counts, from `rollupWorkstreamHealth`), then
    **workstreams grouped by flagship pillar** as compact rows
@@ -139,3 +141,7 @@ Top nav is sticky ("frozen"). Location count = 20.
   "100-Day Integration Plan").
 - **Redesigned the Overview into an executive summary** (see Tabs → Overview):
   KPI tiles + pillar-grouped compact rows, replacing the 15-row table.
+- **Cleaned the Overview top**: headline → "One team, one mission"; replaced
+  the tick-timeline + key-dates table with a single day-line + slim progress
+  bar. Removed the inline "next board meeting" editor (`BoardMeetingCell`) —
+  the board date now comes from the Sheet's key-dates data.
