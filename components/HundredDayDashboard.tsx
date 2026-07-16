@@ -224,27 +224,6 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
           </div>
 
 
-          {/* Health legend */}
-          <div className="mb-6 rounded-lg overflow-hidden" style={{ border: "1px solid #e5e3de" }}>
-            <div style={{ backgroundColor: "white" }}>
-              {(([
-                { label: "On Track"  as TaskHealth, desc: "Due date has not passed and no manual flag — progressing normally." },
-                { label: "At Risk"   as TaskHealth, desc: "Manually flagged At Risk — falling behind but not yet stopped." },
-                { label: "Blocked"   as TaskHealth, desc: "Manually flagged Blocked — stopped, needs external action to proceed." },
-                { label: "Off Track" as TaskHealth, desc: "Due date has passed and the task is not yet complete." },
-              ]).map((row) => ({ ...row, ...HEALTH_META[row.label] }))).map((row, i, arr) => (
-                <div key={row.label} className="grid px-5 py-2.5 items-center gap-4"
-                  style={{ gridTemplateColumns: "110px 1fr", borderBottom: i < arr.length - 1 ? "1px solid #f0efe9" : "none" }}>
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded"
-                    style={{ backgroundColor: row.bg, color: row.color, fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap", display: "inline-block" }}>
-                    {row.label}
-                  </span>
-                  <p className="text-xs leading-relaxed" style={{ color: "#6b7280" }}>{row.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* Task-health bar legend */}
           <div className="flex flex-wrap gap-x-4 gap-y-1 mb-3 text-xs" style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)" }}>
             {[
@@ -265,7 +244,7 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
           <div className="overflow-x-auto" style={{ border: "1px solid #e5e3de", borderRadius: "6px", backgroundColor: "white" }}>
             <div className="grid text-xs uppercase tracking-widest font-semibold px-5 py-2.5"
               style={{
-                gridTemplateColumns: "28px 1fr 120px 150px 56px 1.7fr",
+                gridTemplateColumns: "28px 1fr 120px 150px 52px 90px 1.6fr",
                 backgroundColor: "#f7f6f3",
                 color: "#9ca3af",
                 fontFamily: "var(--font-geist-mono)",
@@ -276,6 +255,7 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
               <span style={{ whiteSpace: "nowrap" }}>Flagship Goal</span>
               <span style={{ whiteSpace: "nowrap" }}>Leader</span>
               <span style={{ whiteSpace: "nowrap" }}>Tasks</span>
+              <span style={{ whiteSpace: "nowrap" }}>Completion</span>
               <span style={{ whiteSpace: "nowrap" }}>Task Health</span>
             </div>
 
@@ -283,7 +263,7 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
               return (
                 <div key={ws.id} className="grid px-5 py-2.5 hover:bg-stone-50 transition-colors"
                   style={{
-                    gridTemplateColumns: "28px 1fr 120px 150px 56px 1.7fr",
+                    gridTemplateColumns: "28px 1fr 120px 150px 52px 90px 1.6fr",
                     borderBottom: i < workstreams.length - 1 ? "1px solid #f0efe9" : "none",
                     alignItems: "center",
                     gap: "8px",
@@ -339,12 +319,10 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
                   <span className="text-xs font-semibold" style={{ color: "#374151", fontFamily: "var(--font-geist-mono)" }}>
                     {ws.tasks.length}
                   </span>
-                  {/* Task-health stacked bar (progress fill: complete → on track → at risk → blocked → off track) */}
                   {(() => {
                     const total = ws.tasks.length;
-                    if (total === 0) {
-                      return <span className="text-xs" style={{ color: "#c0bdb8", fontStyle: "italic" }}>no tasks yet</span>;
-                    }
+                    const done = ws.tasks.filter((tk) => tk.status === "Complete").length;
+                    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
                     const cnt = { complete: 0, onTrack: 0, "At Risk": 0, "Blocked": 0, "Off Track": 0 };
                     ws.tasks.forEach((tk) => {
                       if (tk.status === "Complete") { cnt.complete++; return; }
@@ -352,33 +330,51 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
                       if (h === "At Risk" || h === "Blocked" || h === "Off Track") cnt[h]++;
                       else cnt.onTrack++;
                     });
-                    const segs: { key: string; n: number; label: string; color: string; flagged: boolean }[] = [
-                      { key: "complete", n: cnt.complete,     label: "complete",  color: "#15803d", flagged: false },
-                      { key: "ontrack",  n: cnt.onTrack,      label: "on track",  color: "#86efac", flagged: false },
-                      { key: "atrisk",   n: cnt["At Risk"],   label: "at risk",   color: "#eab308", flagged: true },
-                      { key: "blocked",  n: cnt["Blocked"],   label: "blocked",   color: "#ea580c", flagged: true },
-                      { key: "offtrack", n: cnt["Off Track"], label: "off track", color: "#b91c1c", flagged: true },
+                    const segs: { key: string; n: number; label: string; color: string; text: string; flagged: boolean }[] = [
+                      { key: "complete", n: cnt.complete,     label: "complete",  color: "#15803d", text: "#ffffff", flagged: false },
+                      { key: "ontrack",  n: cnt.onTrack,      label: "on track",  color: "#86efac", text: "#14532d", flagged: false },
+                      { key: "atrisk",   n: cnt["At Risk"],   label: "at risk",   color: "#eab308", text: "#422006", flagged: true },
+                      { key: "blocked",  n: cnt["Blocked"],   label: "blocked",   color: "#ea580c", text: "#ffffff", flagged: true },
+                      { key: "offtrack", n: cnt["Off Track"], label: "off track", color: "#b91c1c", text: "#ffffff", flagged: true },
                     ].filter((s) => s.n > 0);
                     return (
-                      <div className="flex w-full overflow-hidden" style={{ height: "16px", borderRadius: "4px" }}>
-                        {segs.map((s) => (
-                          <div
-                            key={s.key}
-                            onClick={
-                              s.flagged
-                                ? () => { setNaFilter(ws.id); setActiveTab("needs-action"); }
-                                : () => { window.location.hash = `ws-${ws.id}`; setActiveTab("workstreams"); }
-                            }
-                            title={`${s.n} ${s.label}${s.flagged ? " — see Needs Action" : ""}`}
-                            style={{
-                              width: `${(s.n / total) * 100}%`,
-                              minWidth: "8px",
-                              backgroundColor: s.color,
-                              cursor: "pointer",
-                            }}
-                          />
-                        ))}
-                      </div>
+                      <>
+                        {/* Completion */}
+                        <span className="text-xs font-semibold" style={{ color: pct > 0 ? "#15803d" : "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+                          {total > 0 ? `${pct}%` : "—"}
+                        </span>
+                        {/* Task-health stacked bar (complete → on track → at risk → blocked → off track) */}
+                        {total === 0 ? (
+                          <span className="text-xs" style={{ color: "#c0bdb8", fontStyle: "italic" }}>no tasks yet</span>
+                        ) : (
+                          <div className="flex w-full overflow-hidden" style={{ height: "20px", borderRadius: "4px" }}>
+                            {segs.map((s) => (
+                              <div
+                                key={s.key}
+                                onClick={
+                                  s.flagged
+                                    ? () => { setNaFilter(ws.id); setActiveTab("needs-action"); }
+                                    : () => { window.location.hash = `ws-${ws.id}`; setActiveTab("workstreams"); }
+                                }
+                                title={`${s.n} ${s.label}${s.flagged ? " — see Needs Action" : ""}`}
+                                className="flex items-center justify-center"
+                                style={{
+                                  width: `${(s.n / total) * 100}%`,
+                                  minWidth: "22px",
+                                  backgroundColor: s.color,
+                                  color: s.text,
+                                  fontSize: "11px",
+                                  fontWeight: 700,
+                                  fontFamily: "var(--font-geist-mono)",
+                                  cursor: "pointer",
+                                }}
+                              >
+                                {s.n}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
                     );
                   })()}
                 </div>
