@@ -186,6 +186,9 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
             p.items.push(ws);
           });
 
+          // Shared column template so the header row and data rows line up.
+          const COLS = "minmax(0, 1.6fr) 150px minmax(0, 1.4fr) 96px";
+
           return (
           <>
           {/* KPI tiles */}
@@ -197,6 +200,31 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
                 <div className="text-xs mt-1" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>{t.sub}</div>
               </div>
             ))}
+          </div>
+
+          {/* Legend */}
+          <div className="flex flex-wrap gap-x-4 gap-y-1 mb-4 text-xs" style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)" }}>
+            {[
+              { l: "Complete", c: "#15803d" },
+              { l: "On Track (In Progress/Not Started)", c: "#86efac" },
+              { l: "At risk", c: "#eab308" },
+              { l: "Blocked", c: "#ea580c" },
+              { l: "Off track", c: "#b91c1c" },
+            ].map(({ l, c }) => (
+              <span key={l} className="inline-flex items-center gap-1.5">
+                <span style={{ width: "11px", height: "11px", borderRadius: "2px", backgroundColor: c, display: "inline-block" }} />
+                {l}
+              </span>
+            ))}
+          </div>
+
+          {/* Column headers — align to the row grid */}
+          <div className="grid px-5 mb-1.5 text-xs uppercase tracking-widest font-semibold"
+            style={{ gridTemplateColumns: COLS, gap: "16px", color: "#9ca3af", fontFamily: "var(--font-geist-mono)", letterSpacing: "0.05em" }}>
+            <span>Workstream</span>
+            <span>Leader</span>
+            <span>Task health</span>
+            <span className="text-right">Completion %</span>
           </div>
 
           {/* Pillar-grouped compact workstream rows */}
@@ -224,7 +252,7 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
                   ].filter((s) => s.n > 0);
                   return (
                     <div key={ws.id} className="grid px-5 py-2.5 hover:bg-stone-50 transition-colors"
-                      style={{ gridTemplateColumns: "minmax(0, 2.2fr) 90px minmax(0, 1fr) 40px", gap: "12px", alignItems: "center", borderTop: i > 0 ? "1px solid #f0efe9" : "none" }}>
+                      style={{ gridTemplateColumns: COLS, gap: "16px", alignItems: "center", borderTop: i > 0 ? "1px solid #f0efe9" : "none" }}>
                       <span
                         onClick={() => { window.location.hash = `ws-${ws.id}`; setActiveTab("workstreams"); }}
                         className="relative group text-xs font-semibold cursor-pointer hover:underline"
@@ -297,21 +325,6 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
             </div>
           ))}
 
-          {/* Legend */}
-          <div className="flex flex-wrap gap-x-4 gap-y-1 mb-10 text-xs" style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)" }}>
-            {[
-              { l: "Complete", c: "#15803d" },
-              { l: "On Track (In Progress/Not Started)", c: "#86efac" },
-              { l: "At risk", c: "#eab308" },
-              { l: "Blocked", c: "#ea580c" },
-              { l: "Off track", c: "#b91c1c" },
-            ].map(({ l, c }) => (
-              <span key={l} className="inline-flex items-center gap-1.5">
-                <span style={{ width: "11px", height: "11px", borderRadius: "2px", backgroundColor: c, display: "inline-block" }} />
-                {l}
-              </span>
-            ))}
-          </div>
           </>
           );
         })()}
