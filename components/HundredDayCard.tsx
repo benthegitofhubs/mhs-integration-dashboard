@@ -248,7 +248,7 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
 
               {/* Workstream health — shows override if set, otherwise derived; click to override */}
               {(() => {
-                const OVERRIDE_OPTIONS = ["On Track", "In Progress", "At Risk", "Blocked", "Off Track"];
+                const OVERRIDE_OPTIONS = ["On Track", "In Progress", "At Risk", "Blocked", "Off Track", "Complete"];
                 // A value may be a health (HEALTH_META) or a status (STATUS_BG) — try both.
                 const bgOf = (v: string) => HEALTH_META[v as TaskHealth]?.bg ?? STATUS_BG[v as Status100] ?? "#f3f4f6";
                 const colorOf = (v: string) => HEALTH_META[v as TaskHealth]?.color ?? STATUS_COLOR[v as Status100] ?? "#374151";

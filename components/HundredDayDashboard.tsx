@@ -351,7 +351,7 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
                   {/* Derived status — dropdown to override */}
                   <div>
                     {(() => {
-                      const OVERRIDE_OPTIONS = ["On Track", "In Progress", "At Risk", "Blocked", "Off Track"];
+                      const OVERRIDE_OPTIONS = ["On Track", "In Progress", "At Risk", "Blocked", "Off Track", "Complete"];
                       const override = statusOverrides[ws.id];
                       // A value may be a health (HEALTH_META) or a status (STATUS_BG) — try both.
                       const bgOf = (v: string) => HEALTH_META[v as TaskHealth]?.bg ?? STATUS_BG[v as Status100] ?? "#f3f4f6";
