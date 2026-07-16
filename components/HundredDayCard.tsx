@@ -24,13 +24,6 @@ function toDisplayDate(input: string): string {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
-const STATUS_DOT: Record<Status100, string> = {
-  "Not Started": "#374151",
-  "In Progress": "#1d4ed8",
-  "At Risk":     "#eab308",
-  "Blocked":     "#b91c1c",
-  "Complete":    "#15803d",
-};
 
 const STATUSES: Status100[] = ["Not Started", "In Progress", "At Risk", "Blocked", "Complete"];
 
@@ -47,11 +40,10 @@ const RACI: { key: "accountable" | "responsible" | "consulted" | "informed"; lab
 interface Props {
   workstream: Workstream100;
   index: number;
-  derivedStatus: Status100 | null;
   search?: string;
 }
 
-export default function HundredDayCard({ workstream, index, derivedStatus, search = "" }: Props) {
+export default function HundredDayCard({ workstream, index, search = "" }: Props) {
   const [tasks, setTasks] = useState<Task100[]>(workstream.tasks);
   const [expanded, setExpanded] = useState(false);
   const [saving, setSaving] = useState<string | null>(null);
@@ -71,7 +63,6 @@ export default function HundredDayCard({ workstream, index, derivedStatus, searc
   const [leader, setLeader] = useState(workstream.leader);
   const [editingLeader, setEditingLeader] = useState(false);
   const [leaderDraft, setLeaderDraft] = useState(workstream.leader);
-  const [statusOverride, setStatusOverride] = useState<string | null>(workstream.statusOverride);
   const [imNotes, setImNotes] = useState<IMNote[]>([]);
   const [imDraft, setImDraft] = useState("");
   const [imHistoryOpen, setImHistoryOpen] = useState(false);
@@ -122,10 +113,6 @@ export default function HundredDayCard({ workstream, index, derivedStatus, searc
 
   const total      = tasks.length;
   const complete   = tasks.filter((t) => t.status === "Complete").length;
-  const inProgress = tasks.filter((t) => t.status === "In Progress").length;
-  const atRisk     = tasks.filter((t) => t.status === "At Risk").length;
-  const blocked    = tasks.filter((t) => t.status === "Blocked").length;
-  const notStarted = tasks.filter((t) => t.status === "Not Started").length;
   const pct        = total > 0 ? Math.round((complete / total) * 100) : 0;
 
   const yesterday = new Date();
@@ -136,8 +123,6 @@ export default function HundredDayCard({ workstream, index, derivedStatus, searc
     const d = new Date(t.dueDate);
     return !isNaN(d.getTime()) && d < yesterday;
   };
-  const overdueCount = tasks.filter(isOverdue).length;
-  const stuckCount   = tasks.filter((t) => t.status === "Blocked" || t.status === "At Risk").length;
 
 
   const startEditField = (taskId: string, field: RaciField) => {
@@ -314,46 +299,6 @@ export default function HundredDayCard({ workstream, index, derivedStatus, searc
                 </span>
               )}
 
-              {/* Workstream health — shows override if set, otherwise derived; click to override */}
-              {(() => {
-                const OVERRIDE_OPTIONS = ["On Track", "In Progress", "At Risk", "Blocked", "Off Track", "Complete"];
-                // A value may be a health (HEALTH_META) or a status (STATUS_BG) — try both.
-                const bgOf = (v: string) => HEALTH_META[v as TaskHealth]?.bg ?? STATUS_BG[v as Status100] ?? "#f3f4f6";
-                const colorOf = (v: string) => HEALTH_META[v as TaskHealth]?.color ?? STATUS_COLOR[v as Status100] ?? "#374151";
-                const isOverride = statusOverride != null && statusOverride !== "";
-                const display = isOverride ? statusOverride : derivedStatus;
-                if (!display) return null;
-                const bg = bgOf(display);
-                const color = colorOf(display);
-                return (
-                  <>
-                    <span style={{ color: "#d1cfc9" }}>·</span>
-                    <select
-                      value={statusOverride ?? ""}
-                      onChange={async (e) => {
-                        const val = e.target.value || null;
-                        setStatusOverride(val);
-                        await fetch("/api/update-workstream-status", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ workstreamId: workstream.id, status: val }),
-                        });
-                      }}
-                      className="text-xs font-semibold px-2 py-0.5 rounded cursor-pointer focus:outline-none"
-                      style={{ backgroundColor: bg, color, border: "none", fontFamily: "var(--font-geist-mono)" }}
-                      title={isOverride ? "Manual override — select Auto to clear" : "Auto-computed — select to override"}
-                    >
-                      <option value="">{derivedStatus ?? "—"}</option>
-                      {OVERRIDE_OPTIONS.map((h) => (
-                        <option key={h} value={h}>{h}</option>
-                      ))}
-                    </select>
-                    {isOverride && (
-                      <span className="text-xs" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }} title="Manual override active">⚙</span>
-                    )}
-                  </>
-                );
-              })()}
             </div>
 
             <p className="text-xs leading-relaxed" style={{ color: "#78716c", paddingLeft: "22px" }}>
@@ -362,27 +307,43 @@ export default function HundredDayCard({ workstream, index, derivedStatus, searc
 
           </div>
 
-          {/* Right: mini counts + segmented bar */}
-          <div className="flex items-center gap-8 shrink-0">
-            <div className="hidden sm:flex items-center gap-5 text-xs" style={{ fontFamily: "var(--font-geist-mono)" }}>
-              <span style={{ color: "#1a5c3a" }}>{complete}<span style={{ color: "#9ca3af" }}> done</span></span>
-              <span style={{ color: "#1d4ed8" }}>{inProgress}<span style={{ color: "#9ca3af" }}> active</span></span>
-              {atRisk > 0      && <span style={{ color: "#c2410c" }}>{atRisk}<span style={{ color: "#9ca3af" }}> at risk</span></span>}
-              {blocked > 0     && <span style={{ color: "#ea580c" }}>{blocked}<span style={{ color: "#9ca3af" }}> blocked</span></span>}
-              {overdueCount > 0 && <span style={{ color: "#b91c1c" }}>{overdueCount}<span style={{ color: "#9ca3af" }}> off track</span></span>}
+          {/* Right: completion + task-health bar (aligned with the Overview tab) */}
+          <div className="flex items-center gap-6 shrink-0">
+            <div style={{ textAlign: "right", minWidth: "40px" }}>
+              <div className="text-xs" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>complete</div>
+              <div className="text-sm font-semibold" style={{ color: pct > 0 ? "#15803d" : "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>{pct}%</div>
             </div>
 
-            <div style={{ width: "140px" }}>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>{pct}%</span>
-              </div>
-              <div className="flex overflow-hidden" style={{ height: "4px", borderRadius: "2px", backgroundColor: "#e5e3de" }}>
-                {complete > 0   && <div style={{ width: `${(complete / total) * 100}%`,   backgroundColor: STATUS_DOT["Complete"] }} />}
-                {inProgress > 0 && <div style={{ width: `${(inProgress / total) * 100}%`, backgroundColor: STATUS_DOT["In Progress"] }} />}
-                {atRisk > 0     && <div style={{ width: `${(atRisk / total) * 100}%`,     backgroundColor: STATUS_DOT["At Risk"] }} />}
-                {blocked > 0    && <div style={{ width: `${(blocked / total) * 100}%`,    backgroundColor: STATUS_DOT["Blocked"] }} />}
-                {notStarted > 0 && <div style={{ width: `${(notStarted / total) * 100}%`, backgroundColor: STATUS_DOT["Not Started"] }} />}
-              </div>
+            <div style={{ width: "240px" }}>
+              {(() => {
+                if (total === 0) {
+                  return <span className="text-xs" style={{ color: "#c0bdb8", fontStyle: "italic" }}>no tasks yet</span>;
+                }
+                const hc = { complete: 0, onTrack: 0, "At Risk": 0, "Blocked": 0, "Off Track": 0 };
+                tasks.forEach((tk) => {
+                  if (tk.status === "Complete") { hc.complete++; return; }
+                  const h = calcTaskHealth(tk).status;
+                  if (h === "At Risk" || h === "Blocked" || h === "Off Track") hc[h]++;
+                  else hc.onTrack++;
+                });
+                const segs = [
+                  { key: "complete", n: hc.complete,     color: "#15803d", text: "#ffffff", label: "complete" },
+                  { key: "ontrack",  n: hc.onTrack,      color: "#86efac", text: "#14532d", label: "on track" },
+                  { key: "atrisk",   n: hc["At Risk"],   color: "#eab308", text: "#422006", label: "at risk" },
+                  { key: "blocked",  n: hc["Blocked"],   color: "#ea580c", text: "#ffffff", label: "blocked" },
+                  { key: "offtrack", n: hc["Off Track"], color: "#b91c1c", text: "#ffffff", label: "off track" },
+                ].filter((s) => s.n > 0);
+                return (
+                  <div className="flex overflow-hidden" style={{ height: "20px", borderRadius: "4px" }}>
+                    {segs.map((s) => (
+                      <div key={s.key} title={`${s.n} ${s.label}`} className="flex items-center justify-center"
+                        style={{ width: `${(s.n / total) * 100}%`, minWidth: "22px", backgroundColor: s.color, color: s.text, fontSize: "11px", fontWeight: 700, fontFamily: "var(--font-geist-mono)" }}>
+                        {s.n}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
 
             <span className="text-xs" style={{ color: "#c8c5be" }}>{expanded ? "▲" : "▼"}</span>

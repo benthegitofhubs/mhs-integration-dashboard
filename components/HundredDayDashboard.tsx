@@ -22,19 +22,6 @@ export const STATUS_COLOR: Record<Status100, string> = {
   "Complete":    "#15803d",
 };
 
-// Derives workstream status from its tasks: worst task status wins.
-// A workstream with no tasks is treated as "Not Started" so all workstreams
-// are represented in the totals.
-function deriveWorkstreamStatus(ws: Workstream100): Status100 {
-  const tasks = ws.tasks;
-  if (tasks.length === 0) return "Not Started";
-  if (tasks.every((t) => t.status === "Complete"))  return "Complete";
-  if (tasks.some((t) => t.status === "Blocked"))    return "Blocked";
-  if (tasks.some((t) => t.status === "At Risk"))    return "At Risk";
-  if (tasks.some((t) => t.status === "In Progress")) return "In Progress";
-  return "Not Started";
-}
-
 export default function HundredDayDashboard({ workstreams, loadedAt }: { workstreams: Workstream100[]; loadedAt?: string }) {
   const [activeTab, setActiveTab] = useState<"overview" | "workstreams" | "by-owner" | "ai-automations" | "needs-action">("overview");
   const [leaders, setLeaders] = useState<Record<string, string>>(
@@ -50,11 +37,6 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
   const inProgress = allTasks.filter((t) => t.status === "In Progress").length;
   const atRisk     = allTasks.filter((t) => t.status === "At Risk").length;
   const blocked    = allTasks.filter((t) => t.status === "Blocked").length;
-
-  // Derived workstream statuses (no manual input needed)
-  const wsDerived = Object.fromEntries(
-    workstreams.map((ws) => [ws.id, deriveWorkstreamStatus(ws)])
-  ) as Record<string, Status100>;
 
 
 
@@ -445,7 +427,6 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
               key={ws.id}
               workstream={ws}
               index={i + 1}
-              derivedStatus={wsDerived[ws.id]}
               search={taskSearch}
             />
           ))}
