@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Workstream100, Task100, KEY_DATES, Status100, LAST_SYNCED } from "@/lib/hundredday";
 import HundredDayCard from "./HundredDayCard";
 import NavBar from "./NavBar";
-import { calcTaskHealth, rollupWorkstreamHealth, HEALTH_META, TaskHealth } from "@/lib/taskHealth";
+import { calcTaskHealth, HEALTH_META, TaskHealth } from "@/lib/taskHealth";
 
 export const STATUS_BG: Record<Status100, string> = {
   "Not Started": "#f3f4f6",
@@ -59,18 +59,6 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
   ) as Record<string, Status100>;
 
 
-  // Effective workstream health: manual override wins, else task rollup, else
-  // "On Track" (a task-less workstream still counts so all 15 are represented).
-  const VALID_HEALTH = new Set<TaskHealth>(["On Track", "At Risk", "Blocked", "Off Track"]);
-  const autoHealth = Object.fromEntries(
-    workstreams.map((ws) => {
-      const override = ws.statusOverride;
-      const health = override && VALID_HEALTH.has(override as TaskHealth)
-        ? (override as TaskHealth)
-        : rollupWorkstreamHealth(ws.tasks.map((t) => calcTaskHealth(t))) ?? "On Track";
-      return [ws.id, health];
-    })
-  ) as Record<string, TaskHealth>;
 
 
   return (
@@ -263,7 +251,7 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
           <div className="overflow-x-auto" style={{ border: "1px solid #e5e3de", borderRadius: "6px", backgroundColor: "white" }}>
             <div className="grid text-xs uppercase tracking-widest font-semibold px-5 py-2.5"
               style={{
-                gridTemplateColumns: "28px 1fr 120px 150px 150px 110px 80px 44px",
+                gridTemplateColumns: "28px 1fr 120px 150px 150px 56px 1.4fr",
                 backgroundColor: "#f7f6f3",
                 color: "#9ca3af",
                 fontFamily: "var(--font-geist-mono)",
@@ -274,23 +262,17 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
               <span style={{ whiteSpace: "nowrap" }}>Flagship Goal</span>
               <span style={{ whiteSpace: "nowrap" }}>Leader</span>
               <span style={{ whiteSpace: "nowrap" }}>Status</span>
-              <span style={{ whiteSpace: "nowrap" }}>Pace Health</span>
               <span style={{ whiteSpace: "nowrap" }}>Tasks</span>
-              <span className="text-right" style={{ whiteSpace: "nowrap" }}>%</span>
+              <span style={{ whiteSpace: "nowrap" }}>Task Health</span>
             </div>
 
             {workstreams.map((ws, i) => {
-              const t   = ws.tasks.length;
-              const c   = ws.tasks.filter((x) => x.status === "Complete").length;
-              const pct = t > 0 ? Math.round((c / t) * 100) : 0;
               const st  = wsDerived[ws.id];
-              const ah  = autoHealth[ws.id];
-              const ahMeta = ah ? HEALTH_META[ah] : null;
 
               return (
                 <div key={ws.id} className="grid px-5 py-2.5 hover:bg-stone-50 transition-colors"
                   style={{
-                    gridTemplateColumns: "28px 1fr 120px 150px 150px 110px 80px 44px",
+                    gridTemplateColumns: "28px 1fr 120px 150px 150px 56px 1.4fr",
                     borderBottom: i < workstreams.length - 1 ? "1px solid #f0efe9" : "none",
                     alignItems: "center",
                     gap: "8px",
@@ -383,24 +365,45 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
                       );
                     })()}
                   </div>
-                  {/* Pace-gap health */}
-                  <div>
-                    {ahMeta ? (
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded"
-                        style={{ backgroundColor: ahMeta.bg, color: ahMeta.color, fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap" }}>
-                        {ah}
-                      </span>
-                    ) : (
-                      <span className="text-xs" style={{ color: "#d1d5db", fontFamily: "var(--font-geist-mono)" }}>—</span>
-                    )}
+                  {/* Total tasks */}
+                  <span className="text-xs font-semibold" style={{ color: "#374151", fontFamily: "var(--font-geist-mono)" }}>
+                    {ws.tasks.length}
+                  </span>
+                  {/* Task-health breakdown */}
+                  <div className="flex flex-wrap items-center" style={{ gap: "4px" }}>
+                    {(() => {
+                      if (ws.tasks.length === 0) {
+                        return <span className="text-xs" style={{ color: "#c0bdb8", fontStyle: "italic" }}>no tasks yet</span>;
+                      }
+                      const cnt = { onTrack: 0, complete: 0, "At Risk": 0, "Blocked": 0, "Off Track": 0 };
+                      ws.tasks.forEach((tk) => {
+                        if (tk.status === "Complete") { cnt.complete++; return; }
+                        const h = calcTaskHealth(tk).status;
+                        if (h === "At Risk" || h === "Blocked" || h === "Off Track") cnt[h]++;
+                        else cnt.onTrack++;
+                      });
+                      const pill = (n: number, label: string, bg: string, color: string, flagged: boolean) =>
+                        n > 0 ? (
+                          <span
+                            onClick={flagged ? () => setActiveTab("needs-action") : undefined}
+                            className={"text-xs rounded px-2 py-0.5" + (flagged ? " cursor-pointer hover:opacity-80" : "")}
+                            style={{ backgroundColor: bg, color, fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap", display: "inline-block" }}
+                            title={flagged ? "See Needs Action" : undefined}
+                          >
+                            {n} {label}
+                          </span>
+                        ) : null;
+                      return (
+                        <>
+                          {pill(cnt.onTrack, "on track", "#dcfce7", "#15803d", false)}
+                          {pill(cnt.complete, "done", "#bbf7d0", "#166534", false)}
+                          {pill(cnt["At Risk"], "at risk", "#fef9c3", "#854d0e", true)}
+                          {pill(cnt["Blocked"], "blocked", "#ffedd5", "#c2410c", true)}
+                          {pill(cnt["Off Track"], "off track", "#fee2e2", "#b91c1c", true)}
+                        </>
+                      );
+                    })()}
                   </div>
-                  <span className="text-xs" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
-                    {c}/{t} done
-                  </span>
-                  <span className="text-xs font-semibold text-right"
-                    style={{ color: pct > 0 ? "#1a5c3a" : "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
-                    {pct}%
-                  </span>
                 </div>
               );
             })}
