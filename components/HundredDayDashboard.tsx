@@ -215,8 +215,8 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
         {activeTab === "needs-action" && (
           <NeedsActionView
             workstreams={workstreams}
-            onOpenWorkstream={(wsId) => {
-              window.location.hash = `ws-${wsId}`;
+            onOpenTask={(wsId, taskId) => {
+              window.location.hash = `ws-${wsId}~${taskId}`;
               setActiveTab("workstreams");
             }}
           />
@@ -818,7 +818,7 @@ function AIAutomationsView() {
   );
 }
 
-function NeedsActionView({ workstreams, onOpenWorkstream }: { workstreams: Workstream100[]; onOpenWorkstream: (wsId: string) => void }) {
+function NeedsActionView({ workstreams, onOpenTask }: { workstreams: Workstream100[]; onOpenTask: (wsId: string, taskId: string) => void }) {
   const ORDER: TaskHealth[] = ["At Risk", "Blocked", "Off Track"];
 
   // Flatten to individual flagged tasks, keyed by their health
@@ -860,7 +860,7 @@ function NeedsActionView({ workstreams, onOpenWorkstream }: { workstreams: Works
                 return (
                   <button
                     key={t.id}
-                    onClick={() => onOpenWorkstream(ws.id)}
+                    onClick={() => onOpenTask(ws.id, t.id)}
                     className="w-full text-left transition-colors hover:bg-stone-50"
                     style={{
                       display: "block",

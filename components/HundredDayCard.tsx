@@ -64,6 +64,7 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
   const [fieldDraft, setFieldDraft] = useState("");
   const [editingRank, setEditingRank] = useState<string | null>(null);
   const [rankDraft, setRankDraft] = useState("");
+  const [highlightTaskId, setHighlightTaskId] = useState<string | null>(null);
   const [subtasksOpen, setSubtasksOpen] = useState<Record<string, boolean>>({});
   const [newSubtaskDraft, setNewSubtaskDraft] = useState<Record<string, string>>({});
   const [leader, setLeader] = useState(workstream.leader);
@@ -81,15 +82,25 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
       .catch(() => {});
   }, [workstream.id]);
 
-  // Auto-expand + scroll when this card is targeted via #ws-<id> (e.g. from Needs Action)
+  // Auto-expand + scroll (and highlight a task) when targeted via
+  // #ws-<id> or #ws-<id>~<taskId> (e.g. from Needs Action)
   useEffect(() => {
     const focus = () => {
-      if (window.location.hash === `#ws-${workstream.id}`) {
-        setExpanded(true);
-        setTimeout(() => {
-          document.getElementById(`ws-${workstream.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
-        }, 60);
-      }
+      const prefix = `#ws-${workstream.id}`;
+      const h = window.location.hash;
+      if (h !== prefix && !h.startsWith(`${prefix}~`)) return;
+      setExpanded(true);
+      const taskId = h.startsWith(`${prefix}~`) ? h.slice(prefix.length + 1) : null;
+      setTimeout(() => {
+        const el = taskId
+          ? document.getElementById(`task-${taskId}`)
+          : document.getElementById(`ws-${workstream.id}`);
+        el?.scrollIntoView({ behavior: "smooth", block: taskId ? "center" : "start" });
+        if (taskId) {
+          setHighlightTaskId(taskId);
+          setTimeout(() => setHighlightTaskId(null), 2200);
+        }
+      }, 80);
     };
     focus();
     window.addEventListener("hashchange", focus);
@@ -408,8 +419,12 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
             const subtaskOpen = !!subtasksOpen[task.id];
             const doneCount = task.subtasks.filter((s) => s.done).length;
             return (
-            <div key={task.id}
-              style={{ borderBottom: idx < tasks.length - 1 ? "1px solid #f0efe9" : "none" }}>
+            <div key={task.id} id={`task-${task.id}`}
+              style={{
+                borderBottom: idx < tasks.length - 1 ? "1px solid #f0efe9" : "none",
+                backgroundColor: highlightTaskId === task.id ? "#fef9c3" : undefined,
+                transition: "background-color 0.6s ease",
+              }}>
             <div className="grid px-6 py-4 hover:bg-stone-50 transition-colors"
               style={{
                 gridTemplateColumns: "36px 1fr 110px 90px 120px",
