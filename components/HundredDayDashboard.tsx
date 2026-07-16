@@ -213,7 +213,13 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
         )}
 
         {activeTab === "needs-action" && (
-          <NeedsActionView workstreams={workstreams} autoHealth={autoHealth} />
+          <NeedsActionView
+            workstreams={workstreams}
+            onOpenWorkstream={(wsId) => {
+              window.location.hash = `ws-${wsId}`;
+              setActiveTab("workstreams");
+            }}
+          />
         )}
 
         {activeTab === "workstreams" && (
@@ -812,135 +818,74 @@ function AIAutomationsView() {
   );
 }
 
-function NeedsActionView({ workstreams, autoHealth }: { workstreams: Workstream100[]; autoHealth: Record<string, TaskHealth | null> }) {
-  const FLAGGED_STATUSES = new Set(["Not Started", "At Risk", "Blocked"]);
+function NeedsActionView({ workstreams, onOpenWorkstream }: { workstreams: Workstream100[]; onOpenWorkstream: (wsId: string) => void }) {
+  const ORDER: TaskHealth[] = ["At Risk", "Blocked", "Off Track"];
 
-  const flaggedWorkstreams = workstreams
-    .map((ws) => {
-      const wsHealth = autoHealth[ws.id];
-      const flaggedTasks = ws.tasks.filter(
-        (t) => t.status !== "Complete" && (FLAGGED_STATUSES.has(t.status) || calcTaskHealth(t).status !== "On Track")
-      );
-      return { ws, wsHealth, flaggedTasks };
-    })
-    .filter(({ wsHealth, flaggedTasks }) => wsHealth !== "On Track" || flaggedTasks.length > 0);
+  // Flatten to individual flagged tasks, keyed by their health
+  const items = workstreams.flatMap((ws) =>
+    ws.tasks
+      .map((t) => ({ ws, t, health: calcTaskHealth(t).status }))
+      .filter((x) => ORDER.includes(x.health))
+  );
 
-  if (flaggedWorkstreams.length === 0) {
+  if (items.length === 0) {
     return (
       <div className="pb-20 flex flex-col items-center justify-center py-20">
         <p className="text-2xl mb-2">✓</p>
         <p className="text-sm font-semibold" style={{ color: "#15803d" }}>Everything is on track.</p>
-        <p className="text-xs mt-1" style={{ color: "#9ca3af" }}>No workstreams or tasks need attention right now.</p>
+        <p className="text-xs mt-1" style={{ color: "#9ca3af" }}>No tasks are At Risk, Blocked, or Off Track right now.</p>
       </div>
     );
   }
 
   return (
-    <div className="pb-20 space-y-4">
-
-      {/* At-a-glance summary table */}
-      <div className="rounded-lg overflow-hidden mb-6" style={{ border: "1px solid #fecaca", backgroundColor: "white" }}>
-        <div className="px-5 py-3" style={{ backgroundColor: "#fff5f5", borderBottom: "1px solid #fecaca" }}>
-          <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#b91c1c", fontFamily: "var(--font-geist-mono)" }}>
-            Needs Action — At a Glance
-          </p>
-        </div>
-        <div className="grid text-xs uppercase tracking-widest font-semibold px-5 py-2"
-          style={{ gridTemplateColumns: "2fr 1fr 80px 80px 80px 108px", color: "#9ca3af", fontFamily: "var(--font-geist-mono)", borderBottom: "1px solid #fecaca", backgroundColor: "#fafafa" }}>
-          <span>Workstream</span>
-          <span>Owner</span>
-          <span style={{ color: HEALTH_META["At Risk"].color }}>At Risk</span>
-          <span style={{ color: HEALTH_META["Blocked"].color }}>Blocked</span>
-          <span style={{ color: HEALTH_META["Off Track"].color }}>Off Track</span>
-          <span style={{ color: "#374151" }}>Not Started</span>
-        </div>
-        {flaggedWorkstreams.map(({ ws, flaggedTasks }, i) => {
-          const atRisk     = flaggedTasks.filter((t) => calcTaskHealth(t).status === "At Risk").length;
-          const blocked    = flaggedTasks.filter((t) => calcTaskHealth(t).status === "Blocked").length;
-          const offTrack   = flaggedTasks.filter((t) => calcTaskHealth(t).status === "Off Track").length;
-          const notStarted = flaggedTasks.filter((t) => t.status === "Not Started").length;
-          return (
-            <div key={ws.id} className="grid px-5 py-2.5 hover:bg-red-50 transition-colors"
-              style={{
-                gridTemplateColumns: "2fr 1fr 80px 80px 80px 108px",
-                borderBottom: i < flaggedWorkstreams.length - 1 ? "1px solid #fef2f2" : "none",
-                alignItems: "center",
-              }}>
-              <a href={`#na-${ws.id}`} className="text-xs font-semibold hover:underline" style={{ color: "#1a1a1a", textDecoration: "none" }}>{ws.name}</a>
-              <span className="text-xs" style={{ color: "#6b7280", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ws.leader}</span>
-              <span className="text-xs font-semibold" style={{ color: atRisk > 0 ? HEALTH_META["At Risk"].color : "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>{atRisk > 0 ? atRisk : "—"}</span>
-              <span className="text-xs font-semibold" style={{ color: blocked > 0 ? HEALTH_META["Blocked"].color : "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>{blocked > 0 ? blocked : "—"}</span>
-              <span className="text-xs font-semibold" style={{ color: offTrack > 0 ? HEALTH_META["Off Track"].color : "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>{offTrack > 0 ? offTrack : "—"}</span>
-              <span className="text-xs font-semibold" style={{ color: notStarted > 0 ? "#374151" : "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>{notStarted > 0 ? notStarted : "—"}</span>
-            </div>
-          );
-        })}
-      </div>
-
-      {flaggedWorkstreams.map(({ ws, wsHealth, flaggedTasks }) => {
-        const hMeta = wsHealth ? HEALTH_META[wsHealth] : null;
+    <div className="pb-20 max-w-4xl mx-auto">
+      {ORDER.map((h) => {
+        const group = items.filter((x) => x.health === h);
+        if (group.length === 0) return null;
+        const meta = HEALTH_META[h];
         return (
-          <div key={ws.id} id={`na-${ws.id}`} style={{ border: "1px solid #fecaca", borderRadius: "6px", overflow: "hidden", backgroundColor: "white" }}>
-            {/* Workstream header */}
-            <div className="px-5 py-3 flex items-center justify-between gap-4"
-              style={{ backgroundColor: "#fff5f5", borderBottom: "1px solid #fecaca" }}>
-              <div className="flex items-center gap-3 min-w-0">
-                <span className="text-sm font-semibold" style={{ color: "#111" }}>{ws.name}</span>
-                <span className="text-xs" style={{ color: "#9ca3af" }}>{ws.leader}</span>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                {hMeta && (
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded"
-                    style={{ backgroundColor: hMeta.bg, color: hMeta.color, fontFamily: "var(--font-geist-mono)" }}>
-                    {wsHealth}
-                  </span>
-                )}
-                <span className="text-xs" style={{ color: "#b91c1c", fontFamily: "var(--font-geist-mono)" }}>
-                  {flaggedTasks.length} task{flaggedTasks.length !== 1 ? "s" : ""}
-                </span>
-              </div>
+          <div key={h} className="mb-8">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
+                style={{ backgroundColor: meta.bg, color: meta.color, fontFamily: "var(--font-geist-mono)" }}>
+                {h}
+              </span>
+              <span className="text-xs" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>{group.length}</span>
             </div>
 
-            {/* Task rows */}
-            <div className="grid text-xs uppercase tracking-widest font-semibold px-5 py-2"
-              style={{ gridTemplateColumns: "1fr 110px 110px 90px 120px", color: "#9ca3af", fontFamily: "var(--font-geist-mono)", borderBottom: "1px solid #fecaca", backgroundColor: "#fafafa" }}>
-              <span>Task</span>
-              <span>Due Date</span>
-              <span>Accountable</span>
-              <span>Health</span>
-              <span>Status</span>
+            <div className="space-y-2">
+              {group.map(({ ws, t }) => {
+                const overdue = t.status !== "Complete" && t.dueDate && new Date(t.dueDate) < new Date();
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => onOpenWorkstream(ws.id)}
+                    className="w-full text-left transition-colors hover:bg-stone-50"
+                    style={{
+                      display: "block",
+                      backgroundColor: "white",
+                      border: "0.5px solid #e5e3de",
+                      borderLeft: `3px solid ${meta.dot}`,
+                      padding: "12px 14px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <div className="text-xs uppercase tracking-widest mb-1" style={{ color: "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>
+                      {ws.name}
+                    </div>
+                    <div className="text-sm leading-snug mb-2" style={{ color: "#1a1a1a" }}>{t.description}</div>
+                    <div className="flex items-center gap-4 text-xs" style={{ color: "#78716c", fontFamily: "var(--font-geist-mono)" }}>
+                      <span style={{ color: overdue ? "#b91c1c" : undefined, fontWeight: overdue ? 600 : undefined }}>
+                        {t.dueDate || "—"}
+                      </span>
+                      <span>{t.accountable || "—"}</span>
+                      <span style={{ marginLeft: "auto", color: "#1a5c3a" }}>Open task →</span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
-
-            {flaggedTasks.map((task, idx) => {
-              const health = calcTaskHealth(task);
-              const hm = HEALTH_META[health.status];
-              const overdue = task.status !== "Complete" && task.dueDate && new Date(task.dueDate) < new Date();
-              return (
-                <div key={task.id} className="grid px-5 py-3 hover:bg-red-50 transition-colors"
-                  style={{
-                    gridTemplateColumns: "1fr 110px 110px 90px 120px",
-                    borderBottom: idx < flaggedTasks.length - 1 ? "1px solid #fef2f2" : "none",
-                    alignItems: "start",
-                    gap: "12px",
-                  }}>
-                  <p className="text-xs leading-relaxed" style={{ color: "#1a1a1a" }}>{task.description}</p>
-                  <span className="text-xs pt-0.5" style={{ color: overdue ? "#b91c1c" : task.dueDate ? "#57534e" : "#c0bdb8", fontFamily: "var(--font-geist-mono)", fontWeight: overdue ? 600 : undefined }}>
-                    {task.dueDate || "—"}
-                  </span>
-                  <span className="text-xs pt-0.5" style={{ color: task.accountable ? "#78716c" : "#c0bdb8" }}>
-                    {task.accountable || "—"}
-                  </span>
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded pt-0.5"
-                    style={{ backgroundColor: hm.bg, color: hm.color, fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap", display: "inline-block" }}>
-                    {health.status}
-                  </span>
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded"
-                    style={{ backgroundColor: STATUS_BG[task.status], color: STATUS_COLOR[task.status], fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap", display: "inline-block" }}>
-                    {task.status}
-                  </span>
-                </div>
-              );
-            })}
           </div>
         );
       })}

@@ -81,6 +81,21 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
       .catch(() => {});
   }, [workstream.id]);
 
+  // Auto-expand + scroll when this card is targeted via #ws-<id> (e.g. from Needs Action)
+  useEffect(() => {
+    const focus = () => {
+      if (window.location.hash === `#ws-${workstream.id}`) {
+        setExpanded(true);
+        setTimeout(() => {
+          document.getElementById(`ws-${workstream.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 60);
+      }
+    };
+    focus();
+    window.addEventListener("hashchange", focus);
+    return () => window.removeEventListener("hashchange", focus);
+  }, [workstream.id]);
+
   const saveImNote = async () => {
     if (!imDraft.trim()) return;
     const entry: IMNote = { timestamp: new Date().toISOString(), note: imDraft.trim() };
