@@ -253,7 +253,7 @@ export default function HundredDayCard({ workstream, index, search = "" }: Props
         className="w-full text-left transition-colors"
         style={{ padding: "12px 20px", backgroundColor: expanded ? "#fafaf8" : "white", outline: "none" }}
       >
-        <div className="grid items-center" style={{ gridTemplateColumns: "28px 1fr 120px 150px 52px 70px 1.6fr 16px", gap: "8px" }}>
+        <div className="grid items-center" style={{ gridTemplateColumns: "28px 1fr 120px 150px 52px 90px 1.6fr", gap: "8px" }}>
           {/* # */}
           <span className="text-xs font-bold" style={{ color: "#1a5c3a", fontFamily: "var(--font-geist-mono)" }}>{index}</span>
 
@@ -346,9 +346,6 @@ export default function HundredDayCard({ workstream, index, search = "" }: Props
               </div>
             );
           })()}
-
-          {/* Chevron */}
-          <span className="text-xs text-right" style={{ color: "#c8c5be" }}>{expanded ? "▲" : "▼"}</span>
         </div>
       </button>
 
