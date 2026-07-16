@@ -230,8 +230,11 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
           <div className="grid gap-3 mb-8" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))" }}>
             {tiles.map((t) => (
               <div key={t.label} style={{ backgroundColor: "white", border: "1px solid #e5e3de", borderRadius: "6px", padding: "14px 16px" }}>
-                <div className="text-xs uppercase tracking-widest mb-1.5" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)", letterSpacing: "0.05em" }}>{t.label}</div>
-                <div style={{ fontSize: "24px", fontWeight: 700, color: t.color, lineHeight: 1.1 }}>{t.value}</div>
+                <div className="text-xs uppercase tracking-widest" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)", letterSpacing: "0.05em" }}>{t.label}</div>
+                {t.label === "On track" && (
+                  <div className="text-xs" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>(In Progress/Not Started)</div>
+                )}
+                <div className="mt-1.5" style={{ fontSize: "24px", fontWeight: 700, color: t.color, lineHeight: 1.1 }}>{t.value}</div>
                 <div className="text-xs mt-1" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>{t.sub}</div>
               </div>
             ))}
