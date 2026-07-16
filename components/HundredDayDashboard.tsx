@@ -76,7 +76,7 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
         {/* Eyebrow + headline — shown on every tab, below the tabs */}
         <p className="text-xs font-semibold uppercase tracking-widest mb-2"
           style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
-          Mindful Health Solutions · 100-Day Integration Plan
+          100-Day Integration Plan
         </p>
         <h1 className="text-3xl font-bold leading-snug mb-6" style={{ letterSpacing: "-0.02em", color: "#111" }}>
           100 days to one team, one mission.
