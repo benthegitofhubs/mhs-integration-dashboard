@@ -316,14 +316,17 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
                     gap: "8px",
                   }}>
                   <span className="text-xs font-bold" style={{ color: "#1a5c3a", fontFamily: "var(--font-geist-mono)" }}>{i + 1}</span>
-                  <a href={`#ws-${ws.id}`} className="relative group text-xs font-semibold"
-                    style={{ color: "#1a1a1a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textDecoration: "none" }}>
+                  <span
+                    onClick={() => { window.location.hash = `ws-${ws.id}`; setActiveTab("workstreams"); }}
+                    className="relative group text-xs font-semibold cursor-pointer hover:underline"
+                    style={{ color: "#1a1a1a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+                    title="Open tasks">
                     {ws.name}
                     <span className="absolute left-0 top-full mt-1.5 z-50 hidden group-hover:block w-64 rounded px-3 py-2 text-xs leading-relaxed shadow-lg pointer-events-none"
                       style={{ backgroundColor: "#1a1a1a", color: "#f5f5f4", fontWeight: 400, whiteSpace: "normal" }}>
                       {ws.goal}
                     </span>
-                  </a>
+                  </span>
                   <span className="text-xs" style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ws.flagshipGoal.replace(/^\d+\s*·\s*/, "")}</span>
                   {editingLeader === ws.id ? (
                     <input
