@@ -1,0 +1,110 @@
+# MHS × Radial 100-Day Integration Dashboard — Design & Change Notes
+
+Living reference for how the dashboard works and the changes made in the
+Jul 2026 build session. Live at https://mhsintegration.netlify.app/hundredday
+(Netlify, Next.js 16 / Turbopack). Repo: benthegitofhubs/mhs-integration-dashboard.
+
+---
+
+## Source of truth
+
+- **Google Sheet** (native Google Sheets format): `1FzP8ePYCDHoBxx8bW0Ft2mbLEqfzYNmf2zobBF8pbvA`
+  — "Radial x Mindful Health Solutions - 100 Day Integration Plan". The old
+  Excel/Office file (`1Gm5…`) is retired (Sheets API can't read Office files).
+- The app reads live on every page load (`export const dynamic = "force-dynamic"`)
+  and writes changes back immediately. Service account:
+  `radial-mhs-integration@radial-mhs-integration.iam.gserviceaccount.com`
+  (shared as Editor). Credentials via `GOOGLE_SERVICE_ACCOUNT_JSON` env
+  (Netlify) / `~/.mhs_service_account.json` (scripts).
+
+### What comes from where
+- **Workstream name** → Dashboard tab, **column B** (one-way, sheet → app),
+  matched positionally via `DASHBOARD_ID_ORDER` in `lib/sheets.ts`.
+- **100-Day Goal** → Dashboard tab, **column E** ("Final"), falling back to D.
+- **Leader** → each workstream tab's `Leader: X | Supporting: …` header row
+  (two-way editable in app).
+- **Per-task fields** (two-way, matched by header name so column order is safe)
+  in each of the 15 workstream tabs:
+  - A `Ranking #` · B `Work Item` · C `Subtasks` · D `Due Date`
+  - E `Accountable` · F `Responsible` · G `Consulted` · H `Informed` (RACI)
+  - I `Status` · J `Notes / Next Steps` · K `Reason for Risk/Off Track/Block`
+
+15 workstreams; tabs mapped in `WS_TAB_MAP`. Dashboard tab is a curated master
+list — do not restructure the 15 source tabs (header row, Leader row, column
+order). "IM Notes" and "AI Automations" tabs are protected.
+
+---
+
+## Health model (single source: task Status)
+
+You only set **task Status** (Not Started / In Progress / At Risk / Blocked /
+Complete). Everything else is derived (`lib/taskHealth.ts` → `calcTaskHealth`):
+
+1. Complete → not flagged (shown as "complete")
+2. **Off Track** — due date passed and not Complete (automatic; takes precedence)
+3. **Blocked** — Status = Blocked
+4. **At Risk** — Status = At Risk
+5. **Not Started** — Status = Not Started (and not overdue)
+6. **On Track** — everything else (actively in progress, not overdue)
+
+Bar segment colors: Complete `#15803d` · On track `#86efac` · Not started
+`#d1d5db` · At risk `#eab308` · Blocked `#ea580c` · Off track `#b91c1c`.
+
+There is **no workstream-level status/override** anymore — the app is fully
+task-status-driven. (Leftover `Status:` rows in tab headers are ignored.)
+
+---
+
+## Tabs
+
+1. **Overview** — eyebrow/headline/timeline/key dates (shown on every tab,
+   under the tab bar), plus the per-workstream table: `# · Workstream ·
+   Flagship Goal · Leader · Tasks · Completion% · Task Health (stacked bar)`.
+   Clicking a workstream name opens its tasks; clicking a flagged bar segment
+   opens Needs Action filtered to that workstream.
+2. **Workstream Tasks** — keyword search (top), a column-header row + legend,
+   then one card per workstream whose header **mirrors the Overview row** and
+   drops down to the task table (Ranking · Task · Due Date · Status, with RACI
+   + subtasks + notes under each task). Ranking is editable, unique per
+   workstream, and sortable; tasks also sort by due date.
+3. **Needs Action** — flat list of flagged tasks grouped At Risk → Blocked →
+   Off Track, each with workstream, owner, due date, and an editable
+   **Reason** (persists to sheet column K). Click an item → opens that task in
+   the Workstream Tasks tab (expanded, scrolled, highlighted). Can be filtered
+   to one workstream.
+4. **By Accountable** — tasks grouped by the Accountable person.
+5. **AI Automations** — running list of proposed automations (status persisted
+   in browser).
+
+Top nav is sticky ("frozen"). Location count = 20.
+
+---
+
+## Daily Roam digest
+
+- Scheduled task `mhs-integration-daily-digest`, **9:00 AM ET daily**, posts to
+  the Roam **Integration Team** channel (groupId
+  `970c268a-f8b3-4c76-a3b5-b8ad907aa0d8`).
+- Runs `scripts/digest.ts` (uses `fetchWorkstreams`), then formats:
+  header + day line → **Overall Task Health** (✅ complete · 🟢 on track ·
+  ⬜ not started · 🟡 at risk · 🟠 blocked · 🔴 off track) → **Needs attention**
+  (only workstreams with flagged tasks, by count) → tracker link.
+
+---
+
+## This session's changes (Jul 16, 2026)
+
+- Migrated to native Google Sheets; fixed truncated `b2b`/`ltc` tab names that
+  had them silently reading static data.
+- RACI replaced single Owner (4 sheet columns + inline editing).
+- Subtasks (add / check / delete), Ranking (editable, unique, sortable).
+- Workstream name + goal sourced from Dashboard tab; added Service Experience
+  to the Dashboard tab.
+- Rewrote all 15 Dashboard rollup formulas (correct tabs, ranges, status logic).
+- Reframed health reporting: dropped ambiguous workstream "status" rollup in
+  favor of per-workstream **task-badge stacked bars** with counts + Completion%;
+  split **Not Started** out of On Track.
+- 5-tab restructure; sticky nav; keyword search; Needs Action redesign with
+  persistent Reason field.
+- Daily digest → live data, per-workstream, shortened format, 9 AM ET.
+- Removed the pace/Expected-vs-Actual card and redundant section dividers.
