@@ -41,6 +41,7 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
   );
   const [editingLeader, setEditingLeader] = useState<string | null>(null);
   const [leaderDraft, setLeaderDraft] = useState("");
+  const [taskSearch, setTaskSearch] = useState("");
   const [statusOverrides, setStatusOverrides] = useState<Record<string, string | null>>(
     Object.fromEntries(workstreams.map((ws) => [ws.id, ws.statusOverride ?? null]))
   );
@@ -454,14 +455,45 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
       {/* Workstream cards — only on workstreams tab */}
       {activeTab === "workstreams" && (
         <div className="max-w-6xl mx-auto px-8 pb-20 space-y-2">
+          {/* Task keyword search */}
+          <div className="relative mb-2">
+            <input
+              type="text"
+              value={taskSearch}
+              onChange={(e) => setTaskSearch(e.target.value)}
+              placeholder="Search tasks by keyword…"
+              className="w-full text-sm rounded-lg focus:outline-none"
+              style={{ border: "1px solid #e5e3de", backgroundColor: "white", color: "#1a1a1a", padding: "10px 32px 10px 12px" }}
+            />
+            {taskSearch && (
+              <button onClick={() => setTaskSearch("")} aria-label="Clear search"
+                className="hover:text-stone-600"
+                style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#9ca3af", fontSize: "14px", lineHeight: 1 }}>
+                ✕
+              </button>
+            )}
+          </div>
+
           {workstreams.map((ws, i) => (
             <HundredDayCard
               key={ws.id}
               workstream={ws}
               index={i + 1}
               derivedStatus={wsDerived[ws.id]}
+              search={taskSearch}
             />
           ))}
+
+          {taskSearch.trim() && !workstreams.some((ws) =>
+            ws.tasks.some((t) =>
+              [t.description, t.accountable, t.responsible, t.consulted, t.informed, t.notes, t.reason, ...t.subtasks.map((s) => s.text)]
+                .some((v) => (v || "").toLowerCase().includes(taskSearch.trim().toLowerCase()))
+            )
+          ) && (
+            <p className="text-sm text-center py-10" style={{ color: "#9ca3af" }}>
+              No tasks match “{taskSearch}”.
+            </p>
+          )}
         </div>
       )}
     </main>

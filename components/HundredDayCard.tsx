@@ -48,9 +48,10 @@ interface Props {
   workstream: Workstream100;
   index: number;
   derivedStatus: Status100 | null;
+  search?: string;
 }
 
-export default function HundredDayCard({ workstream, index, derivedStatus }: Props) {
+export default function HundredDayCard({ workstream, index, derivedStatus, search = "" }: Props) {
   const [tasks, setTasks] = useState<Task100[]>(workstream.tasks);
   const [expanded, setExpanded] = useState(false);
   const [saving, setSaving] = useState<string | null>(null);
@@ -213,9 +214,16 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
     });
   };
 
+  const q = search.trim().toLowerCase();
+  const matchesQuery = (t: Task100) =>
+    !q ||
+    [t.description, t.accountable, t.responsible, t.consulted, t.informed, t.notes, t.reason, ...t.subtasks.map((s) => s.text)]
+      .some((v) => (v || "").toLowerCase().includes(q));
+
   const sortedTasks = (() => {
+    const base = q ? tasks.filter(matchesQuery) : tasks;
     if (sortByRank) {
-      return [...tasks].sort((a, b) => {
+      return [...base].sort((a, b) => {
         if (a.ranking == null && b.ranking == null) return 0;
         if (a.ranking == null) return 1;
         if (b.ranking == null) return -1;
@@ -223,13 +231,13 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
       });
     }
     if (sortByDate) {
-      return [...tasks].sort((a, b) => {
+      return [...base].sort((a, b) => {
         const da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
         const db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
         return sortByDate === "asc" ? da - db : db - da;
       });
     }
-    return tasks;
+    return base;
   })();
 
   const handleStatusChange = async (taskId: string, newStatus: Status100) => {
@@ -246,6 +254,10 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
       setSaving(null);
     }
   };
+
+  // While searching, hide workstreams with no matching tasks and force-expand the rest
+  if (q && sortedTasks.length === 0) return null;
+  const open = expanded || !!q;
 
   return (
     <div id={`ws-${workstream.id}`} style={{ backgroundColor: "white", border: "1px solid #e5e3de", borderRadius: "6px", overflow: "hidden" }}>
@@ -379,7 +391,7 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
       </button>
 
       {/* Task table */}
-      {expanded && tasks.length > 0 && (
+      {open && sortedTasks.length > 0 && (
         <div style={{ borderTop: "1px solid #e5e3de" }}>
           <div className="grid text-xs uppercase tracking-widest font-semibold px-6 py-2.5"
             style={{
@@ -421,7 +433,7 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
             return (
             <div key={task.id} id={`task-${task.id}`}
               style={{
-                borderBottom: idx < tasks.length - 1 ? "1px solid #f0efe9" : "none",
+                borderBottom: idx < sortedTasks.length - 1 ? "1px solid #f0efe9" : "none",
                 backgroundColor: highlightTaskId === task.id ? "#fef9c3" : undefined,
                 transition: "background-color 0.6s ease",
               }}>
