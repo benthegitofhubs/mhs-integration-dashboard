@@ -72,12 +72,6 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
     })
   ) as Record<string, TaskHealth>;
 
-  const autoHealthCounts: Record<TaskHealth, number> = {
-    "On Track":  workstreams.filter((ws) => autoHealth[ws.id] === "On Track").length,
-    "At Risk":   workstreams.filter((ws) => autoHealth[ws.id] === "At Risk").length,
-    "Blocked":   workstreams.filter((ws) => autoHealth[ws.id] === "Blocked").length,
-    "Off Track": workstreams.filter((ws) => autoHealth[ws.id] === "Off Track").length,
-  };
 
   return (
     <>
@@ -241,23 +235,6 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
               Workstream Health
             </p>
             <div className="flex-1" style={{ height: "2px", backgroundColor: "#e5e3de" }} />
-          </div>
-
-          {/* Summary counts: pace health */}
-          <div className="flex mb-3" style={{ borderTop: "1px solid #e5e3de" }}>
-            {/* Health group — pill badges */}
-            <div style={{ flex: "1" }}>
-              <div className="text-xs font-semibold uppercase tracking-widest px-5 pt-2 pb-1" style={{ color: "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>Health</div>
-              <div className="grid grid-cols-2 gap-2 px-5 pb-4">
-                {(["On Track", "At Risk", "Blocked", "Off Track"] as TaskHealth[]).map((h) => (
-                  <div key={h} className="flex items-center justify-between px-3 py-1.5 rounded"
-                    style={{ backgroundColor: HEALTH_META[h].bg }}>
-                    <span className="text-xs font-semibold" style={{ color: HEALTH_META[h].color, fontFamily: "var(--font-geist-mono)" }}>{h}</span>
-                    <span className="text-xs font-bold" style={{ color: HEALTH_META[h].color, fontFamily: "var(--font-geist-mono)" }}>{autoHealthCounts[h]}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
 
 
