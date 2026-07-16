@@ -43,6 +43,7 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
   const [editingLeader, setEditingLeader] = useState<string | null>(null);
   const [leaderDraft, setLeaderDraft] = useState("");
   const [taskSearch, setTaskSearch] = useState("");
+  const [naFilter, setNaFilter] = useState<string | null>(null);
   const [statusOverrides, setStatusOverrides] = useState<Record<string, string | null>>(
     Object.fromEntries(workstreams.map((ws) => [ws.id, ws.statusOverride ?? null]))
   );
@@ -78,7 +79,7 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
           ] as const).map((tab) => {
             const isActive = activeTab === tab.id;
             return (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              <button key={tab.id} onClick={() => { setActiveTab(tab.id); setNaFilter(null); }}
                 className="text-xs font-semibold uppercase tracking-widest px-4 py-2 rounded-md transition-all"
                 style={{
                   fontFamily: "var(--font-geist-mono)",
@@ -205,6 +206,8 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
         {activeTab === "needs-action" && (
           <NeedsActionView
             workstreams={workstreams}
+            filterWsId={naFilter}
+            onClearFilter={() => setNaFilter(null)}
             onOpenTask={(wsId, taskId) => {
               window.location.hash = `ws-${wsId}~${taskId}`;
               setActiveTab("workstreams");
@@ -385,7 +388,7 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
                       const pill = (n: number, label: string, bg: string, color: string, flagged: boolean) =>
                         n > 0 ? (
                           <span
-                            onClick={flagged ? () => setActiveTab("needs-action") : undefined}
+                            onClick={flagged ? () => { setNaFilter(ws.id); setActiveTab("needs-action"); } : undefined}
                             className={"text-xs rounded px-2 py-0.5" + (flagged ? " cursor-pointer hover:opacity-80" : "")}
                             style={{ backgroundColor: bg, color, fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap", display: "inline-block" }}
                             title={flagged ? "See Needs Action" : undefined}
@@ -957,8 +960,10 @@ function AIAutomationsView() {
   );
 }
 
-function NeedsActionView({ workstreams, onOpenTask }: { workstreams: Workstream100[]; onOpenTask: (wsId: string, taskId: string) => void }) {
+function NeedsActionView({ workstreams, onOpenTask, filterWsId, onClearFilter }: { workstreams: Workstream100[]; onOpenTask: (wsId: string, taskId: string) => void; filterWsId?: string | null; onClearFilter?: () => void }) {
   const ORDER: TaskHealth[] = ["At Risk", "Blocked", "Off Track"];
+  const filtered = filterWsId ? workstreams.filter((ws) => ws.id === filterWsId) : workstreams;
+  const filterName = filterWsId ? workstreams.find((ws) => ws.id === filterWsId)?.name : null;
 
   const [reasons, setReasons] = useState<Record<string, string>>(() => {
     const m: Record<string, string> = {};
@@ -977,24 +982,41 @@ function NeedsActionView({ workstreams, onOpenTask }: { workstreams: Workstream1
   };
 
   // Flatten to individual flagged tasks, keyed by their health
-  const items = workstreams.flatMap((ws) =>
+  const items = filtered.flatMap((ws) =>
     ws.tasks
       .map((t) => ({ ws, t, health: calcTaskHealth(t).status }))
       .filter((x) => ORDER.includes(x.health))
   );
 
+  const filterBanner = filterName ? (
+    <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded" style={{ backgroundColor: "#f0efe9" }}>
+      <span className="text-xs" style={{ color: "#57534e", fontFamily: "var(--font-geist-mono)" }}>
+        Filtered to <strong>{filterName}</strong>
+      </span>
+      <button onClick={onClearFilter} className="text-xs underline" style={{ color: "#1a5c3a", background: "none", border: "none", cursor: "pointer" }}>
+        Show all
+      </button>
+    </div>
+  ) : null;
+
   if (items.length === 0) {
     return (
-      <div className="pb-20 flex flex-col items-center justify-center py-20">
-        <p className="text-2xl mb-2">✓</p>
-        <p className="text-sm font-semibold" style={{ color: "#15803d" }}>Everything is on track.</p>
-        <p className="text-xs mt-1" style={{ color: "#9ca3af" }}>No tasks are At Risk, Blocked, or Off Track right now.</p>
+      <div className="pb-20">
+        {filterBanner}
+        <div className="flex flex-col items-center justify-center py-20">
+          <p className="text-2xl mb-2">✓</p>
+          <p className="text-sm font-semibold" style={{ color: "#15803d" }}>
+            {filterName ? `${filterName} is on track.` : "Everything is on track."}
+          </p>
+          <p className="text-xs mt-1" style={{ color: "#9ca3af" }}>No tasks are At Risk, Blocked, or Off Track right now.</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="pb-20 max-w-4xl mx-auto">
+      {filterBanner}
       {ORDER.map((h) => {
         const group = items.filter((x) => x.health === h);
         if (group.length === 0) return null;
