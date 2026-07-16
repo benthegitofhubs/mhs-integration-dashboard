@@ -183,8 +183,6 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
           </div>
         </div>
 
-        {/* Integration pace — schedule adherence (Expected vs Actual by today) */}
-        <PaceCard tasks={allTasks} />
 
         {/* Disclaimer */}
         <div className="mb-6 px-4 py-3 rounded" style={{ backgroundColor: "#f0fdf4", border: "1px solid #bbf7d0" }}>
@@ -500,118 +498,6 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
 
 
 
-function TrendIcon({ dir, color }: { dir: "up" | "down" | "flat"; color: string }) {
-  const line = dir === "up" ? "M3 17 L10 10 L14 14 L21 6" : dir === "down" ? "M3 6 L10 14 L14 10 L21 17" : "M3 12 H21";
-  const head = dir === "up" ? "M21 6 V11 M21 6 H16" : dir === "down" ? "M21 17 V12 M21 17 H16" : "M17 8 L21 12 L17 16";
-  return (
-    <svg width="30" height="26" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d={line} /><path d={head} />
-    </svg>
-  );
-}
-
-function PaceCard({ tasks }: { tasks: Task100[] }) {
-  const START = new Date("2026-06-23T00:00:00").getTime();
-  const END = new Date("2026-10-01T00:00:00").getTime();
-  const TOTAL_DAYS = Math.round((END - START) / 86400000);
-
-  // Schedule adherence is measured against tasks that HAVE a due date —
-  // undated tasks aren't on a schedule, so they'd only dilute the numbers.
-  const dueDated = tasks.filter((t) => !isNaN(new Date(t.dueDate).getTime()));
-  const base = dueDated.length;
-  const noDue = tasks.length - base;
-  const completeDated = dueDated.filter((t) => t.status === "Complete").length;
-  const actualPct = base > 0 ? Math.round((completeDated / base) * 100) : 0;
-
-  const todayDay = Math.min(TOTAL_DAYS, Math.max(0, Math.floor((Date.now() - START) / 86400000)));
-  const [day, setDay] = useState(todayDay);
-
-  const asOf = new Date(START + day * 86400000);
-  const dueByThen = dueDated.filter((t) => new Date(t.dueDate).getTime() <= asOf.getTime()).length;
-  const expectedPct = base > 0 ? Math.round((dueByThen / base) * 100) : 0;
-
-  const ahead = actualPct > expectedPct;
-  const behind = actualPct < expectedPct;
-  const verdict = ahead ? "Ahead of pace" : behind ? "Behind pace" : "At pace";
-  const vColor = behind ? "#b45309" : "#15803d";
-  const pct = TOTAL_DAYS > 0 ? (day / TOTAL_DAYS) * 100 : 0;
-  const daysLeft = TOTAL_DAYS - day;
-  const isToday = day === todayDay;
-  const asOfShort = asOf.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  const asOfFull = asOf.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-
-  const statCard = (label: string, value: number) => (
-    <div className="rounded-lg px-4 py-3" style={{ backgroundColor: "#fafaf8", border: "1px solid #f0efe9" }}>
-      <div className="text-xs mb-1.5" style={{ color: "#9ca3af" }}>{label}</div>
-      <div className="font-bold" style={{ fontSize: "30px", color: "#111", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{value}%</div>
-    </div>
-  );
-
-  return (
-    <div className="mb-6 overflow-hidden" style={{ border: "1px solid #e5e3de", borderRadius: "10px", backgroundColor: "white" }}>
-      <div className="px-5 pt-4 pb-2">
-        <div className="font-bold mb-1" style={{ fontSize: "20px", color: "#111", letterSpacing: "-0.01em" }}>
-          Integration Health
-        </div>
-        <span className="text-xs" style={{ color: "#9ca3af" }}>
-          Tasks completed by {isToday ? "today" : `day ${day}`}, {asOfFull}
-        </span>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 px-5 pb-4">
-        {statCard("Expected", expectedPct)}
-        {statCard("Actual", actualPct)}
-      </div>
-
-      <div className="px-5 pb-5 flex items-center gap-3">
-        <TrendIcon dir={ahead ? "up" : behind ? "down" : "flat"} color={vColor} />
-        <span style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: "30px", color: vColor, letterSpacing: "-0.01em" }}>{verdict}</span>
-      </div>
-
-      {/* Draggable "move today" timeline */}
-      <div className="px-5 py-4" style={{ borderTop: "1px solid #e5e3de", backgroundColor: "#fafaf8" }}>
-        <div className="flex items-center justify-between gap-3 mb-3">
-          <span className="text-xs" style={{ color: "#9ca3af" }}>Drag to move &ldquo;today&rdquo; along the 100-day timeline</span>
-          <button onClick={() => setDay(todayDay)} className="text-xs rounded px-2.5 py-1 shrink-0"
-            style={{ border: "1px solid #e5e3de", background: "white", cursor: "pointer", color: "#57534e", fontFamily: "var(--font-geist-mono)" }}>
-            Today
-          </button>
-        </div>
-
-        <div className="text-center mb-2">
-          <span className="text-xs font-semibold" style={{ color: "#1a5c3a", fontFamily: "var(--font-geist-mono)" }}>
-            {day}d elapsed · {asOfShort} · {daysLeft}d left
-          </span>
-        </div>
-
-        <div className="relative" style={{ height: "18px" }}>
-          <div className="absolute w-full" style={{ height: "6px", top: "6px", backgroundColor: "#e5e3de", borderRadius: "3px" }}>
-            <div style={{ width: `${pct}%`, height: "100%", backgroundColor: "#1a5c3a", borderRadius: "3px" }} />
-            <div className="absolute" style={{ left: `${pct}%`, top: "50%", transform: "translate(-50%,-50%)", width: "14px", height: "14px", borderRadius: "50%", backgroundColor: "white", border: "2px solid #1a5c3a" }} />
-          </div>
-          <input
-            type="range" min={0} max={TOTAL_DAYS} step={1} value={day}
-            onChange={(e) => setDay(Number(e.target.value))}
-            aria-label="Move today along the timeline"
-            className="absolute w-full cursor-pointer"
-            style={{ height: "18px", margin: 0, opacity: 0 }}
-          />
-        </div>
-
-        <div className="flex items-center justify-between mt-1.5">
-          <span className="text-xs" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>Jun 23, 2026 · close</span>
-          <span className="text-xs" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>Oct 1, 2026 · day 100 target</span>
-        </div>
-      </div>
-
-      <div className="px-5 py-3" style={{ borderTop: "1px solid #e5e3de" }}>
-        <span className="text-xs leading-relaxed" style={{ color: "#9ca3af" }}>
-          Live task data — measured against the {base} tasks that have a due date ({noDue} undated tasks are excluded).
-        </span>
-      </div>
-    </div>
-  );
-}
 
 function BoardMeetingCell({ defaultDate }: { defaultDate: string }) {
   const [editing, setEditing] = useState(false);
