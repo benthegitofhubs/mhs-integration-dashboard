@@ -211,18 +211,18 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
             { label: "Off track",          value: `${pctOf(tc.offTrack)}%`,   sub: `${tc.offTrack} of ${totalTasks} tasks`,   color: tc.offTrack > 0 ? "#b91c1c" : "#9ca3af" },
           ];
 
-          // Group workstreams by flagship pillar (e.g. "1. Growth" → "Growth"),
-          // preserving canonical order.
-          const pillars: { key: string; items: Workstream100[] }[] = [];
-          workstreams.forEach((ws) => {
-            const key = (ws.flagshipGoal || "Other").replace(/^\d+\s*[·.]\s*/, "").trim() || "Other";
-            let p = pillars.find((x) => x.key === key);
-            if (!p) { p = { key, items: [] }; pillars.push(p); }
-            p.items.push(ws);
-          });
+          // One flat list of workstreams, sorted by completion % descending.
+          const rows = workstreams
+            .map((ws) => {
+              const total = ws.tasks.length;
+              const done  = ws.tasks.filter((tk) => tk.status === "Complete").length;
+              const pct   = total > 0 ? Math.round((done / total) * 100) : 0;
+              return { ws, total, pct };
+            })
+            .sort((a, b) => b.pct - a.pct);
 
           // Shared column template so the header row and data rows line up.
-          const COLS = "minmax(0, 1.6fr) 150px minmax(0, 1.4fr) 96px";
+          const COLS = "minmax(0, 1fr) 220px 100px";
 
           return (
           <>
@@ -237,128 +237,69 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
             ))}
           </div>
 
-          {/* Legend */}
-          <div className="flex flex-wrap gap-x-4 gap-y-1 mb-4 text-xs" style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)" }}>
-            {[
-              { l: "Complete", c: "#15803d" },
-              { l: "On Track (In Progress/Not Started)", c: "#86efac" },
-              { l: "At risk", c: "#eab308" },
-              { l: "Blocked", c: "#ea580c" },
-              { l: "Off track", c: "#b91c1c" },
-            ].map(({ l, c }) => (
-              <span key={l} className="inline-flex items-center gap-1.5">
-                <span style={{ width: "11px", height: "11px", borderRadius: "2px", backgroundColor: c, display: "inline-block" }} />
-                {l}
-              </span>
-            ))}
-          </div>
-
           {/* Column headers — align to the row grid */}
           <div className="grid px-5 mb-1.5 text-xs uppercase tracking-widest font-semibold"
             style={{ gridTemplateColumns: COLS, gap: "16px", color: "#9ca3af", fontFamily: "var(--font-geist-mono)", letterSpacing: "0.05em" }}>
             <span>Workstream</span>
             <span>Leader</span>
-            <span>Task health</span>
             <span className="text-right">Completion %</span>
           </div>
 
-          {/* Pillar-grouped compact workstream rows */}
-          {pillars.map((p) => (
-            <div key={p.key} className="mb-6">
-              <div className="text-xs uppercase tracking-widest mb-2" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)", letterSpacing: "0.07em" }}>{p.key}</div>
-              <div style={{ border: "1px solid #e5e3de", borderRadius: "6px", backgroundColor: "white", overflow: "hidden" }}>
-                {p.items.map((ws, i) => {
-                  const total = ws.tasks.length;
-                  const done  = ws.tasks.filter((tk) => tk.status === "Complete").length;
-                  const pct   = total > 0 ? Math.round((done / total) * 100) : 0;
-                  const cnt = { complete: 0, onTrack: 0, "At Risk": 0, "Blocked": 0, "Off Track": 0 };
-                  ws.tasks.forEach((tk) => {
-                    if (tk.status === "Complete") { cnt.complete++; return; }
-                    const h = calcTaskHealth(tk).status;
-                    if (h === "At Risk" || h === "Blocked" || h === "Off Track") cnt[h]++;
-                    else cnt.onTrack++;
-                  });
-                  const segs = [
-                    { key: "complete", n: cnt.complete,     label: "complete", color: "#15803d", flagged: false },
-                    { key: "ontrack",  n: cnt.onTrack,      label: "on track", color: "#86efac", flagged: false },
-                    { key: "atrisk",   n: cnt["At Risk"],   label: "at risk",  color: "#eab308", flagged: true },
-                    { key: "blocked",  n: cnt["Blocked"],   label: "blocked",  color: "#ea580c", flagged: true },
-                    { key: "offtrack", n: cnt["Off Track"], label: "off track", color: "#b91c1c", flagged: true },
-                  ].filter((s) => s.n > 0);
-                  return (
-                    <div key={ws.id} className="grid px-5 py-2.5 hover:bg-stone-50 transition-colors"
-                      style={{ gridTemplateColumns: COLS, gap: "16px", alignItems: "center", borderTop: i > 0 ? "1px solid #f0efe9" : "none" }}>
-                      <span
-                        onClick={() => { window.location.hash = `ws-${ws.id}`; setActiveTab("workstreams"); }}
-                        className="relative group text-xs font-semibold cursor-pointer hover:underline"
-                        style={{ color: "#1a1a1a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
-                        title="Open tasks">
-                        {ws.name}
-                        <span className="absolute left-0 top-full mt-1.5 z-50 hidden group-hover:block w-64 rounded px-3 py-2 text-xs leading-relaxed shadow-lg pointer-events-none"
-                          style={{ backgroundColor: "#1a1a1a", color: "#f5f5f4", fontWeight: 400, whiteSpace: "normal" }}>
-                          {ws.goal}
-                        </span>
-                      </span>
-                      {editingLeader === ws.id ? (
-                        <input
-                          autoFocus
-                          type="text"
-                          value={leaderDraft}
-                          onChange={(e) => setLeaderDraft(e.target.value)}
-                          onBlur={async () => {
-                            setEditingLeader(null);
-                            const trimmed = leaderDraft.trim();
-                            if (!trimmed || trimmed === leaders[ws.id]) return;
-                            setLeaders((prev) => ({ ...prev, [ws.id]: trimmed }));
-                            await fetch("/api/update-leader", {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ workstreamId: ws.id, leader: trimmed }),
-                            });
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                            if (e.key === "Escape") setEditingLeader(null);
-                          }}
-                          className="text-xs rounded px-1 py-0.5 focus:outline-none"
-                          style={{ border: "1px solid #1a5c3a", color: "#374151", width: "100px" }}
-                        />
-                      ) : (
-                        <span
-                          className="text-xs cursor-pointer hover:underline"
-                          style={{ color: "#6b7280", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
-                          onClick={() => { setLeaderDraft(leaders[ws.id] || ""); setEditingLeader(ws.id); }}
-                          title="Click to edit leader">
-                          {leaders[ws.id] || "—"}
-                        </span>
-                      )}
-                      {total === 0 ? (
-                        <span className="text-xs" style={{ color: "#c0bdb8", fontStyle: "italic" }}>no tasks yet</span>
-                      ) : (
-                        <div className="flex w-full overflow-hidden" style={{ height: "16px", borderRadius: "4px", backgroundColor: "#f0efe9" }}>
-                          {segs.map((s) => (
-                            <div
-                              key={s.key}
-                              onClick={
-                                s.flagged
-                                  ? () => { setNaFilter(ws.id); setActiveTab("needs-action"); }
-                                  : () => { window.location.hash = `ws-${ws.id}`; setActiveTab("workstreams"); }
-                              }
-                              title={`${s.n} ${s.label}${s.flagged ? " — see Needs Action" : ""}`}
-                              style={{ width: `${(s.n / total) * 100}%`, backgroundColor: s.color, cursor: "pointer" }}
-                            />
-                          ))}
-                        </div>
-                      )}
-                      <span className="text-xs font-semibold text-right" style={{ color: pct > 0 ? "#15803d" : "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
-                        {total > 0 ? `${pct}%` : "—"}
-                      </span>
-                    </div>
-                  );
-                })}
+          {/* Workstream list — one row each: name · leader · completion %, sorted by completion desc */}
+          <div style={{ border: "1px solid #e5e3de", borderRadius: "6px", backgroundColor: "white", overflow: "hidden" }}>
+            {rows.map(({ ws, total, pct }, i) => (
+              <div key={ws.id} className="grid px-5 py-2.5 hover:bg-stone-50 transition-colors"
+                style={{ gridTemplateColumns: COLS, gap: "16px", alignItems: "center", borderTop: i > 0 ? "1px solid #f0efe9" : "none" }}>
+                <span
+                  onClick={() => { window.location.hash = `ws-${ws.id}`; setActiveTab("workstreams"); }}
+                  className="relative group text-xs font-semibold cursor-pointer hover:underline"
+                  style={{ color: "#1a1a1a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+                  title="Open tasks">
+                  {ws.name}
+                  <span className="absolute left-0 top-full mt-1.5 z-50 hidden group-hover:block w-64 rounded px-3 py-2 text-xs leading-relaxed shadow-lg pointer-events-none"
+                    style={{ backgroundColor: "#1a1a1a", color: "#f5f5f4", fontWeight: 400, whiteSpace: "normal" }}>
+                    {ws.goal}
+                  </span>
+                </span>
+                {editingLeader === ws.id ? (
+                  <input
+                    autoFocus
+                    type="text"
+                    value={leaderDraft}
+                    onChange={(e) => setLeaderDraft(e.target.value)}
+                    onBlur={async () => {
+                      setEditingLeader(null);
+                      const trimmed = leaderDraft.trim();
+                      if (!trimmed || trimmed === leaders[ws.id]) return;
+                      setLeaders((prev) => ({ ...prev, [ws.id]: trimmed }));
+                      await fetch("/api/update-leader", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ workstreamId: ws.id, leader: trimmed }),
+                      });
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                      if (e.key === "Escape") setEditingLeader(null);
+                    }}
+                    className="text-xs rounded px-1 py-0.5 focus:outline-none"
+                    style={{ border: "1px solid #1a5c3a", color: "#374151", width: "180px" }}
+                  />
+                ) : (
+                  <span
+                    className="text-xs cursor-pointer hover:underline"
+                    style={{ color: "#6b7280", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+                    onClick={() => { setLeaderDraft(leaders[ws.id] || ""); setEditingLeader(ws.id); }}
+                    title="Click to edit leader">
+                    {leaders[ws.id] || "—"}
+                  </span>
+                )}
+                <span className="text-xs font-semibold text-right" style={{ color: pct > 0 ? "#15803d" : "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+                  {total > 0 ? `${pct}%` : "—"}
+                </span>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
 
           {/* Sync status — bottom of the page */}
           {live ? (
