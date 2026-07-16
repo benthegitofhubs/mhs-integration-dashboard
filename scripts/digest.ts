@@ -18,13 +18,14 @@ async function main() {
   const wss = await fetchWorkstreams();
 
   const workstreams = wss.map((ws) => {
-    const c = { complete: 0, onTrack: 0, atRisk: 0, blocked: 0, offTrack: 0 };
+    const c = { complete: 0, onTrack: 0, notStarted: 0, atRisk: 0, blocked: 0, offTrack: 0 };
     ws.tasks.forEach((t) => {
       if (t.status === "Complete") { c.complete++; return; }
       const h = calcTaskHealth(t, today).status;
       if (h === "At Risk") c.atRisk++;
       else if (h === "Blocked") c.blocked++;
       else if (h === "Off Track") c.offTrack++;
+      else if (t.status === "Not Started") c.notStarted++;
       else c.onTrack++;
     });
     return { name: ws.name, leader: ws.leader || "", total: ws.tasks.length, ...c };
@@ -35,11 +36,12 @@ async function main() {
       tasks: a.tasks + w.total,
       complete: a.complete + w.complete,
       onTrack: a.onTrack + w.onTrack,
+      notStarted: a.notStarted + w.notStarted,
       atRisk: a.atRisk + w.atRisk,
       blocked: a.blocked + w.blocked,
       offTrack: a.offTrack + w.offTrack,
     }),
-    { tasks: 0, complete: 0, onTrack: 0, atRisk: 0, blocked: 0, offTrack: 0 }
+    { tasks: 0, complete: 0, onTrack: 0, notStarted: 0, atRisk: 0, blocked: 0, offTrack: 0 }
   );
 
   const out = {

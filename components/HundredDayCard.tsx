@@ -321,19 +321,21 @@ export default function HundredDayCard({ workstream, index, search = "" }: Props
             if (total === 0) {
               return <span className="text-xs" style={{ color: "#c0bdb8", fontStyle: "italic" }}>no tasks yet</span>;
             }
-            const hc = { complete: 0, onTrack: 0, "At Risk": 0, "Blocked": 0, "Off Track": 0 };
+            const hc = { complete: 0, onTrack: 0, notStarted: 0, "At Risk": 0, "Blocked": 0, "Off Track": 0 };
             tasks.forEach((tk) => {
               if (tk.status === "Complete") { hc.complete++; return; }
               const h = calcTaskHealth(tk).status;
               if (h === "At Risk" || h === "Blocked" || h === "Off Track") hc[h]++;
+              else if (tk.status === "Not Started") hc.notStarted++;
               else hc.onTrack++;
             });
             const segs = [
-              { key: "complete", n: hc.complete,     color: "#15803d", text: "#ffffff", label: "complete" },
-              { key: "ontrack",  n: hc.onTrack,      color: "#86efac", text: "#14532d", label: "on track" },
-              { key: "atrisk",   n: hc["At Risk"],   color: "#eab308", text: "#422006", label: "at risk" },
-              { key: "blocked",  n: hc["Blocked"],   color: "#ea580c", text: "#ffffff", label: "blocked" },
-              { key: "offtrack", n: hc["Off Track"], color: "#b91c1c", text: "#ffffff", label: "off track" },
+              { key: "complete",   n: hc.complete,     color: "#15803d", text: "#ffffff", label: "complete" },
+              { key: "ontrack",    n: hc.onTrack,      color: "#86efac", text: "#14532d", label: "on track" },
+              { key: "notstarted", n: hc.notStarted,   color: "#d1d5db", text: "#374151", label: "not started" },
+              { key: "atrisk",     n: hc["At Risk"],   color: "#eab308", text: "#422006", label: "at risk" },
+              { key: "blocked",    n: hc["Blocked"],   color: "#ea580c", text: "#ffffff", label: "blocked" },
+              { key: "offtrack",   n: hc["Off Track"], color: "#b91c1c", text: "#ffffff", label: "off track" },
             ].filter((s) => s.n > 0);
             return (
               <div className="flex overflow-hidden" style={{ height: "20px", borderRadius: "4px" }}>

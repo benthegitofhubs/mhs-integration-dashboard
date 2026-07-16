@@ -196,21 +196,12 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
         {activeTab === "overview" && (
         <>
         <div className="mb-10">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="flex-1" style={{ height: "2px", backgroundColor: "#e5e3de" }} />
-            <p className="text-sm font-semibold uppercase tracking-widest shrink-0"
-              style={{ color: "#111111", fontFamily: "var(--font-geist-mono)" }}>
-              Workstream Health
-            </p>
-            <div className="flex-1" style={{ height: "2px", backgroundColor: "#e5e3de" }} />
-          </div>
-
-
           {/* Task-health bar legend */}
           <div className="flex flex-wrap gap-x-4 gap-y-1 mb-3 text-xs" style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)" }}>
             {[
               { l: "Complete", c: "#15803d" },
               { l: "On track", c: "#86efac" },
+              { l: "Not started", c: "#d1d5db" },
               { l: "At risk", c: "#eab308" },
               { l: "Blocked", c: "#ea580c" },
               { l: "Off track", c: "#b91c1c" },
@@ -306,19 +297,21 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
                     const total = ws.tasks.length;
                     const done = ws.tasks.filter((tk) => tk.status === "Complete").length;
                     const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-                    const cnt = { complete: 0, onTrack: 0, "At Risk": 0, "Blocked": 0, "Off Track": 0 };
+                    const cnt = { complete: 0, onTrack: 0, notStarted: 0, "At Risk": 0, "Blocked": 0, "Off Track": 0 };
                     ws.tasks.forEach((tk) => {
                       if (tk.status === "Complete") { cnt.complete++; return; }
                       const h = calcTaskHealth(tk).status;
                       if (h === "At Risk" || h === "Blocked" || h === "Off Track") cnt[h]++;
+                      else if (tk.status === "Not Started") cnt.notStarted++;
                       else cnt.onTrack++;
                     });
                     const segs: { key: string; n: number; label: string; color: string; text: string; flagged: boolean }[] = [
-                      { key: "complete", n: cnt.complete,     label: "complete",  color: "#15803d", text: "#ffffff", flagged: false },
-                      { key: "ontrack",  n: cnt.onTrack,      label: "on track",  color: "#86efac", text: "#14532d", flagged: false },
-                      { key: "atrisk",   n: cnt["At Risk"],   label: "at risk",   color: "#eab308", text: "#422006", flagged: true },
-                      { key: "blocked",  n: cnt["Blocked"],   label: "blocked",   color: "#ea580c", text: "#ffffff", flagged: true },
-                      { key: "offtrack", n: cnt["Off Track"], label: "off track", color: "#b91c1c", text: "#ffffff", flagged: true },
+                      { key: "complete",   n: cnt.complete,     label: "complete",    color: "#15803d", text: "#ffffff", flagged: false },
+                      { key: "ontrack",    n: cnt.onTrack,      label: "on track",    color: "#86efac", text: "#14532d", flagged: false },
+                      { key: "notstarted", n: cnt.notStarted,   label: "not started", color: "#d1d5db", text: "#374151", flagged: false },
+                      { key: "atrisk",     n: cnt["At Risk"],   label: "at risk",     color: "#eab308", text: "#422006", flagged: true },
+                      { key: "blocked",    n: cnt["Blocked"],   label: "blocked",     color: "#ea580c", text: "#ffffff", flagged: true },
+                      { key: "offtrack",   n: cnt["Off Track"], label: "off track",   color: "#b91c1c", text: "#ffffff", flagged: true },
                     ].filter((s) => s.n > 0);
                     return (
                       <>
@@ -389,15 +382,6 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
           )}
         </div>
 
-        <div className="mb-3 flex items-center gap-4">
-          <div className="flex-1" style={{ height: "2px", backgroundColor: "#e5e3de" }} />
-          <p className="text-sm font-semibold uppercase tracking-widest shrink-0"
-            style={{ color: "#111111", fontFamily: "var(--font-geist-mono)" }}>
-            Workstream Tasks
-          </p>
-          <div className="flex-1" style={{ height: "2px", backgroundColor: "#e5e3de" }} />
-        </div>
-
         {/* RACI legend */}
         <div className="mb-6 flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs" style={{ color: "#9ca3af" }}>
           {[
@@ -428,6 +412,7 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
             {[
               { l: "Complete", c: "#15803d" },
               { l: "On track", c: "#86efac" },
+              { l: "Not started", c: "#d1d5db" },
               { l: "At risk", c: "#eab308" },
               { l: "Blocked", c: "#ea580c" },
               { l: "Off track", c: "#b91c1c" },
