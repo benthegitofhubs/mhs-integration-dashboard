@@ -4,7 +4,7 @@ import { useState, Fragment } from "react";
 import { Workstream100, Task100, KEY_DATES, Status100, LAST_SYNCED } from "@/lib/hundredday";
 import HundredDayCard from "./HundredDayCard";
 import NavBar from "./NavBar";
-import { calcTaskHealth, HEALTH_META, TaskHealth } from "@/lib/taskHealth";
+import { calcTaskHealth, rollupWorkstreamHealth, HEALTH_META, TaskHealth } from "@/lib/taskHealth";
 
 export const STATUS_BG: Record<Status100, string> = {
   "Not Started": "#f3f4f6",
@@ -202,12 +202,155 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
           />
         )}
 
-        {/* Workstream Health (Overview tab) */}
-        {activeTab === "overview" && (
-        <>
-        <div className="mb-10">
-          {/* Task-health bar legend */}
-          <div className="flex flex-wrap gap-x-4 gap-y-1 mb-3 text-xs" style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)" }}>
+        {/* Executive summary (Overview tab) */}
+        {activeTab === "overview" && (() => {
+          const totalTasks  = allTasks.length;
+          const doneTasks   = allTasks.filter((t) => t.status === "Complete").length;
+          const overallPct  = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
+
+          const wsHealth = workstreams.map((ws) =>
+            (rollupWorkstreamHealth(ws.tasks.map((t) => calcTaskHealth(t))) ?? "On Track") as TaskHealth
+          );
+          const onTrackCount  = wsHealth.filter((h) => h === "On Track").length;
+          const blockedCount  = wsHealth.filter((h) => h === "Blocked").length;
+          const atRiskCount   = wsHealth.filter((h) => h === "At Risk").length;
+          const offTrackCount = wsHealth.filter((h) => h === "Off Track").length;
+          const needAttention = blockedCount + atRiskCount;
+
+          const attnParts: string[] = [];
+          if (blockedCount) attnParts.push(`${blockedCount} blocked`);
+          if (atRiskCount)  attnParts.push(`${atRiskCount} at risk`);
+
+          const tiles = [
+            { label: "Overall complete", value: `${overallPct}%`,        sub: `${doneTasks} of ${totalTasks} tasks`,   color: "#1a1a1a" },
+            { label: "On track",         value: `${onTrackCount}`,       sub: `of ${workstreams.length} workstreams`,  color: "#15803d" },
+            { label: "Need attention",   value: `${needAttention}`,      sub: attnParts.join(" · ") || "none",         color: needAttention > 0 ? "#b45309" : "#9ca3af" },
+            { label: "Off track",        value: `${offTrackCount}`,      sub: "past due, incomplete",                  color: offTrackCount > 0 ? "#b91c1c" : "#9ca3af" },
+          ];
+
+          // Group workstreams by flagship pillar (e.g. "1. Growth" → "Growth"),
+          // preserving canonical order.
+          const pillars: { key: string; items: Workstream100[] }[] = [];
+          workstreams.forEach((ws) => {
+            const key = (ws.flagshipGoal || "Other").replace(/^\d+\s*[·.]\s*/, "").trim() || "Other";
+            let p = pillars.find((x) => x.key === key);
+            if (!p) { p = { key, items: [] }; pillars.push(p); }
+            p.items.push(ws);
+          });
+
+          return (
+          <>
+          {/* KPI tiles */}
+          <div className="grid gap-3 mb-8" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))" }}>
+            {tiles.map((t) => (
+              <div key={t.label} style={{ backgroundColor: "white", border: "1px solid #e5e3de", borderRadius: "6px", padding: "14px 16px" }}>
+                <div className="text-xs uppercase tracking-widest mb-1.5" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)", letterSpacing: "0.05em" }}>{t.label}</div>
+                <div style={{ fontSize: "24px", fontWeight: 700, color: t.color, lineHeight: 1.1 }}>{t.value}</div>
+                <div className="text-xs mt-1" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>{t.sub}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Pillar-grouped compact workstream rows */}
+          {pillars.map((p) => (
+            <div key={p.key} className="mb-6">
+              <div className="text-xs uppercase tracking-widest mb-2" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)", letterSpacing: "0.07em" }}>{p.key}</div>
+              <div style={{ border: "1px solid #e5e3de", borderRadius: "6px", backgroundColor: "white", overflow: "hidden" }}>
+                {p.items.map((ws, i) => {
+                  const total = ws.tasks.length;
+                  const done  = ws.tasks.filter((tk) => tk.status === "Complete").length;
+                  const pct   = total > 0 ? Math.round((done / total) * 100) : 0;
+                  const cnt = { complete: 0, onTrack: 0, "At Risk": 0, "Blocked": 0, "Off Track": 0 };
+                  ws.tasks.forEach((tk) => {
+                    if (tk.status === "Complete") { cnt.complete++; return; }
+                    const h = calcTaskHealth(tk).status;
+                    if (h === "At Risk" || h === "Blocked" || h === "Off Track") cnt[h]++;
+                    else cnt.onTrack++;
+                  });
+                  const segs = [
+                    { key: "complete", n: cnt.complete,     label: "complete", color: "#15803d", flagged: false },
+                    { key: "ontrack",  n: cnt.onTrack,      label: "on track", color: "#86efac", flagged: false },
+                    { key: "atrisk",   n: cnt["At Risk"],   label: "at risk",  color: "#eab308", flagged: true },
+                    { key: "blocked",  n: cnt["Blocked"],   label: "blocked",  color: "#ea580c", flagged: true },
+                    { key: "offtrack", n: cnt["Off Track"], label: "off track", color: "#b91c1c", flagged: true },
+                  ].filter((s) => s.n > 0);
+                  return (
+                    <div key={ws.id} className="grid px-5 py-2.5 hover:bg-stone-50 transition-colors"
+                      style={{ gridTemplateColumns: "1.5fr 110px 1fr 44px", gap: "12px", alignItems: "center", borderTop: i > 0 ? "1px solid #f0efe9" : "none" }}>
+                      <span
+                        onClick={() => { window.location.hash = `ws-${ws.id}`; setActiveTab("workstreams"); }}
+                        className="relative group text-xs font-semibold cursor-pointer hover:underline"
+                        style={{ color: "#1a1a1a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+                        title="Open tasks">
+                        {ws.name}
+                        <span className="absolute left-0 top-full mt-1.5 z-50 hidden group-hover:block w-64 rounded px-3 py-2 text-xs leading-relaxed shadow-lg pointer-events-none"
+                          style={{ backgroundColor: "#1a1a1a", color: "#f5f5f4", fontWeight: 400, whiteSpace: "normal" }}>
+                          {ws.goal}
+                        </span>
+                      </span>
+                      {editingLeader === ws.id ? (
+                        <input
+                          autoFocus
+                          type="text"
+                          value={leaderDraft}
+                          onChange={(e) => setLeaderDraft(e.target.value)}
+                          onBlur={async () => {
+                            setEditingLeader(null);
+                            const trimmed = leaderDraft.trim();
+                            if (!trimmed || trimmed === leaders[ws.id]) return;
+                            setLeaders((prev) => ({ ...prev, [ws.id]: trimmed }));
+                            await fetch("/api/update-leader", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ workstreamId: ws.id, leader: trimmed }),
+                            });
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                            if (e.key === "Escape") setEditingLeader(null);
+                          }}
+                          className="text-xs rounded px-1 py-0.5 focus:outline-none"
+                          style={{ border: "1px solid #1a5c3a", color: "#374151", width: "100px" }}
+                        />
+                      ) : (
+                        <span
+                          className="text-xs cursor-pointer hover:underline"
+                          style={{ color: "#6b7280", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+                          onClick={() => { setLeaderDraft(leaders[ws.id] || ""); setEditingLeader(ws.id); }}
+                          title="Click to edit leader">
+                          {leaders[ws.id] || "—"}
+                        </span>
+                      )}
+                      {total === 0 ? (
+                        <span className="text-xs" style={{ color: "#c0bdb8", fontStyle: "italic" }}>no tasks yet</span>
+                      ) : (
+                        <div className="flex w-full overflow-hidden" style={{ height: "16px", borderRadius: "4px", backgroundColor: "#f0efe9" }}>
+                          {segs.map((s) => (
+                            <div
+                              key={s.key}
+                              onClick={
+                                s.flagged
+                                  ? () => { setNaFilter(ws.id); setActiveTab("needs-action"); }
+                                  : () => { window.location.hash = `ws-${ws.id}`; setActiveTab("workstreams"); }
+                              }
+                              title={`${s.n} ${s.label}${s.flagged ? " — see Needs Action" : ""}`}
+                              style={{ width: `${(s.n / total) * 100}%`, backgroundColor: s.color, cursor: "pointer" }}
+                            />
+                          ))}
+                        </div>
+                      )}
+                      <span className="text-xs font-semibold text-right" style={{ color: pct > 0 ? "#15803d" : "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+                        {total > 0 ? `${pct}%` : "—"}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+
+          {/* Legend */}
+          <div className="flex flex-wrap gap-x-4 gap-y-1 mb-10 text-xs" style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)" }}>
             {[
               { l: "Complete", c: "#15803d" },
               { l: "On Track (In Progress/Not Started)", c: "#86efac" },
@@ -221,153 +364,9 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
               </span>
             ))}
           </div>
-
-          {/* Per-workstream table */}
-          <div className="overflow-x-auto" style={{ border: "1px solid #e5e3de", borderRadius: "6px", backgroundColor: "white" }}>
-            <div className="grid text-xs uppercase tracking-widest font-semibold px-5 py-2.5"
-              style={{
-                gridTemplateColumns: "28px 1fr 120px 150px 52px 90px 1.6fr",
-                gap: "8px",
-                backgroundColor: "#f7f6f3",
-                color: "#9ca3af",
-                fontFamily: "var(--font-geist-mono)",
-                borderBottom: "1px solid #e5e3de",
-              }}>
-              <span style={{ whiteSpace: "nowrap" }}>#</span>
-              <span style={{ whiteSpace: "nowrap" }}>Workstream</span>
-              <span style={{ whiteSpace: "nowrap" }}>Flagship Goal</span>
-              <span style={{ whiteSpace: "nowrap" }}>Leader</span>
-              <span style={{ whiteSpace: "nowrap" }}>Tasks</span>
-              <span style={{ whiteSpace: "nowrap" }}>Completion</span>
-              <span style={{ whiteSpace: "nowrap" }}>Task Health</span>
-            </div>
-
-            {workstreams.map((ws, i) => {
-              return (
-                <div key={ws.id} className="grid px-5 py-2.5 hover:bg-stone-50 transition-colors"
-                  style={{
-                    gridTemplateColumns: "28px 1fr 120px 150px 52px 90px 1.6fr",
-                    borderBottom: i < workstreams.length - 1 ? "1px solid #f0efe9" : "none",
-                    alignItems: "center",
-                    gap: "8px",
-                  }}>
-                  <span className="text-xs font-bold" style={{ color: "#1a5c3a", fontFamily: "var(--font-geist-mono)" }}>{i + 1}</span>
-                  <span
-                    onClick={() => { window.location.hash = `ws-${ws.id}`; setActiveTab("workstreams"); }}
-                    className="relative group text-xs font-semibold cursor-pointer hover:underline"
-                    style={{ color: "#1a1a1a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
-                    title="Open tasks">
-                    {ws.name}
-                    <span className="absolute left-0 top-full mt-1.5 z-50 hidden group-hover:block w-64 rounded px-3 py-2 text-xs leading-relaxed shadow-lg pointer-events-none"
-                      style={{ backgroundColor: "#1a1a1a", color: "#f5f5f4", fontWeight: 400, whiteSpace: "normal" }}>
-                      {ws.goal}
-                    </span>
-                  </span>
-                  <span className="text-xs" style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{ws.flagshipGoal.replace(/^\d+\s*·\s*/, "")}</span>
-                  {editingLeader === ws.id ? (
-                    <input
-                      autoFocus
-                      type="text"
-                      value={leaderDraft}
-                      onChange={(e) => setLeaderDraft(e.target.value)}
-                      onBlur={async () => {
-                        setEditingLeader(null);
-                        const trimmed = leaderDraft.trim();
-                        if (!trimmed || trimmed === leaders[ws.id]) return;
-                        setLeaders((prev) => ({ ...prev, [ws.id]: trimmed }));
-                        await fetch("/api/update-leader", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ workstreamId: ws.id, leader: trimmed }),
-                        });
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                        if (e.key === "Escape") setEditingLeader(null);
-                      }}
-                      className="text-xs rounded px-1 py-0.5 focus:outline-none"
-                      style={{ border: "1px solid #1a5c3a", color: "#374151", width: "140px" }}
-                    />
-                  ) : (
-                    <span
-                      className="text-xs cursor-pointer hover:underline"
-                      style={{ color: "#6b7280", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
-                      onClick={() => { setLeaderDraft(leaders[ws.id] || ""); setEditingLeader(ws.id); }}
-                      title="Click to edit leader"
-                    >
-                      {leaders[ws.id] || "—"}
-                    </span>
-                  )}
-                  {/* Total tasks */}
-                  <span className="text-xs font-semibold" style={{ color: "#374151", fontFamily: "var(--font-geist-mono)" }}>
-                    {ws.tasks.length}
-                  </span>
-                  {(() => {
-                    const total = ws.tasks.length;
-                    const done = ws.tasks.filter((tk) => tk.status === "Complete").length;
-                    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-                    const cnt = { complete: 0, onTrack: 0, "At Risk": 0, "Blocked": 0, "Off Track": 0 };
-                    ws.tasks.forEach((tk) => {
-                      if (tk.status === "Complete") { cnt.complete++; return; }
-                      const h = calcTaskHealth(tk).status;
-                      if (h === "At Risk" || h === "Blocked" || h === "Off Track") cnt[h]++;
-                      else cnt.onTrack++;
-                    });
-                    const segs: { key: string; n: number; label: string; color: string; text: string; flagged: boolean }[] = [
-                      { key: "complete",   n: cnt.complete,     label: "complete",    color: "#15803d", text: "#ffffff", flagged: false },
-                      { key: "ontrack",    n: cnt.onTrack,      label: "on track",    color: "#86efac", text: "#14532d", flagged: false },
-                      { key: "atrisk",     n: cnt["At Risk"],   label: "at risk",     color: "#eab308", text: "#422006", flagged: true },
-                      { key: "blocked",    n: cnt["Blocked"],   label: "blocked",     color: "#ea580c", text: "#ffffff", flagged: true },
-                      { key: "offtrack",   n: cnt["Off Track"], label: "off track",   color: "#b91c1c", text: "#ffffff", flagged: true },
-                    ].filter((s) => s.n > 0);
-                    return (
-                      <>
-                        {/* Completion */}
-                        <span className="text-xs font-semibold" style={{ color: pct > 0 ? "#15803d" : "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
-                          {total > 0 ? `${pct}%` : "—"}
-                        </span>
-                        {/* Task-health stacked bar (complete → on track → at risk → blocked → off track) */}
-                        {total === 0 ? (
-                          <span className="text-xs" style={{ color: "#c0bdb8", fontStyle: "italic" }}>no tasks yet</span>
-                        ) : (
-                          <div className="flex w-full overflow-hidden" style={{ height: "20px", borderRadius: "4px" }}>
-                            {segs.map((s) => (
-                              <div
-                                key={s.key}
-                                onClick={
-                                  s.flagged
-                                    ? () => { setNaFilter(ws.id); setActiveTab("needs-action"); }
-                                    : () => { window.location.hash = `ws-${ws.id}`; setActiveTab("workstreams"); }
-                                }
-                                title={`${s.n} ${s.label}${s.flagged ? " — see Needs Action" : ""}`}
-                                className="flex items-center justify-center"
-                                style={{
-                                  width: `${(s.n / total) * 100}%`,
-                                  minWidth: "22px",
-                                  backgroundColor: s.color,
-                                  color: s.text,
-                                  fontSize: "11px",
-                                  fontWeight: 700,
-                                  fontFamily: "var(--font-geist-mono)",
-                                  cursor: "pointer",
-                                }}
-                              >
-                                {s.n}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </>
-                    );
-                  })()}
-                </div>
-              );
-            })}
-          </div>
-
-        </div>
-        </>
-        )}
+          </>
+          );
+        })()}
 
         {/* TAB: Workstream Tasks — search + tasks */}
         {activeTab === "workstreams" && (
