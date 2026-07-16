@@ -4,7 +4,7 @@ import { useState, Fragment } from "react";
 import { Workstream100, Task100, KEY_DATES, Status100, LAST_SYNCED } from "@/lib/hundredday";
 import HundredDayCard from "./HundredDayCard";
 import NavBar from "./NavBar";
-import { calcTaskHealth, rollupWorkstreamHealth, HEALTH_META, TaskHealth } from "@/lib/taskHealth";
+import { calcTaskHealth, HEALTH_META, TaskHealth } from "@/lib/taskHealth";
 
 export const STATUS_BG: Record<Status100, string> = {
   "Not Started": "#f3f4f6",
@@ -163,24 +163,6 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
         </div>
 
 
-        {/* Disclaimer — live sync vs. cached-data fallback */}
-        {live ? (
-          <div className="mb-6 px-4 py-3 rounded" style={{ backgroundColor: "#f0fdf4", border: "1px solid #bbf7d0" }}>
-            <p className="text-xs leading-relaxed" style={{ color: "#78716c", fontFamily: "var(--font-geist-mono)" }}>
-              <span className="font-semibold" style={{ color: "#15803d" }}>Live sync with the Google Sheet.</span>{" "}
-              Status, due date, and ARCI (Accountable / Responsible / Consulted / Informed) changes made here write back to the sheet immediately. Data refreshes every 5 minutes.{" "}
-              <span className="font-semibold" style={{ color: "#57534e" }}>Last loaded: {loadedAt ?? LAST_SYNCED}.</span>
-            </p>
-          </div>
-        ) : (
-          <div className="mb-6 px-4 py-3 rounded" style={{ backgroundColor: "#fffbeb", border: "1px solid #fcd34d" }}>
-            <p className="text-xs leading-relaxed" style={{ color: "#78716c", fontFamily: "var(--font-geist-mono)" }}>
-              <span className="font-semibold" style={{ color: "#b45309" }}>⚠ Live sync unavailable — showing cached data.</span>{" "}
-              The Google Sheet couldn&apos;t be reached, so these figures are the last bundled snapshot and may be out of date. Edits made here will <span className="font-semibold">not</span> save until sync is restored.{" "}
-              <span className="font-semibold" style={{ color: "#57534e" }}>Page loaded: {loadedAt ?? LAST_SYNCED}.</span>
-            </p>
-          </div>
-        )}
         </>
         )}
 
@@ -208,24 +190,25 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
           const doneTasks   = allTasks.filter((t) => t.status === "Complete").length;
           const overallPct  = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
 
-          const wsHealth = workstreams.map((ws) =>
-            (rollupWorkstreamHealth(ws.tasks.map((t) => calcTaskHealth(t))) ?? "On Track") as TaskHealth
-          );
-          const onTrackCount  = wsHealth.filter((h) => h === "On Track").length;
-          const blockedCount  = wsHealth.filter((h) => h === "Blocked").length;
-          const atRiskCount   = wsHealth.filter((h) => h === "At Risk").length;
-          const offTrackCount = wsHealth.filter((h) => h === "Off Track").length;
-          const needAttention = blockedCount + atRiskCount;
-
-          const attnParts: string[] = [];
-          if (blockedCount) attnParts.push(`${blockedCount} blocked`);
-          if (atRiskCount)  attnParts.push(`${atRiskCount} at risk`);
+          // Task-level health counts (Complete handled separately; the four
+          // buckets partition all tasks, so their percentages sum to 100%).
+          const tc = { complete: 0, onTrack: 0, atRisk: 0, blocked: 0, offTrack: 0 };
+          allTasks.forEach((t) => {
+            if (t.status === "Complete") { tc.complete++; return; }
+            const h = calcTaskHealth(t).status;
+            if (h === "At Risk") tc.atRisk++;
+            else if (h === "Blocked") tc.blocked++;
+            else if (h === "Off Track") tc.offTrack++;
+            else tc.onTrack++;
+          });
+          const needAttention = tc.atRisk + tc.blocked;
+          const pctOf = (n: number) => (totalTasks > 0 ? Math.round((n / totalTasks) * 100) : 0);
 
           const tiles = [
-            { label: "Overall complete", value: `${overallPct}%`,        sub: `${doneTasks} of ${totalTasks} tasks`,   color: "#1a1a1a" },
-            { label: "On track",         value: `${onTrackCount}`,       sub: `of ${workstreams.length} workstreams`,  color: "#15803d" },
-            { label: "Need attention",   value: `${needAttention}`,      sub: attnParts.join(" · ") || "none",         color: needAttention > 0 ? "#b45309" : "#9ca3af" },
-            { label: "Off track",        value: `${offTrackCount}`,      sub: "past due, incomplete",                  color: offTrackCount > 0 ? "#b91c1c" : "#9ca3af" },
+            { label: "Overall completion", value: `${overallPct}%`,           sub: `${doneTasks} of ${totalTasks} tasks`,     color: "#1a1a1a" },
+            { label: "On track",           value: `${pctOf(tc.onTrack)}%`,    sub: `${tc.onTrack} of ${totalTasks} tasks`,    color: "#15803d" },
+            { label: "Need attention",     value: `${pctOf(needAttention)}%`, sub: `${needAttention} of ${totalTasks} tasks`, color: needAttention > 0 ? "#b45309" : "#9ca3af" },
+            { label: "Off track",          value: `${pctOf(tc.offTrack)}%`,   sub: `${tc.offTrack} of ${totalTasks} tasks`,   color: tc.offTrack > 0 ? "#b91c1c" : "#9ca3af" },
           ];
 
           // Group workstreams by flagship pillar (e.g. "1. Growth" → "Growth"),
@@ -376,6 +359,25 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
               </div>
             </div>
           ))}
+
+          {/* Sync status — bottom of the page */}
+          {live ? (
+            <div className="mt-8 mb-4 px-4 py-3 rounded" style={{ backgroundColor: "#f0fdf4", border: "1px solid #bbf7d0" }}>
+              <p className="text-xs leading-relaxed" style={{ color: "#78716c", fontFamily: "var(--font-geist-mono)" }}>
+                <span className="font-semibold" style={{ color: "#15803d" }}>Live sync with the Google Sheet.</span>{" "}
+                Status, due date, and ARCI (Accountable / Responsible / Consulted / Informed) changes made here write back to the sheet immediately. Data refreshes every 5 minutes.{" "}
+                <span className="font-semibold" style={{ color: "#57534e" }}>Last loaded: {loadedAt ?? LAST_SYNCED}.</span>
+              </p>
+            </div>
+          ) : (
+            <div className="mt-8 mb-4 px-4 py-3 rounded" style={{ backgroundColor: "#fffbeb", border: "1px solid #fcd34d" }}>
+              <p className="text-xs leading-relaxed" style={{ color: "#78716c", fontFamily: "var(--font-geist-mono)" }}>
+                <span className="font-semibold" style={{ color: "#b45309" }}>⚠ Live sync unavailable — showing cached data.</span>{" "}
+                The Google Sheet couldn&apos;t be reached, so these figures are the last bundled snapshot and may be out of date. Edits made here will <span className="font-semibold">not</span> save until sync is restored.{" "}
+                <span className="font-semibold" style={{ color: "#57534e" }}>Page loaded: {loadedAt ?? LAST_SYNCED}.</span>
+              </p>
+            </div>
+          )}
 
           </>
           );
