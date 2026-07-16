@@ -247,107 +247,108 @@ export default function HundredDayCard({ workstream, index, search = "" }: Props
   return (
     <div id={`ws-${workstream.id}`} style={{ backgroundColor: "white", border: "1px solid #e5e3de", borderRadius: "6px", overflow: "hidden" }}>
 
-      {/* Header */}
+      {/* Header — matches the Overview row; click to drop down */}
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full text-left transition-colors"
-        style={{ padding: "16px 24px", backgroundColor: expanded ? "#fafaf8" : "white", outline: "none" }}
+        style={{ padding: "12px 20px", backgroundColor: expanded ? "#fafaf8" : "white", outline: "none" }}
       >
-        <div className="flex items-start justify-between gap-6">
+        <div className="grid items-center" style={{ gridTemplateColumns: "28px 1fr 120px 150px 52px 70px 1.6fr 16px", gap: "8px" }}>
+          {/* # */}
+          <span className="text-xs font-bold" style={{ color: "#1a5c3a", fontFamily: "var(--font-geist-mono)" }}>{index}</span>
 
-          {/* Left: index · name · leader + RAG row */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-bold" style={{ color: "#1a5c3a", fontFamily: "var(--font-geist-mono)", minWidth: "16px" }}>
-                {index}
-              </span>
-              <span style={{ color: "#d1cfc9" }}>·</span>
-              <h2 className="text-sm font-bold" style={{ color: "#111" }}>{workstream.name}</h2>
-              <span style={{ color: "#d1cfc9" }}>·</span>
-              {editingLeader ? (
-                <input
-                  autoFocus
-                  type="text"
-                  value={leaderDraft}
-                  onChange={(e) => setLeaderDraft(e.target.value)}
-                  onBlur={async () => {
-                    setEditingLeader(false);
-                    const trimmed = leaderDraft.trim();
-                    if (!trimmed || trimmed === leader) return;
-                    setLeader(trimmed);
-                    await fetch("/api/update-leader", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ workstreamId: workstream.id, leader: trimmed }),
-                    });
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                    if (e.key === "Escape") { setLeaderDraft(leader); setEditingLeader(false); }
-                  }}
-                  className="text-xs rounded px-1 py-0.5 focus:outline-none"
-                  style={{ border: "1px solid #1a5c3a", color: "#374151", width: "160px" }}
-                />
-              ) : (
-                <span
-                  className="text-xs cursor-pointer hover:underline"
-                  style={{ color: "#9ca3af" }}
-                  onClick={(e) => { e.stopPropagation(); setLeaderDraft(leader); setEditingLeader(true); }}
-                  title="Click to edit leader"
-                >
-                  {leader || "—"}
-                </span>
-              )}
-
-            </div>
-
-            <p className="text-xs leading-relaxed" style={{ color: "#78716c", paddingLeft: "22px" }}>
+          {/* Workstream name (goal on hover) */}
+          <span className="relative group text-sm font-bold" style={{ color: "#111", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {workstream.name}
+            <span className="absolute left-0 top-full mt-1.5 z-50 hidden group-hover:block w-64 rounded px-3 py-2 text-xs leading-relaxed shadow-lg pointer-events-none"
+              style={{ backgroundColor: "#1a1a1a", color: "#f5f5f4", fontWeight: 400, whiteSpace: "normal" }}>
               {workstream.goal}
-            </p>
+            </span>
+          </span>
 
-          </div>
+          {/* Flagship goal */}
+          <span className="text-xs" style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {workstream.flagshipGoal.replace(/^\d+\s*·\s*/, "")}
+          </span>
 
-          {/* Right: completion + task-health bar (aligned with the Overview tab) */}
-          <div className="flex items-center gap-6 shrink-0">
-            <div style={{ textAlign: "right", minWidth: "40px" }}>
-              <div className="text-xs" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>complete</div>
-              <div className="text-sm font-semibold" style={{ color: pct > 0 ? "#15803d" : "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>{pct}%</div>
-            </div>
-
-            <div style={{ width: "240px" }}>
-              {(() => {
-                if (total === 0) {
-                  return <span className="text-xs" style={{ color: "#c0bdb8", fontStyle: "italic" }}>no tasks yet</span>;
-                }
-                const hc = { complete: 0, onTrack: 0, "At Risk": 0, "Blocked": 0, "Off Track": 0 };
-                tasks.forEach((tk) => {
-                  if (tk.status === "Complete") { hc.complete++; return; }
-                  const h = calcTaskHealth(tk).status;
-                  if (h === "At Risk" || h === "Blocked" || h === "Off Track") hc[h]++;
-                  else hc.onTrack++;
+          {/* Leader (editable) */}
+          {editingLeader ? (
+            <input
+              autoFocus
+              type="text"
+              value={leaderDraft}
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) => setLeaderDraft(e.target.value)}
+              onBlur={async () => {
+                setEditingLeader(false);
+                const trimmed = leaderDraft.trim();
+                if (!trimmed || trimmed === leader) return;
+                setLeader(trimmed);
+                await fetch("/api/update-leader", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ workstreamId: workstream.id, leader: trimmed }),
                 });
-                const segs = [
-                  { key: "complete", n: hc.complete,     color: "#15803d", text: "#ffffff", label: "complete" },
-                  { key: "ontrack",  n: hc.onTrack,      color: "#86efac", text: "#14532d", label: "on track" },
-                  { key: "atrisk",   n: hc["At Risk"],   color: "#eab308", text: "#422006", label: "at risk" },
-                  { key: "blocked",  n: hc["Blocked"],   color: "#ea580c", text: "#ffffff", label: "blocked" },
-                  { key: "offtrack", n: hc["Off Track"], color: "#b91c1c", text: "#ffffff", label: "off track" },
-                ].filter((s) => s.n > 0);
-                return (
-                  <div className="flex overflow-hidden" style={{ height: "20px", borderRadius: "4px" }}>
-                    {segs.map((s) => (
-                      <div key={s.key} title={`${s.n} ${s.label}`} className="flex items-center justify-center"
-                        style={{ width: `${(s.n / total) * 100}%`, minWidth: "22px", backgroundColor: s.color, color: s.text, fontSize: "11px", fontWeight: 700, fontFamily: "var(--font-geist-mono)" }}>
-                        {s.n}
-                      </div>
-                    ))}
-                  </div>
-                );
-              })()}
-            </div>
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                if (e.key === "Escape") { setLeaderDraft(leader); setEditingLeader(false); }
+              }}
+              className="text-xs rounded px-1 py-0.5 focus:outline-none"
+              style={{ border: "1px solid #1a5c3a", color: "#374151", width: "140px" }}
+            />
+          ) : (
+            <span
+              className="text-xs cursor-pointer hover:underline"
+              style={{ color: "#6b7280", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+              onClick={(e) => { e.stopPropagation(); setLeaderDraft(leader); setEditingLeader(true); }}
+              title="Click to edit leader"
+            >
+              {leader || "—"}
+            </span>
+          )}
 
-            <span className="text-xs" style={{ color: "#c8c5be" }}>{expanded ? "▲" : "▼"}</span>
-          </div>
+          {/* Tasks total */}
+          <span className="text-xs font-semibold" style={{ color: "#374151", fontFamily: "var(--font-geist-mono)" }}>{total}</span>
+
+          {/* Completion */}
+          <span className="text-xs font-semibold" style={{ color: pct > 0 ? "#15803d" : "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+            {total > 0 ? `${pct}%` : "—"}
+          </span>
+
+          {/* Task-health stacked bar */}
+          {(() => {
+            if (total === 0) {
+              return <span className="text-xs" style={{ color: "#c0bdb8", fontStyle: "italic" }}>no tasks yet</span>;
+            }
+            const hc = { complete: 0, onTrack: 0, "At Risk": 0, "Blocked": 0, "Off Track": 0 };
+            tasks.forEach((tk) => {
+              if (tk.status === "Complete") { hc.complete++; return; }
+              const h = calcTaskHealth(tk).status;
+              if (h === "At Risk" || h === "Blocked" || h === "Off Track") hc[h]++;
+              else hc.onTrack++;
+            });
+            const segs = [
+              { key: "complete", n: hc.complete,     color: "#15803d", text: "#ffffff", label: "complete" },
+              { key: "ontrack",  n: hc.onTrack,      color: "#86efac", text: "#14532d", label: "on track" },
+              { key: "atrisk",   n: hc["At Risk"],   color: "#eab308", text: "#422006", label: "at risk" },
+              { key: "blocked",  n: hc["Blocked"],   color: "#ea580c", text: "#ffffff", label: "blocked" },
+              { key: "offtrack", n: hc["Off Track"], color: "#b91c1c", text: "#ffffff", label: "off track" },
+            ].filter((s) => s.n > 0);
+            return (
+              <div className="flex overflow-hidden" style={{ height: "20px", borderRadius: "4px" }}>
+                {segs.map((s) => (
+                  <div key={s.key} title={`${s.n} ${s.label}`} className="flex items-center justify-center"
+                    style={{ width: `${(s.n / total) * 100}%`, minWidth: "22px", backgroundColor: s.color, color: s.text, fontSize: "11px", fontWeight: 700, fontFamily: "var(--font-geist-mono)" }}>
+                    {s.n}
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+
+          {/* Chevron */}
+          <span className="text-xs text-right" style={{ color: "#c8c5be" }}>{expanded ? "▲" : "▼"}</span>
         </div>
       </button>
 
