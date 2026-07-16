@@ -567,6 +567,9 @@ function PaceCard({ tasks }: { tasks: Task100[] }) {
   return (
     <div className="mb-6 overflow-hidden" style={{ border: "1px solid #e5e3de", borderRadius: "10px", backgroundColor: "white" }}>
       <div className="px-5 pt-4 pb-2">
+        <div className="font-bold mb-1" style={{ fontSize: "20px", color: "#111", letterSpacing: "-0.01em" }}>
+          Integration Health
+        </div>
         <span className="text-xs" style={{ color: "#9ca3af" }}>
           Tasks completed by {isToday ? "today" : `day ${day}`}, {asOfFull}
         </span>
