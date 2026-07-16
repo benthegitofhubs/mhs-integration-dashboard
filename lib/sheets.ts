@@ -142,6 +142,7 @@ export async function fetchWorkstreams(): Promise<Workstream100[]> {
         const infoCol    = header.findIndex((h) => h === "informed");
         const statusCol  = header.findIndex((h) => h === "status");
         const notesCol   = header.findIndex((h) => h.includes("notes"));
+        const reasonCol  = header.findIndex((h) => h.includes("reason"));
         const idCol      = header.findIndex((h) => h === "task id");
 
         if (descCol === -1) return ws;
@@ -191,6 +192,7 @@ export async function fetchWorkstreams(): Promise<Workstream100[]> {
               informed:    (infoCol !== -1 ? r[infoCol]?.trim() : "") || staticTask?.informed || "",
               status:      toStatus(r[statusCol]?.trim()),
               notes:       r[notesCol]?.trim() || staticTask?.notes || "",
+              reason:      (reasonCol !== -1 ? r[reasonCol]?.trim() : "") || staticTask?.reason || "",
             };
           });
 
@@ -215,7 +217,7 @@ export async function writeField(
   workstreamId: string,
   taskId: string,
   taskDescription: string,
-  field: "status" | "dueDate" | "accountable" | "responsible" | "consulted" | "informed" | "ranking",
+  field: "status" | "dueDate" | "accountable" | "responsible" | "consulted" | "informed" | "ranking" | "reason",
   value: string
 ): Promise<void> {
   const fieldHeader: Record<string, string> = {
@@ -226,6 +228,7 @@ export async function writeField(
     consulted:   "consulted",
     informed:    "informed",
     ranking:     "ranking",
+    reason:      "reason",
   };
 
   const tab = WS_TAB_MAP[workstreamId];

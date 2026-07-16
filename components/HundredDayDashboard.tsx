@@ -821,6 +821,22 @@ function AIAutomationsView() {
 function NeedsActionView({ workstreams, onOpenTask }: { workstreams: Workstream100[]; onOpenTask: (wsId: string, taskId: string) => void }) {
   const ORDER: TaskHealth[] = ["At Risk", "Blocked", "Off Track"];
 
+  const [reasons, setReasons] = useState<Record<string, string>>(() => {
+    const m: Record<string, string> = {};
+    workstreams.forEach((ws) => ws.tasks.forEach((t) => { m[t.id] = t.reason || ""; }));
+    return m;
+  });
+  const [editingReason, setEditingReason] = useState<string | null>(null);
+
+  const saveReason = async (wsId: string, taskId: string, description: string) => {
+    setEditingReason(null);
+    await fetch("/api/update-field", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ taskId, taskDescription: description, workstreamId: wsId, field: "reason", value: reasons[taskId] ?? "" }),
+    });
+  };
+
   // Flatten to individual flagged tasks, keyed by their health
   const items = workstreams.flatMap((ws) =>
     ws.tasks
@@ -858,31 +874,58 @@ function NeedsActionView({ workstreams, onOpenTask }: { workstreams: Workstream1
               {group.map(({ ws, t }) => {
                 const overdue = t.status !== "Complete" && t.dueDate && new Date(t.dueDate) < new Date();
                 return (
-                  <button
+                  <div
                     key={t.id}
-                    onClick={() => onOpenTask(ws.id, t.id)}
-                    className="w-full text-left transition-colors hover:bg-stone-50"
                     style={{
-                      display: "block",
                       backgroundColor: "white",
                       border: "0.5px solid #e5e3de",
                       borderLeft: `3px solid ${meta.dot}`,
                       padding: "12px 14px",
-                      cursor: "pointer",
                     }}
                   >
-                    <div className="text-xs uppercase tracking-widest mb-1" style={{ color: "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>
-                      {ws.name}
+                    {/* Clickable header → opens the task in Workstreams */}
+                    <div onClick={() => onOpenTask(ws.id, t.id)} className="cursor-pointer rounded -mx-1 px-1 hover:bg-stone-50 transition-colors">
+                      <div className="text-xs uppercase tracking-widest mb-1" style={{ color: "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>
+                        {ws.name}
+                      </div>
+                      <div className="text-sm leading-snug mb-2" style={{ color: "#1a1a1a" }}>{t.description}</div>
+                      <div className="flex items-center gap-4 text-xs" style={{ color: "#78716c", fontFamily: "var(--font-geist-mono)" }}>
+                        <span style={{ color: overdue ? "#b91c1c" : undefined, fontWeight: overdue ? 600 : undefined }}>
+                          {t.dueDate || "—"}
+                        </span>
+                        <span>{t.accountable || "—"}</span>
+                        <span style={{ marginLeft: "auto", color: "#1a5c3a" }}>Open task →</span>
+                      </div>
                     </div>
-                    <div className="text-sm leading-snug mb-2" style={{ color: "#1a1a1a" }}>{t.description}</div>
-                    <div className="flex items-center gap-4 text-xs" style={{ color: "#78716c", fontFamily: "var(--font-geist-mono)" }}>
-                      <span style={{ color: overdue ? "#b91c1c" : undefined, fontWeight: overdue ? 600 : undefined }}>
-                        {t.dueDate || "—"}
-                      </span>
-                      <span>{t.accountable || "—"}</span>
-                      <span style={{ marginLeft: "auto", color: "#1a5c3a" }}>Open task →</span>
+
+                    {/* Reason field — persists to the sheet */}
+                    <div style={{ marginTop: "10px", borderTop: "1px solid #f0efe9", paddingTop: "8px" }}>
+                      <div className="text-xs uppercase tracking-widest mb-1" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+                        Reason for Risk / Off Track / Block
+                      </div>
+                      {editingReason === t.id ? (
+                        <textarea
+                          autoFocus
+                          value={reasons[t.id] ?? ""}
+                          onChange={(e) => setReasons((prev) => ({ ...prev, [t.id]: e.target.value }))}
+                          onBlur={() => saveReason(ws.id, t.id, t.description)}
+                          onKeyDown={(e) => { if (e.key === "Escape") setEditingReason(null); }}
+                          rows={2}
+                          placeholder="Add the reason…"
+                          className="w-full text-xs leading-relaxed rounded px-2 py-1.5 resize-none focus:outline-none"
+                          style={{ border: "1px solid #d1cfc9", backgroundColor: "#fafaf8", color: "#57534e" }}
+                        />
+                      ) : (
+                        <p
+                          onClick={() => setEditingReason(t.id)}
+                          className="text-xs leading-relaxed cursor-pointer rounded px-1 -mx-1 hover:bg-stone-100 transition-colors"
+                          style={{ color: reasons[t.id] ? "#57534e" : "#c0bdb8", fontStyle: "italic" }}
+                        >
+                          {reasons[t.id] || "Add the reason…"}
+                        </p>
+                      )}
                     </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>
