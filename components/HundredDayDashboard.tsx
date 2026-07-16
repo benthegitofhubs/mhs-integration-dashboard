@@ -36,7 +36,7 @@ function deriveWorkstreamStatus(ws: Workstream100): Status100 {
 }
 
 export default function HundredDayDashboard({ workstreams, loadedAt }: { workstreams: Workstream100[]; loadedAt?: string }) {
-  const [activeTab, setActiveTab] = useState<"workstreams" | "by-owner" | "ai-automations" | "needs-action">("workstreams");
+  const [activeTab, setActiveTab] = useState<"overview" | "workstreams" | "by-owner" | "ai-automations" | "needs-action">("overview");
   const [leaders, setLeaders] = useState<Record<string, string>>(
     Object.fromEntries(workstreams.map((ws) => [ws.id, ws.leader]))
   );
@@ -81,14 +81,39 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
 
   return (
     <>
-    <NavBar
-      search={taskSearch}
-      onSearchChange={setTaskSearch}
-      showSearch={activeTab === "workstreams"}
-    />
+    <NavBar />
     <main className="min-h-screen" style={{ backgroundColor: "#f7f6f3", color: "#1a1a1a" }}>
       <div className="max-w-6xl mx-auto px-8 pt-12 pb-8">
 
+        {/* Tab switcher */}
+        <div className="flex gap-1 mb-8 p-1 rounded-lg" style={{ backgroundColor: "#eeede9", width: "fit-content" }}>
+          {([
+            { id: "overview",       label: "Overview",        red: false },
+            { id: "workstreams",    label: "Workstream Tasks", red: false },
+            { id: "needs-action",   label: "Needs Action",    red: true  },
+            { id: "by-owner",       label: "By Accountable",  red: false },
+            { id: "ai-automations", label: "AI Automations",  red: false },
+          ] as const).map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                className="text-xs font-semibold uppercase tracking-widest px-4 py-2 rounded-md transition-all"
+                style={{
+                  fontFamily: "var(--font-geist-mono)",
+                  color: isActive ? (tab.red ? "#b91c1c" : "#1a5c3a") : (tab.red ? "#e06060" : "#9ca3af"),
+                  backgroundColor: isActive ? "white" : "transparent",
+                  boxShadow: isActive ? "0 1px 3px rgba(0,0,0,0.10)" : "none",
+                  border: "none", cursor: "pointer", letterSpacing: "0.07em", whiteSpace: "nowrap",
+                }}>
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* TAB: Overview — top info + workstream health */}
+        {activeTab === "overview" && (
+        <>
         {/* Eyebrow + headline */}
         <p className="text-xs font-semibold uppercase tracking-widest mb-2"
           style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
@@ -183,36 +208,8 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
             <span className="font-semibold" style={{ color: "#57534e" }}>Last loaded: {loadedAt ?? LAST_SYNCED}.</span>
           </p>
         </div>
-
-        {/* Tab switcher */}
-        <div className="flex gap-1 mb-8 p-1 rounded-lg" style={{ backgroundColor: "#eeede9", width: "fit-content" }}>
-          {([
-            { id: "workstreams",    label: "Workstreams",   red: false },
-            { id: "needs-action",   label: "Needs Action",  red: true  },
-            { id: "by-owner",       label: "By Accountable", red: false },
-            { id: "ai-automations", label: "AI Automations",red: false },
-          ] as const).map((tab) => {
-            const isActive = activeTab === tab.id;
-            return (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                className="text-xs font-semibold uppercase tracking-widest px-4 py-2 rounded-md transition-all"
-                style={{
-                  fontFamily: "var(--font-geist-mono)",
-                  color: isActive
-                    ? (tab.red ? "#b91c1c" : "#1a5c3a")
-                    : (tab.red ? "#e06060" : "#9ca3af"),
-                  backgroundColor: isActive ? "white" : "transparent",
-                  boxShadow: isActive ? "0 1px 3px rgba(0,0,0,0.10)" : "none",
-                  border: "none",
-                  cursor: "pointer",
-                  letterSpacing: "0.07em",
-                  whiteSpace: "nowrap",
-                }}>
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
+        </>
+        )}
 
         {activeTab === "ai-automations" && <AIAutomationsView />}
 
@@ -230,9 +227,9 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
           />
         )}
 
-        {activeTab === "workstreams" && (
+        {/* Workstream Health (Overview tab) */}
+        {activeTab === "overview" && (
         <>
-        {/* Workstream Health */}
         <div className="mb-10">
           <div className="flex items-center gap-4 mb-6">
             <div className="flex-1" style={{ height: "2px", backgroundColor: "#e5e3de" }} />
@@ -426,6 +423,28 @@ export default function HundredDayDashboard({ workstreams, loadedAt }: { workstr
             })}
           </div>
 
+        </div>
+        </>
+        )}
+
+        {/* TAB: Workstream Tasks — search + tasks */}
+        {activeTab === "workstreams" && (
+        <>
+        <div className="relative mb-6">
+          <input
+            type="text"
+            value={taskSearch}
+            onChange={(e) => setTaskSearch(e.target.value)}
+            placeholder="Search tasks by keyword…"
+            className="w-full text-sm rounded-lg focus:outline-none"
+            style={{ border: "1px solid #e5e3de", backgroundColor: "white", color: "#1a1a1a", padding: "10px 32px 10px 12px" }}
+          />
+          {taskSearch && (
+            <button onClick={() => setTaskSearch("")} aria-label="Clear search"
+              style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#9ca3af", fontSize: "14px", lineHeight: 1 }}>
+              ✕
+            </button>
+          )}
         </div>
 
         <div className="mb-3 flex items-center gap-4">
