@@ -62,6 +62,8 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
   );
   const [editingField, setEditingField] = useState<{ taskId: string; field: RaciField } | null>(null);
   const [fieldDraft, setFieldDraft] = useState("");
+  const [editingRank, setEditingRank] = useState<string | null>(null);
+  const [rankDraft, setRankDraft] = useState("");
   const [subtasksOpen, setSubtasksOpen] = useState<Record<string, boolean>>({});
   const [newSubtaskDraft, setNewSubtaskDraft] = useState<Record<string, string>>({});
   const [leader, setLeader] = useState(workstream.leader);
@@ -127,6 +129,34 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ taskId, taskDescription: task?.description, workstreamId: workstream.id, field, value }),
+    });
+  };
+
+  const saveRanking = async (taskId: string) => {
+    const raw = rankDraft.trim();
+    setEditingRank(null);
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+
+    // Empty clears the ranking
+    const num = raw === "" ? null : parseInt(raw, 10);
+    if (raw !== "" && (num === null || isNaN(num) || num < 1)) {
+      alert("Ranking must be a whole number (1 or higher).");
+      return;
+    }
+    if (num === task.ranking) return; // no change
+
+    // Enforce uniqueness within this workstream
+    if (num !== null && tasks.some((t) => t.id !== taskId && t.ranking === num)) {
+      alert(`Rank ${num} is already assigned to another task in this workstream. Each task must have a unique rank.`);
+      return;
+    }
+
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, ranking: num } : t)));
+    await fetch("/api/update-field", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ taskId, taskDescription: task.description, workstreamId: workstream.id, field: "ranking", value: num === null ? "" : String(num) }),
     });
   };
 
@@ -372,15 +402,38 @@ export default function HundredDayCard({ workstream, index, derivedStatus }: Pro
                 gap: "12px",
               }}>
 
-              {/* Ranking */}
+              {/* Ranking — click to edit, unique per workstream */}
               <div className="pt-0.5 flex items-center justify-center">
-                {task.ranking != null ? (
-                  <span className="text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center"
-                    style={{ backgroundColor: "#f0efe9", color: "#78716c", fontFamily: "var(--font-geist-mono)" }}>
+                {editingRank === task.id ? (
+                  <input
+                    autoFocus
+                    type="number"
+                    min={1}
+                    value={rankDraft}
+                    onChange={(e) => setRankDraft(e.target.value)}
+                    onBlur={() => saveRanking(task.id)}
+                    onKeyDown={(e) => { if (e.key === "Enter") saveRanking(task.id); if (e.key === "Escape") setEditingRank(null); }}
+                    className="text-xs font-bold rounded w-10 text-center focus:outline-none"
+                    style={{ border: "1px solid #1a5c3a", color: "#374151", fontFamily: "var(--font-geist-mono)" }}
+                  />
+                ) : task.ranking != null ? (
+                  <span
+                    onClick={() => { setRankDraft(String(task.ranking)); setEditingRank(task.id); }}
+                    className="text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center cursor-pointer hover:ring-1 hover:ring-stone-300"
+                    style={{ backgroundColor: "#f0efe9", color: "#78716c", fontFamily: "var(--font-geist-mono)" }}
+                    title="Click to edit rank"
+                  >
                     {task.ranking}
                   </span>
                 ) : (
-                  <span style={{ color: "#d6d3cd", fontFamily: "var(--font-geist-mono)", fontSize: "11px" }}>—</span>
+                  <span
+                    onClick={() => { setRankDraft(""); setEditingRank(task.id); }}
+                    className="cursor-pointer hover:underline"
+                    style={{ color: "#d6d3cd", fontFamily: "var(--font-geist-mono)", fontSize: "11px" }}
+                    title="Click to set rank"
+                  >
+                    —
+                  </span>
                 )}
               </div>
 
