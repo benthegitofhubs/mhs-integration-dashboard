@@ -174,6 +174,11 @@ Top nav is sticky ("frozen"). Location count = 20.
   week after. If a metric regresses above 0, its section (and future congrats)
   resume automatically. `--dry-run` computes without writing state;
   `--test-ns=N` / `--test-md=M` override totals to exercise the sunset states.
+- **Same-day idempotency.** State also stores `lastPosted` (ET date). If it has
+  already posted today, the script returns `SILENT` — so the reminder can post to
+  the channel at most once per day even if the scheduled task fires more than once
+  (which happened Jul 17 2026: one run double-posted; the duplicate was deleted and
+  this guard added). The task prompt also instructs a single `chat_post`.
 
 ## Daily two-way sync check
 

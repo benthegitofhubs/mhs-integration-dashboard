@@ -102,7 +102,7 @@ for (const a of process.argv) {
   if (m) cur[m[1] === "ns" ? "notStarted" : "missingDue"] = Number(m[2]);
 }
 
-// Prior counts for one-time congrats detection.
+// Prior state: counts for one-time congrats detection + the date we last posted.
 let prev = null;
 if (existsSync(STATE_FILE)) {
   try { prev = JSON.parse(readFileSync(STATE_FILE, "utf8")); } catch { prev = null; }
@@ -111,8 +111,11 @@ const crossedToZero = (key) => prev && prev[key] > 0 && cur[key] === 0;
 const congratsStarted = crossedToZero("notStarted");
 const congratsDated   = crossedToZero("missingDue");
 
-// Persist current counts for next week (unless dry-run).
-if (!DRY_RUN) writeFileSync(STATE_FILE, JSON.stringify({ notStarted: cur.notStarted, missingDue: cur.missingDue }));
+const todayISO = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" }); // YYYY-MM-DD ET
+// Persist current counts (+ the date we posted, when we actually post). No-op on dry-run.
+const persist = (lastPosted) => {
+  if (!DRY_RUN) writeFileSync(STATE_FILE, JSON.stringify({ notStarted: cur.notStarted, missingDue: cur.missingDue, lastPosted }));
+};
 
 const dateStr = new Date().toLocaleDateString("en-US", { timeZone: "America/New_York", month: "short", day: "numeric" });
 
@@ -125,8 +128,16 @@ const section = (key, emoji, count, label) => {
   return lines;
 };
 
-// Nothing outstanding and nothing to celebrate → stay quiet.
+// Nothing outstanding and nothing to celebrate → stay quiet (but remember counts).
 if (cur.notStarted === 0 && cur.missingDue === 0 && !congratsStarted && !congratsDated) {
+  persist(prev?.lastPosted || "");
+  process.stdout.write("SILENT\n");
+  process.exit(0);
+}
+
+// Idempotency: if we already posted today, stay quiet — guards against the
+// scheduled task firing more than once in a day. Leave prior state untouched.
+if (prev?.lastPosted === todayISO) {
   process.stdout.write("SILENT\n");
   process.exit(0);
 }
@@ -139,6 +150,7 @@ if (bothClear && (congratsStarted || congratsDated)) {
   out.push("🎉  **Weekly reminder — signing off.**");
   out.push("");
   out.push("Every task across all 15 workstreams is now **started** and has a **due date**. This reminder has done its job and will stop here. Onward. 🚀");
+  persist(todayISO);
   process.stdout.write(out.join("\n") + "\n");
   process.exit(0);
 }
@@ -166,4 +178,5 @@ if (cur.notStarted > 0 && cur.missingDue > 0) {
 if (cur.missingDue > 0) out.push(...section("missingDue", "📅", cur.missingDue, "tasks don’t have a due date yet"));
 
 out.push(`🔗  [View full tracker](${TRACKER_URL})`);
+persist(todayISO);
 process.stdout.write(out.join("\n") + "\n");
