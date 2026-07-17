@@ -158,6 +158,11 @@ if (congratsDated) {
 }
 
 if (cur.notStarted > 0) out.push(...section("notStarted", "⏳", cur.notStarted, "tasks haven’t started yet"));
+// Space + horizontal rule between the two sections when both are shown.
+if (cur.notStarted > 0 && cur.missingDue > 0) {
+  out.push("─────────────────────");
+  out.push("");
+}
 if (cur.missingDue > 0) out.push(...section("missingDue", "📅", cur.missingDue, "tasks don’t have a due date yet"));
 
 out.push(`🔗  [View full tracker](${TRACKER_URL})`);
