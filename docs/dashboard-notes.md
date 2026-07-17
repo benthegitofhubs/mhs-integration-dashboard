@@ -64,19 +64,27 @@ task-status-driven. (Leftover `Status:` rows in tab headers are ignored.)
 
 ## Tabs
 
-1. **Overview** — executive summary. Eyebrow ("100-Day Integration Plan") /
-   headline ("One team, one mission") / a single **day-line** (Day N of 100 ·
-   days left · next board meeting) with a **slim progress bar** / live-sync (or
-   cached-data) banner at top,
-   then: **four KPI tiles** (overall % complete, on-track / need-attention /
-   off-track workstream counts, from `rollupWorkstreamHealth`), then
-   **workstreams grouped by flagship pillar** as compact rows
-   (`name · leader · mini health bar · completion%`). Grouping is dynamic off
-   the Sheet's flagship-goal field. Clicking a workstream name opens its tasks;
-   clicking a flagged bar segment opens Needs Action filtered to that
-   workstream; leader is inline-editable; the 100-Day goal shows on hover.
-   The full per-workstream table now lives in the Workstream Tasks tab.
-2. **Workstream Tasks** — keyword search (top), a column-header row + legend,
+1. **Overview** — executive summary. Structure, top to bottom:
+   1. **Rich top** — eyebrow ("100-Day Integration Plan") · headline
+      ("One team, one mission") · **tick-timeline + key-dates**. (The evening
+      Jul 16 work restored this rich top; the earlier single day-line + slim
+      progress bar was reverted.)
+   2. **Four task-level KPI tiles** — Overall Completion · **On Track
+      (In Progress/Not Started)** · Need Attention · Off Track. Each shows a
+      **percentage** with "X of N **tasks**" beneath, and the four partition
+      cleanly to 100%. These count **tasks, not workstreams**
+      (`rollupWorkstreamHealth` is no longer what drives the tiles).
+   3. **Workstream list** — a **single flat list sorted by completion %
+      descending**, columns **Workstream · Leader · Completion %** only. No
+      pillar grouping, no mini health bars, no color legend (all removed in the
+      evening Jul 16 work). Clicking a workstream name opens its tasks; leader
+      is inline-editable; the 100-Day goal shows on hover.
+   4. **Live-sync / cached-data banner at the BOTTOM** (moved down from the top).
+
+   The full per-workstream task table lives in the Workstream Tasks tab.
+2. **Workstream Tasks** — keyword search (top), a **centered, boxed** legend
+   (white card, `#e5e3de` border, `width: fit-content`, `justify-center`), a
+   column-header row,
    then one card per workstream whose header **mirrors the Overview row** and
    drops down to the task table (Ranking · Task · Due Date · Status, with RACI
    + subtasks + notes under each task). Ranking is editable, unique per
@@ -86,6 +94,19 @@ task-status-driven. (Leftover `Status:` rows in tab headers are ignored.)
    **Reason** (persists to sheet column K). Click an item → opens that task in
    the Workstream Tasks tab (expanded, scrolled, highlighted). Can be filtered
    to one workstream.
+   - **Review mode / stepper.** Opening a flagged task from here enters a
+     review mode: a floating bar (bottom-center) shows **← Needs Action ·
+     Prev · "X of N flagged" · Next**, letting you walk the whole flagged
+     queue *in the same order this tab renders it* (At Risk → Blocked → Off
+     Track, respecting the active workstream filter) without bouncing back and
+     forth. **Prev** disables at the first item, **Next** at the last; the bar
+     clears when you switch to any other tab. **← Needs Action** returns you
+     here scrolled to (and briefly highlighting) the task you left off on.
+     State lives in `HundredDayDashboard` (`review`, `naReturnTaskId`);
+     `buildReviewQueue()` reproduces the tab's ordering. The browser back
+     button is intentionally NOT wired (tab state isn't in history, only the
+     scroll hash) — the in-app button covers the workflow without risking the
+     hash-scroll logic.
 4. **By Accountable** — tasks grouped by the Accountable person.
 5. **AI Automations** — running list of proposed automations (status persisted
    in browser).
@@ -145,3 +166,42 @@ Top nav is sticky ("frozen"). Location count = 20.
   the tick-timeline + key-dates table with a single day-line + slim progress
   bar. Removed the inline "next board meeting" editor (`BoardMeetingCell`) —
   the board date now comes from the Sheet's key-dates data.
+
+## Evening Jul 16, 2026 session (final state of the day)
+
+Ran a live pressure-test of the app and reworked the Overview. Net changes,
+all shipped to `main` (commits `471c5a6` → `85797cd` → `c57367a`):
+
+- **KPI tiles switched to task-level.** All four tiles (Overall Completion ·
+  On Track · Need Attention · Off Track) now count **tasks**, each as a
+  percentage with "X of N tasks" beneath, summing to 100% — replacing the
+  earlier workstream-level counts driven by `rollupWorkstreamHealth`.
+- **On Track tile** subtitled **"(In Progress/Not Started)"** to match the
+  health model.
+- **Workstream section → single flat list** sorted by **completion %
+  descending** (Workstream · Leader · Completion %). Removed the pillar
+  grouping, mini health bars, and color legend that the exec-summary redesign
+  had introduced earlier the same day.
+- **Restored the rich Overview top** (headline · tick-timeline · key dates),
+  reverting the afternoon's day-line + slim-progress-bar simplification.
+- **Moved the live-sync / cached-data banner to the bottom** of the Overview.
+- **Tried and reverted** (NOT in the app): the Integration Health / pace card
+  (Expected vs. Actual by today, draggable timeline) and a separate
+  **Not Started** task segment — both added earlier in the day and pulled back
+  out.
+
+Still open (not blocking): rotate the plaintext GitHub PAT in `.git/config`.
+
+## Jul 17, 2026 session
+
+- **Needs Action review stepper.** Added a floating Prev/Next/Back bar so the
+  flagged queue can be worked top-to-bottom without losing your place (see
+  Tabs → Needs Action). Opening a task from Needs Action now enters review
+  mode; the "← Needs Action" button returns you scrolled to and highlighting
+  the last task you were on. New state in `HundredDayDashboard`: `review`
+  (`{ queue, index }`), `naReturnTaskId`; helpers `buildReviewQueue`,
+  `openFromNeedsAction`, `goToReviewIndex`, `backToNeedsAction`;
+  `NeedsActionView` gained `scrollToTaskId` / `onScrolled` props and `na-<id>`
+  anchors on each card. Browser back button deliberately left unwired.
+- **Workstream Tasks legend** centered and put in a bordered white box for
+  legibility.

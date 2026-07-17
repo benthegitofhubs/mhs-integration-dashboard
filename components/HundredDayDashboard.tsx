@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Fragment } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { Workstream100, Task100, KEY_DATES, Status100, LAST_SYNCED } from "@/lib/hundredday";
 import HundredDayCard from "./HundredDayCard";
 import NavBar from "./NavBar";
@@ -31,6 +31,12 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
   const [leaderDraft, setLeaderDraft] = useState("");
   const [taskSearch, setTaskSearch] = useState("");
   const [naFilter, setNaFilter] = useState<string | null>(null);
+  // Needs Action "review mode": ordered queue of flagged tasks + current
+  // position, set when a task is opened from Needs Action. Drives the
+  // floating Prev/Next/Back stepper so the whole queue can be worked in order.
+  const [review, setReview] = useState<{ queue: { wsId: string; taskId: string }[]; index: number } | null>(null);
+  // Task to scroll back to when returning to the Needs Action tab.
+  const [naReturnTaskId, setNaReturnTaskId] = useState<string | null>(null);
   const allTasks   = workstreams.flatMap((ws) => ws.tasks);
   const total      = allTasks.length;
   const complete   = allTasks.filter((t) => t.status === "Complete").length;
@@ -38,8 +44,47 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
   const atRisk     = allTasks.filter((t) => t.status === "At Risk").length;
   const blocked    = allTasks.filter((t) => t.status === "Blocked").length;
 
+  // Build the flagged-task queue in the SAME order Needs Action renders:
+  // grouped At Risk → Blocked → Off Track, workstream order within each group.
+  // Respects the current Needs Action workstream filter.
+  const buildReviewQueue = (): { wsId: string; taskId: string }[] => {
+    const ORDER: TaskHealth[] = ["At Risk", "Blocked", "Off Track"];
+    const source = naFilter ? workstreams.filter((ws) => ws.id === naFilter) : workstreams;
+    const items = source.flatMap((ws) =>
+      ws.tasks
+        .map((t) => ({ wsId: ws.id, taskId: t.id, health: calcTaskHealth(t).status }))
+        .filter((x) => ORDER.includes(x.health))
+    );
+    return ORDER.flatMap((h) =>
+      items.filter((x) => x.health === h).map(({ wsId, taskId }) => ({ wsId, taskId }))
+    );
+  };
 
+  // Open a flagged task in the Workstreams tab and enter review mode at its
+  // position in the queue.
+  const openFromNeedsAction = (wsId: string, taskId: string) => {
+    const queue = buildReviewQueue();
+    const index = queue.findIndex((q) => q.wsId === wsId && q.taskId === taskId);
+    setReview({ queue, index: index < 0 ? 0 : index });
+    window.location.hash = `ws-${wsId}~${taskId}`;
+    setActiveTab("workstreams");
+  };
 
+  // Jump to a position in the review queue (Prev/Next stepper).
+  const goToReviewIndex = (i: number) => {
+    if (!review || i < 0 || i >= review.queue.length) return;
+    const { wsId, taskId } = review.queue[i];
+    window.location.hash = `ws-${wsId}~${taskId}`;
+    setReview({ queue: review.queue, index: i });
+  };
+
+  // Leave review mode and return to the Needs Action tab, scrolled to the
+  // task you were last on.
+  const backToNeedsAction = () => {
+    if (review) setNaReturnTaskId(review.queue[review.index]?.taskId ?? null);
+    setReview(null);
+    setActiveTab("needs-action");
+  };
 
   return (
     <>
@@ -58,7 +103,7 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
           ] as const).map((tab) => {
             const isActive = activeTab === tab.id;
             return (
-              <button key={tab.id} onClick={() => { setActiveTab(tab.id); setNaFilter(null); }}
+              <button key={tab.id} onClick={() => { setActiveTab(tab.id); setNaFilter(null); setReview(null); }}
                 className="text-xs font-semibold uppercase tracking-widest px-4 py-2 rounded-md transition-all"
                 style={{
                   fontFamily: "var(--font-geist-mono)",
@@ -177,10 +222,9 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
             workstreams={workstreams}
             filterWsId={naFilter}
             onClearFilter={() => setNaFilter(null)}
-            onOpenTask={(wsId, taskId) => {
-              window.location.hash = `ws-${wsId}~${taskId}`;
-              setActiveTab("workstreams");
-            }}
+            onOpenTask={openFromNeedsAction}
+            scrollToTaskId={naReturnTaskId}
+            onScrolled={() => setNaReturnTaskId(null)}
           />
         )}
 
@@ -373,7 +417,17 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
       {activeTab === "workstreams" && (
         <div className="max-w-6xl mx-auto px-8 pb-20 space-y-2">
           {/* Task-health bar legend */}
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs" style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)" }}>
+          <div
+            className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs mx-auto mb-2 px-5 py-3 rounded-lg"
+            style={{
+              color: "#6b7280",
+              fontFamily: "var(--font-geist-mono)",
+              backgroundColor: "white",
+              border: "1px solid #e5e3de",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+              width: "fit-content",
+            }}
+          >
             {[
               { l: "Complete", c: "#15803d" },
               { l: "On Track (In Progress/Not Started)", c: "#86efac" },
@@ -428,6 +482,47 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
         </div>
       )}
     </main>
+
+    {/* Needs Action review stepper — floats while working the flagged queue */}
+    {review && activeTab === "workstreams" && (
+      <div
+        className="fixed left-1/2 bottom-6 z-50 flex items-center gap-1 px-2 py-1.5 rounded-full"
+        style={{
+          transform: "translateX(-50%)",
+          backgroundColor: "#1a1a1a",
+          boxShadow: "0 6px 24px rgba(0,0,0,0.28)",
+          fontFamily: "var(--font-geist-mono)",
+        }}
+      >
+        <button
+          onClick={backToNeedsAction}
+          className="text-xs font-semibold uppercase tracking-widest px-3 py-1.5 rounded-full transition-colors"
+          style={{ color: "#e06060", background: "none", border: "none", cursor: "pointer", letterSpacing: "0.07em" }}
+        >
+          ← Needs Action
+        </button>
+        <span style={{ width: "1px", height: "18px", backgroundColor: "#3a3a3a" }} />
+        <button
+          onClick={() => goToReviewIndex(review.index - 1)}
+          disabled={review.index <= 0}
+          className="text-sm px-3 py-1.5 rounded-full"
+          style={{ color: review.index <= 0 ? "#5a5a5a" : "#e5e3de", background: "none", border: "none", cursor: review.index <= 0 ? "default" : "pointer" }}
+        >
+          ← Prev
+        </button>
+        <span className="text-xs px-1" style={{ color: "#c0bdb8", whiteSpace: "nowrap" }}>
+          {review.index + 1} of {review.queue.length} flagged
+        </span>
+        <button
+          onClick={() => goToReviewIndex(review.index + 1)}
+          disabled={review.index >= review.queue.length - 1}
+          className="text-sm px-3 py-1.5 rounded-full"
+          style={{ color: review.index >= review.queue.length - 1 ? "#5a5a5a" : "#e5e3de", background: "none", border: "none", cursor: review.index >= review.queue.length - 1 ? "default" : "pointer" }}
+        >
+          Next →
+        </button>
+      </div>
+    )}
     </>
   );
 }
@@ -784,8 +879,23 @@ function AIAutomationsView() {
   );
 }
 
-function NeedsActionView({ workstreams, onOpenTask, filterWsId, onClearFilter }: { workstreams: Workstream100[]; onOpenTask: (wsId: string, taskId: string) => void; filterWsId?: string | null; onClearFilter?: () => void }) {
+function NeedsActionView({ workstreams, onOpenTask, filterWsId, onClearFilter, scrollToTaskId, onScrolled }: { workstreams: Workstream100[]; onOpenTask: (wsId: string, taskId: string) => void; filterWsId?: string | null; onClearFilter?: () => void; scrollToTaskId?: string | null; onScrolled?: () => void }) {
   const ORDER: TaskHealth[] = ["At Risk", "Blocked", "Off Track"];
+
+  // When returning from review mode, scroll back to the task you left off on.
+  const [flash, setFlash] = useState<string | null>(null);
+  useEffect(() => {
+    if (!scrollToTaskId) return;
+    const id = scrollToTaskId;
+    const t = setTimeout(() => {
+      const el = document.getElementById(`na-${id}`);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      setFlash(id);
+      onScrolled?.();
+      setTimeout(() => setFlash(null), 2200);
+    }, 80);
+    return () => clearTimeout(t);
+  }, [scrollToTaskId, onScrolled]);
   const filtered = filterWsId ? workstreams.filter((ws) => ws.id === filterWsId) : workstreams;
   const filterName = filterWsId ? workstreams.find((ws) => ws.id === filterWsId)?.name : null;
 
@@ -861,11 +971,14 @@ function NeedsActionView({ workstreams, onOpenTask, filterWsId, onClearFilter }:
                 return (
                   <div
                     key={t.id}
+                    id={`na-${t.id}`}
                     style={{
-                      backgroundColor: "white",
+                      backgroundColor: flash === t.id ? "#fffbe6" : "white",
                       border: "0.5px solid #e5e3de",
                       borderLeft: `3px solid ${meta.dot}`,
                       padding: "12px 14px",
+                      transition: "background-color 0.4s ease",
+                      scrollMarginTop: "90px",
                     }}
                   >
                     {/* Clickable header → opens the task in Workstreams */}
