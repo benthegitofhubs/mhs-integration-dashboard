@@ -22,7 +22,7 @@ export const STATUS_COLOR: Record<Status100, string> = {
   "Complete":    "#15803d",
 };
 
-export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live = true }: { workstreams: Workstream100[]; loadedAt?: string; nowMs: number; live?: boolean }) {
+export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live = true, joinDates = {} }: { workstreams: Workstream100[]; loadedAt?: string; nowMs: number; live?: boolean; joinDates?: Record<string, string> }) {
   const [activeTab, setActiveTab] = useState<"overview" | "workstreams" | "by-owner" | "ai-automations" | "needs-action">("overview");
   const [leaders, setLeaders] = useState<Record<string, string>>(
     Object.fromEntries(workstreams.map((ws) => [ws.id, ws.leader]))
@@ -47,26 +47,11 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
   const atRisk     = allTasks.filter((t) => t.status === "At Risk").length;
   const blocked    = allTasks.filter((t) => t.status === "Blocked").length;
 
-  // Build the flagged-task queue in the SAME order Needs Action renders:
-  // grouped At Risk → Blocked → Off Track, workstream order within each group.
-  // Respects the current Needs Action workstream filter.
-  const buildReviewQueue = (): { wsId: string; taskId: string }[] => {
-    const ORDER: TaskHealth[] = ["At Risk", "Blocked", "Off Track"];
-    const source = naFilter ? workstreams.filter((ws) => ws.id === naFilter) : workstreams;
-    const items = source.flatMap((ws) =>
-      ws.tasks
-        .map((t) => ({ wsId: ws.id, taskId: t.id, health: calcTaskHealth(t).status }))
-        .filter((x) => ORDER.includes(x.health))
-    );
-    return ORDER.flatMap((h) =>
-      items.filter((x) => x.health === h).map(({ wsId, taskId }) => ({ wsId, taskId }))
-    );
-  };
-
   // Open a flagged task in the Workstreams tab and enter review mode at its
-  // position in the queue.
-  const openFromNeedsAction = (wsId: string, taskId: string) => {
-    const queue = buildReviewQueue();
+  // position in the queue. The queue is supplied by Needs Action in its exact
+  // current display order (sorted by join date, respecting any filter), so the
+  // Prev/Next stepper always walks the list top-to-bottom as shown.
+  const openFromNeedsAction = (wsId: string, taskId: string, queue: { wsId: string; taskId: string }[]) => {
     const index = queue.findIndex((q) => q.wsId === wsId && q.taskId === taskId);
     setReview({ queue, index: index < 0 ? 0 : index });
     window.location.hash = `ws-${wsId}~${taskId}`;
@@ -226,6 +211,7 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
             filterWsId={naFilter}
             onClearFilter={() => setNaFilter(null)}
             onOpenTask={openFromNeedsAction}
+            joinDates={joinDates}
             scrollToTaskId={naReturnTaskId}
             onScrolled={() => setNaReturnTaskId(null)}
           />
@@ -940,8 +926,10 @@ function AIAutomationsView() {
   );
 }
 
-function NeedsActionView({ workstreams, onOpenTask, filterWsId, onClearFilter, scrollToTaskId, onScrolled }: { workstreams: Workstream100[]; onOpenTask: (wsId: string, taskId: string) => void; filterWsId?: string | null; onClearFilter?: () => void; scrollToTaskId?: string | null; onScrolled?: () => void }) {
+function NeedsActionView({ workstreams, onOpenTask, filterWsId, onClearFilter, joinDates = {}, scrollToTaskId, onScrolled }: { workstreams: Workstream100[]; onOpenTask: (wsId: string, taskId: string, queue: { wsId: string; taskId: string }[]) => void; filterWsId?: string | null; onClearFilter?: () => void; joinDates?: Record<string, string>; scrollToTaskId?: string | null; onScrolled?: () => void }) {
   const ORDER: TaskHealth[] = ["At Risk", "Blocked", "Off Track"];
+  // Sort by join date; newest on top by default.
+  const [dateSort, setDateSort] = useState<"desc" | "asc">("desc");
 
   // When returning from review mode, scroll back to the task you left off on.
   const [flash, setFlash] = useState<string | null>(null);
@@ -976,12 +964,32 @@ function NeedsActionView({ workstreams, onOpenTask, filterWsId, onClearFilter, s
     });
   };
 
-  // Flatten to individual flagged tasks, keyed by their health
-  const items = filtered.flatMap((ws) =>
-    ws.tasks
-      .map((t) => ({ ws, t, health: calcTaskHealth(t).status }))
-      .filter((x) => ORDER.includes(x.health))
-  );
+  // Flatten to individual flagged tasks with their health + join date, then
+  // sort by join date (newest first by default). Tasks with no recorded join
+  // date sort to the bottom regardless of direction.
+  const items = filtered
+    .flatMap((ws) =>
+      ws.tasks
+        .map((t) => ({ ws, t, health: calcTaskHealth(t).status, joined: joinDates[t.id] || "" }))
+        .filter((x) => ORDER.includes(x.health))
+    )
+    .sort((a, b) => {
+      if (a.joined && !b.joined) return -1;
+      if (!a.joined && b.joined) return 1;
+      if (a.joined === b.joined) return a.ws.name.localeCompare(b.ws.name);
+      return dateSort === "desc" ? b.joined.localeCompare(a.joined) : a.joined.localeCompare(b.joined);
+    });
+
+  // Queue passed to the stepper — the exact displayed order.
+  const queue = items.map(({ ws, t }) => ({ wsId: ws.id, taskId: t.id }));
+
+  // "2026-07-17" → "Jul 17"
+  const fmtJoined = (iso: string) => {
+    if (!iso) return "—";
+    const [y, m, d] = iso.split("-").map(Number);
+    if (!y || !m || !d) return iso;
+    return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-US", { timeZone: "UTC", month: "short", day: "numeric" });
+  };
 
   const filterBanner = filterName ? (
     <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded" style={{ backgroundColor: "#f0efe9" }}>
@@ -1012,85 +1020,96 @@ function NeedsActionView({ workstreams, onOpenTask, filterWsId, onClearFilter, s
   return (
     <div className="pb-20 max-w-4xl mx-auto">
       {filterBanner}
-      {ORDER.map((h) => {
-        const group = items.filter((x) => x.health === h);
-        if (group.length === 0) return null;
-        const meta = HEALTH_META[h];
-        return (
-          <div key={h} className="mb-8">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
-                style={{ backgroundColor: meta.bg, color: meta.color, fontFamily: "var(--font-geist-mono)" }}>
-                {h}
-              </span>
-              <span className="text-xs" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>{group.length}</span>
-            </div>
 
-            <div className="space-y-2">
-              {group.map(({ ws, t }) => {
-                const overdue = t.status !== "Complete" && t.dueDate && new Date(t.dueDate) < new Date();
-                return (
-                  <div
-                    key={t.id}
-                    id={`na-${t.id}`}
-                    style={{
-                      backgroundColor: flash === t.id ? "#fffbe6" : "white",
-                      border: "0.5px solid #e5e3de",
-                      borderLeft: `3px solid ${meta.dot}`,
-                      padding: "12px 14px",
-                      transition: "background-color 0.4s ease",
-                      scrollMarginTop: "90px",
-                    }}
-                  >
-                    {/* Clickable header → opens the task in Workstreams */}
-                    <div onClick={() => onOpenTask(ws.id, t.id)} className="cursor-pointer rounded -mx-1 px-1 hover:bg-stone-50 transition-colors">
-                      <div className="text-xs uppercase tracking-widest mb-1" style={{ color: "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>
-                        {ws.name}
-                      </div>
-                      <div className="text-sm leading-snug mb-2" style={{ color: "#1a1a1a" }}>{t.description}</div>
-                      <div className="flex items-center gap-4 text-xs" style={{ color: "#78716c", fontFamily: "var(--font-geist-mono)" }}>
-                        <span style={{ color: overdue ? "#b91c1c" : undefined, fontWeight: overdue ? 600 : undefined }}>
-                          {t.dueDate || "—"}
-                        </span>
-                        <span>{t.accountable || "—"}</span>
-                        <span style={{ marginLeft: "auto", color: "#1a5c3a" }}>Open task →</span>
-                      </div>
+      {/* Sortable header — Flagged (join date) + Item */}
+      <div className="grid px-1 mb-2 text-xs uppercase tracking-widest font-semibold"
+        style={{ gridTemplateColumns: "84px 1fr", gap: "12px", color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+        <button
+          onClick={() => setDateSort((s) => (s === "desc" ? "asc" : "desc"))}
+          className="text-left flex items-center gap-1"
+          style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280", fontFamily: "inherit", fontSize: "inherit", fontWeight: "inherit", letterSpacing: "inherit", textTransform: "inherit", padding: 0 }}
+          title="Sort by date joined">
+          Flagged {dateSort === "desc" ? "↓" : "↑"}
+        </button>
+        <span>Item</span>
+      </div>
+
+      <div className="space-y-2">
+        {items.map(({ ws, t, health, joined }) => {
+          const meta = HEALTH_META[health];
+          const overdue = t.status !== "Complete" && t.dueDate && new Date(t.dueDate) < new Date();
+          return (
+            <div
+              key={t.id}
+              id={`na-${t.id}`}
+              style={{
+                backgroundColor: flash === t.id ? "#fffbe6" : "white",
+                border: "0.5px solid #e5e3de",
+                borderLeft: `3px solid ${meta.dot}`,
+                transition: "background-color 0.4s ease",
+                scrollMarginTop: "90px",
+              }}
+            >
+              <div className="grid" style={{ gridTemplateColumns: "84px 1fr", gap: "12px", alignItems: "start", padding: "12px 14px" }}>
+                {/* Left: date joined the list */}
+                <div className="text-xs pt-0.5" style={{ color: joined ? "#57534e" : "#c0bdb8", fontFamily: "var(--font-geist-mono)", whiteSpace: "nowrap" }}
+                  title={joined ? `Joined Needs Action ${joined}` : "Join date not yet recorded"}>
+                  {fmtJoined(joined)}
+                </div>
+
+                {/* Right: the flagged item */}
+                <div>
+                  <div onClick={() => onOpenTask(ws.id, t.id, queue)} className="cursor-pointer rounded -mx-1 px-1 hover:bg-stone-50 transition-colors">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                        style={{ backgroundColor: meta.bg, color: meta.color, fontFamily: "var(--font-geist-mono)" }}>
+                        {health}
+                      </span>
+                      <span className="text-xs uppercase tracking-widest" style={{ color: "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>{ws.name}</span>
                     </div>
-
-                    {/* Reason field — persists to the sheet */}
-                    <div style={{ marginTop: "10px", borderTop: "1px solid #f0efe9", paddingTop: "8px" }}>
-                      <div className="text-xs uppercase tracking-widest mb-1" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
-                        Reason for Risk / Off Track / Block
-                      </div>
-                      {editingReason === t.id ? (
-                        <textarea
-                          autoFocus
-                          value={reasons[t.id] ?? ""}
-                          onChange={(e) => setReasons((prev) => ({ ...prev, [t.id]: e.target.value }))}
-                          onBlur={() => saveReason(ws.id, t.id, t.description)}
-                          onKeyDown={(e) => { if (e.key === "Escape") setEditingReason(null); }}
-                          rows={2}
-                          placeholder="Add the reason…"
-                          className="w-full text-xs leading-relaxed rounded px-2 py-1.5 resize-none focus:outline-none"
-                          style={{ border: "1px solid #d1cfc9", backgroundColor: "#fafaf8", color: "#57534e" }}
-                        />
-                      ) : (
-                        <p
-                          onClick={() => setEditingReason(t.id)}
-                          className="text-xs leading-relaxed cursor-pointer rounded px-1 -mx-1 hover:bg-stone-100 transition-colors"
-                          style={{ color: reasons[t.id] ? "#57534e" : "#c0bdb8", fontStyle: "italic" }}
-                        >
-                          {reasons[t.id] || "Add the reason…"}
-                        </p>
-                      )}
+                    <div className="text-sm leading-snug mb-2" style={{ color: "#1a1a1a" }}>{t.description}</div>
+                    <div className="flex items-center gap-4 text-xs" style={{ color: "#78716c", fontFamily: "var(--font-geist-mono)" }}>
+                      <span style={{ color: overdue ? "#b91c1c" : undefined, fontWeight: overdue ? 600 : undefined }}>
+                        {t.dueDate || "—"}
+                      </span>
+                      <span>{t.accountable || "—"}</span>
+                      <span style={{ marginLeft: "auto", color: "#1a5c3a" }}>Open task →</span>
                     </div>
                   </div>
-                );
-              })}
+
+                  {/* Reason field — persists to the sheet */}
+                  <div style={{ marginTop: "10px", borderTop: "1px solid #f0efe9", paddingTop: "8px" }}>
+                    <div className="text-xs uppercase tracking-widest mb-1" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+                      Reason for Risk / Off Track / Block
+                    </div>
+                    {editingReason === t.id ? (
+                      <textarea
+                        autoFocus
+                        value={reasons[t.id] ?? ""}
+                        onChange={(e) => setReasons((prev) => ({ ...prev, [t.id]: e.target.value }))}
+                        onBlur={() => saveReason(ws.id, t.id, t.description)}
+                        onKeyDown={(e) => { if (e.key === "Escape") setEditingReason(null); }}
+                        rows={2}
+                        placeholder="Add the reason…"
+                        className="w-full text-xs leading-relaxed rounded px-2 py-1.5 resize-none focus:outline-none"
+                        style={{ border: "1px solid #d1cfc9", backgroundColor: "#fafaf8", color: "#57534e" }}
+                      />
+                    ) : (
+                      <p
+                        onClick={() => setEditingReason(t.id)}
+                        className="text-xs leading-relaxed cursor-pointer rounded px-1 -mx-1 hover:bg-stone-100 transition-colors"
+                        style={{ color: reasons[t.id] ? "#57534e" : "#c0bdb8", fontStyle: "italic" }}
+                      >
+                        {reasons[t.id] || "Add the reason…"}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }

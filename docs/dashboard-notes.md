@@ -95,24 +95,39 @@ task-status-driven. (Leftover `Status:` rows in tab headers are ignored.)
    drops down to the task table (Ranking · Task · Due Date · Status, with RACI
    + subtasks + notes under each task). Ranking is editable, unique per
    workstream, and sortable; tasks also sort by due date.
-3. **Needs Action** — flat list of flagged tasks grouped At Risk → Blocked →
-   Off Track, each with workstream, owner, due date, and an editable
-   **Reason** (persists to sheet column K). Click an item → opens that task in
-   the Workstream Tasks tab (expanded, scrolled, highlighted). Can be filtered
-   to one workstream.
-   - **Review mode / stepper.** Opening a flagged task from here enters a
-     review mode: a floating bar (bottom-center) shows **← Needs Action ·
-     Prev · "X of N flagged" · Next**, letting you walk the whole flagged
-     queue *in the same order this tab renders it* (At Risk → Blocked → Off
-     Track, respecting the active workstream filter) without bouncing back and
-     forth. **Prev** disables at the first item, **Next** at the last; the bar
-     clears when you switch to any other tab. **← Needs Action** returns you
-     here scrolled to (and briefly highlighting) the task you left off on.
-     State lives in `HundredDayDashboard` (`review`, `naReturnTaskId`);
-     `buildReviewQueue()` reproduces the tab's ordering. The browser back
-     button is intentionally NOT wired (tab state isn't in history, only the
-     scroll hash) — the in-app button covers the workflow without risking the
-     hash-scroll logic.
+3. **Needs Action** — a **single flat list** of flagged tasks (no more At Risk /
+   Blocked / Off Track grouping; health shows as a colored pill + left border per
+   row). Each row: a left **"Flagged" (date-joined) column**, then health pill ·
+   workstream · description · due date · owner · Open task, then an editable
+   **Reason** (persists to sheet column K). Click a row → opens that task in the
+   Workstream Tasks tab (expanded, scrolled, highlighted). Can be filtered to one
+   workstream.
+   - **Date joined the list.** Tracked in a dedicated **"Needs Action Log"** sheet
+     tab (`Task ID · Workstream · Description · First Flagged`), reconciled on
+     every page load by `reconcileNeedsActionLog()` in `lib/sheets.ts` (called
+     from `app/hundredday/page.tsx`): newly-flagged tasks are stamped with today's
+     ET date, tasks no longer flagged are dropped (so a re-flag gets a fresh
+     date), existing dates carried forward. The `taskId → date` map is passed to
+     the client as `joinDates`. "Start the clock now" — everything flagged the
+     first day is dated that day; dates become meaningful as items flag over time.
+     Best-effort: if the sheet can't be written (e.g. no creds locally) it returns
+     `{}` and the column shows "—". (Note: giving a **local Turbopack dev server**
+     real creds makes `/hundredday` 500 with `ArrayBuffer is not detachable` — a
+     pre-existing googleapis-in-dev-SSR issue, NOT from this code; production build
+     is fine. Normal local dev uses the cached-data fallback and never hits it.)
+   - **Sort.** The list sorts by join date, **newest on top by default**; the
+     **"Flagged" header toggles** asc/desc (↑/↓). Blank dates sort to the bottom;
+     ties break by workstream name.
+   - **Review mode / stepper.** Opening a flagged task from here enters a review
+     mode: a floating bar (bottom-center) shows **← Needs Action · Prev ·
+     "X of N flagged" · Next**, walking the flagged queue *in the exact order this
+     tab currently shows* (Needs Action passes its ordered queue to `onOpenTask`,
+     so it always matches the active sort + filter — the old `buildReviewQueue`
+     was removed). **Prev** disables at the first item, **Next** at the last; the
+     bar clears when you switch tabs. **← Needs Action** returns you scrolled to
+     (and briefly highlighting) the task you left off on. State: `review`,
+     `naReturnTaskId` in `HundredDayDashboard`. The browser back button is
+     intentionally NOT wired (tab state isn't in history, only the scroll hash).
 4. **By Accountable** — tasks grouped by the Accountable person.
 5. **AI Automations** — automations split into two sections: **Active** (status
    = Active) on top, then **Parking Lot** (everything not Active). Each row keeps
@@ -247,3 +262,11 @@ Still open (not blocking): rotate the plaintext GitHub PAT in `.git/config`.
   sections, driven by each item's status; category shown as an inline tag. A
   suggestion-box idea form (→ sheet capture → Roam/email delivery) was fully
   built then held off per Ben; all its pieces were removed. See Tabs item 5.
+  The 2 live scheduled tasks (daily digest, weekly reminder) are listed as
+  Active so the tab reflects what's actually running.
+- **Needs Action redesigned** to a single flat list sorted by **date joined the
+  list** (newest first, sortable "Flagged" header), with the join date in a left
+  column backed by a new **"Needs Action Log"** sheet tab
+  (`reconcileNeedsActionLog`, stamped on page load). Health grouping replaced by
+  an inline pill. Stepper now follows the tab's live display order. See Tabs
+  item 3.

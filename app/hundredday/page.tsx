@@ -1,4 +1,5 @@
-import { fetchWorkstreamsResult } from "@/lib/sheets";
+import { fetchWorkstreamsResult, reconcileNeedsActionLog } from "@/lib/sheets";
+import { calcTaskHealth } from "@/lib/taskHealth";
 import HundredDayDashboard from "@/components/HundredDayDashboard";
 
 export const dynamic = "force-dynamic"; // always fetch fresh data from sheet
@@ -11,5 +12,16 @@ export default async function HundredDayPage() {
     month: "short", day: "numeric", year: "numeric",
     hour: "numeric", minute: "2-digit", hour12: true,
   }) + " ET";
-  return <HundredDayDashboard workstreams={workstreams} loadedAt={loadedAt} nowMs={nowMs} live={live} />;
+
+  // Reconcile the Needs Action join-date log against what's currently flagged,
+  // and pass the taskId → join-date map to the client for display + sorting.
+  const flaggedNow = ["At Risk", "Blocked", "Off Track"];
+  const flagged = workstreams.flatMap((ws) =>
+    ws.tasks
+      .filter((t) => flaggedNow.includes(calcTaskHealth(t).status))
+      .map((t) => ({ taskId: t.id, workstream: ws.name, description: t.description }))
+  );
+  const joinDates = await reconcileNeedsActionLog(flagged);
+
+  return <HundredDayDashboard workstreams={workstreams} loadedAt={loadedAt} nowMs={nowMs} live={live} joinDates={joinDates} />;
 }

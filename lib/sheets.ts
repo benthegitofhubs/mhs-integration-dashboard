@@ -470,3 +470,78 @@ export async function writeSubtasks(
     requestBody: { values: [[serializeSubtasks(subtasks)]] },
   });
 }
+
+// ---- Needs Action join-date log -------------------------------------------
+// Tracks the date each task first appeared on the Needs Action list (i.e. first
+// became At Risk / Blocked / Off Track). Persisted in a dedicated sheet tab so
+// the date is shared across everyone, not per-browser.
+const NA_LOG_TAB = "Needs Action Log";
+
+// Reconcile the log against the currently-flagged tasks: stamp newly-flagged
+// tasks with today's ET date, drop tasks no longer flagged (so a re-flag gets a
+// fresh date), carry forward existing dates otherwise. Returns taskId -> the
+// join date (YYYY-MM-DD). Best-effort: on any sheet error (e.g. no creds
+// locally) returns {} so the page still renders.
+export async function reconcileNeedsActionLog(
+  flagged: { taskId: string; workstream: string; description: string }[]
+): Promise<Record<string, string>> {
+  try {
+    const auth = getAuth();
+    const sheets = google.sheets({ version: "v4", auth });
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" }); // YYYY-MM-DD
+
+    let existing: string[][] = [];
+    try {
+      const res = await sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: `'${NA_LOG_TAB}'!A:D` });
+      existing = (res.data.values ?? []) as string[][];
+    } catch {
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: SPREADSHEET_ID,
+        requestBody: { requests: [{ addSheet: { properties: { title: NA_LOG_TAB } } }] },
+      });
+      existing = [];
+    }
+
+    const startRow = existing.length && existing[0][0]?.toLowerCase().includes("task id") ? 1 : 0;
+    const prior: Record<string, string> = {};
+    for (let i = startRow; i < existing.length; i++) {
+      const id = existing[i][0]?.trim();
+      if (id) prior[id] = existing[i][3] || "";
+    }
+
+    const flaggedIds = new Set(flagged.map((f) => f.taskId).filter(Boolean));
+    const result: Record<string, string> = {};
+    let changed = false;
+
+    for (const f of flagged) {
+      if (!f.taskId) continue;
+      if (prior[f.taskId]) {
+        result[f.taskId] = prior[f.taskId];
+      } else {
+        result[f.taskId] = today; // start the clock now
+        changed = true;
+      }
+    }
+    // Any prior entry no longer flagged means the log shrinks — rewrite needed.
+    for (const id of Object.keys(prior)) if (!flaggedIds.has(id)) changed = true;
+
+    if (changed) {
+      const rows: string[][] = [["Task ID", "Workstream", "Description", "First Flagged"]];
+      for (const f of flagged) {
+        if (!f.taskId) continue;
+        rows.push([f.taskId, f.workstream, (f.description || "").slice(0, 200), result[f.taskId]]);
+      }
+      await sheets.spreadsheets.values.clear({ spreadsheetId: SPREADSHEET_ID, range: `'${NA_LOG_TAB}'!A:D` });
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `'${NA_LOG_TAB}'!A1`,
+        valueInputOption: "RAW",
+        requestBody: { values: rows },
+      });
+    }
+
+    return result;
+  } catch {
+    return {};
+  }
+}
