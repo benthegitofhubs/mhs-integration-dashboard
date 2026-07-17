@@ -850,72 +850,75 @@ function AIAutomationsView() {
     localStorage.setItem("ai-automation-statuses", JSON.stringify(updated));
   };
 
-  const categories = Array.from(new Set(AUTOMATION_IDEAS.map((a) => a.category)));
+  const statusOf = (a: typeof AUTOMATION_IDEAS[number]) => statuses[a.title] ?? a.status;
+  const active     = AUTOMATION_IDEAS.filter((a) => statusOf(a) === "Active");
+  const parkingLot = AUTOMATION_IDEAS.filter((a) => statusOf(a) !== "Active");
 
-  const counts: Record<AutomationStatus, number> = { Parked: 0, "In Review": 0, Active: 0 };
-  AUTOMATION_IDEAS.forEach((a) => {
-    const s = statuses[a.title] ?? a.status;
-    counts[s]++;
-  });
+  const renderRow = (a: typeof AUTOMATION_IDEAS[number], i: number, arr: typeof AUTOMATION_IDEAS) => {
+    const currentStatus = statusOf(a);
+    const meta = AUTOMATION_STATUS_META[currentStatus];
+    return (
+      <div key={a.title} className="grid px-5 py-4 hover:bg-stone-50 transition-colors"
+        style={{ gridTemplateColumns: "1fr 200px 180px 110px", borderBottom: i < arr.length - 1 ? "1px solid #f0efe9" : "none", alignItems: "start", gap: "12px" }}>
+        <div>
+          <div className="flex items-center gap-2 mb-0.5">
+            <p className="text-sm font-semibold" style={{ color: "#1a1a1a" }}>{a.title}</p>
+            <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: "#f0efe9", color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>{a.category}</span>
+          </div>
+          <p className="text-xs leading-relaxed" style={{ color: "#78716c" }}>{a.description}</p>
+        </div>
+        <span className="text-xs leading-relaxed pt-0.5" style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)" }}>{a.trigger}</span>
+        <span className="text-xs leading-relaxed pt-0.5" style={{ color: "#6b7280" }}>{a.channel}</span>
+        <div className="pt-0.5">
+          <select
+            value={currentStatus}
+            onChange={(e) => setStatus(a.title, e.target.value as AutomationStatus)}
+            className="text-xs font-semibold cursor-pointer focus:outline-none rounded px-2 py-1"
+            style={{ backgroundColor: meta.bg, color: meta.color, border: "none", fontFamily: "var(--font-geist-mono)" }}>
+            {AUTOMATION_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+      </div>
+    );
+  };
+
+  const sectionTable = (rows: typeof AUTOMATION_IDEAS, emptyText: string) => (
+    <div style={{ border: "1px solid #e5e3de", borderRadius: "6px", overflow: "hidden", backgroundColor: "white" }}>
+      <div className="grid text-xs uppercase tracking-widest font-semibold px-5 py-2"
+        style={{ gridTemplateColumns: "1fr 200px 180px 110px", gap: "12px", color: "#9ca3af", fontFamily: "var(--font-geist-mono)", borderBottom: "1px solid #e5e3de", backgroundColor: "#f7f6f3" }}>
+        <span>Automation</span>
+        <span>Trigger</span>
+        <span>Channel</span>
+        <span>Status</span>
+      </div>
+      {rows.length > 0
+        ? rows.map((a, i) => renderRow(a, i, rows))
+        : <p className="text-xs px-5 py-6" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>{emptyText}</p>}
+    </div>
+  );
 
   return (
     <div className="pb-20">
-      <div className="mb-6">
-        <p className="text-xs leading-relaxed mb-4" style={{ color: "#78716c", fontFamily: "var(--font-geist-mono)" }}>
-          A running list of Claude-managed automations for this dashboard. Change a status to <strong>In Review</strong> to discuss, or <strong>Active</strong> once built. Status persists in your browser.
-        </p>
-        <div className="flex gap-6">
-          {AUTOMATION_STATUSES.map((s) => {
-            const meta = AUTOMATION_STATUS_META[s];
-            return (
-              <div key={s} className="flex items-center gap-2">
-                <span className="text-2xl font-bold" style={{ color: meta.color, letterSpacing: "-0.03em" }}>{counts[s]}</span>
-                <span className="text-xs uppercase tracking-widest" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>{s}</span>
-              </div>
-            );
-          })}
+      <p className="text-xs leading-relaxed mb-6" style={{ color: "#78716c", fontFamily: "var(--font-geist-mono)" }}>
+        Claude-managed automations for this dashboard. <strong>Active</strong> ones are live; the <strong>Parking Lot</strong> holds ideas we haven&apos;t built yet. Change a status to move an item between the two. Status persists in your browser.
+      </p>
+
+      {/* Active */}
+      <div className="mb-8">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#15803d", fontFamily: "var(--font-geist-mono)" }}>Active</span>
+          <span className="text-xs" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>{active.length}</span>
         </div>
+        {sectionTable(active, "Nothing active yet — promote an idea below to Active once it's built.")}
       </div>
 
-      <div className="space-y-8">
-        {categories.map((cat) => (
-          <div key={cat}>
-            <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>{cat}</p>
-            <div style={{ border: "1px solid #e5e3de", borderRadius: "6px", overflow: "hidden", backgroundColor: "white" }}>
-              <div className="grid text-xs uppercase tracking-widest font-semibold px-5 py-2"
-                style={{ gridTemplateColumns: "1fr 200px 180px 110px", color: "#9ca3af", fontFamily: "var(--font-geist-mono)", borderBottom: "1px solid #e5e3de", backgroundColor: "#f7f6f3" }}>
-                <span>Automation</span>
-                <span>Trigger</span>
-                <span>Channel</span>
-                <span>Status</span>
-              </div>
-              {AUTOMATION_IDEAS.filter((a) => a.category === cat).map((a, i, arr) => {
-                const currentStatus = statuses[a.title] ?? a.status;
-                const meta = AUTOMATION_STATUS_META[currentStatus];
-                return (
-                  <div key={a.title} className="grid px-5 py-4 hover:bg-stone-50 transition-colors"
-                    style={{ gridTemplateColumns: "1fr 200px 180px 110px", borderBottom: i < arr.length - 1 ? "1px solid #f0efe9" : "none", alignItems: "start", gap: "12px" }}>
-                    <div>
-                      <p className="text-sm font-semibold mb-0.5" style={{ color: "#1a1a1a" }}>{a.title}</p>
-                      <p className="text-xs leading-relaxed" style={{ color: "#78716c" }}>{a.description}</p>
-                    </div>
-                    <span className="text-xs leading-relaxed pt-0.5" style={{ color: "#6b7280", fontFamily: "var(--font-geist-mono)" }}>{a.trigger}</span>
-                    <span className="text-xs leading-relaxed pt-0.5" style={{ color: "#6b7280" }}>{a.channel}</span>
-                    <div className="pt-0.5">
-                      <select
-                        value={currentStatus}
-                        onChange={(e) => setStatus(a.title, e.target.value as AutomationStatus)}
-                        className="text-xs font-semibold cursor-pointer focus:outline-none rounded px-2 py-1"
-                        style={{ backgroundColor: meta.bg, color: meta.color, border: "none", fontFamily: "var(--font-geist-mono)" }}>
-                        {AUTOMATION_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+      {/* Parking Lot */}
+      <div className="mb-8">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#78716c", fontFamily: "var(--font-geist-mono)" }}>Parking Lot</span>
+          <span className="text-xs" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>{parkingLot.length}</span>
+        </div>
+        {sectionTable(parkingLot, "Parking lot is empty.")}
       </div>
     </div>
   );

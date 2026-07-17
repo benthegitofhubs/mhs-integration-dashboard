@@ -114,8 +114,15 @@ task-status-driven. (Leftover `Status:` rows in tab headers are ignored.)
      scroll hash) — the in-app button covers the workflow without risking the
      hash-scroll logic.
 4. **By Accountable** — tasks grouped by the Accountable person.
-5. **AI Automations** — running list of proposed automations (status persisted
-   in browser).
+5. **AI Automations** — automations split into two sections: **Active** (status
+   = Active) on top, then **Parking Lot** (everything not Active). Each row keeps
+   its status dropdown (Parked / In Review / Active), so changing status moves the
+   item between sections live; category shows as a small inline tag. Status
+   persists in the browser. (A "suggestion box" idea-submission form + Roam/email
+   delivery was designed and built but **held off** per Ben — the form, the
+   `/api/submit-idea` route, the `appendAutomationIdea` sheet helper, and the
+   "AI Automation Ideas" sheet tab were all removed to avoid dead surface;
+   re-add when revisited.)
 
 Top nav is sticky ("frozen"). Location count = 20.
 
@@ -236,3 +243,7 @@ Still open (not blocking): rotate the plaintext GitHub PAT in `.git/config`.
 - **Overview workstream list — sortable Leader & Completion % columns.** Both
   headers toggle asc/desc with an ↑/↓ indicator on the active column; default
   remains completion % descending. See Tabs → Overview item 3.
+- **AI Automations restructured** into **Active** (top) + **Parking Lot**
+  sections, driven by each item's status; category shown as an inline tag. A
+  suggestion-box idea form (→ sheet capture → Roam/email delivery) was fully
+  built then held off per Ben; all its pieces were removed. See Tabs item 5.
