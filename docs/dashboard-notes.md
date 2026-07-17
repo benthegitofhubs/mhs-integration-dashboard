@@ -74,11 +74,17 @@ task-status-driven. (Leftover `Status:` rows in tab headers are ignored.)
       **percentage** with "X of N **tasks**" beneath, and the four partition
       cleanly to 100%. These count **tasks, not workstreams**
       (`rollupWorkstreamHealth` is no longer what drives the tiles).
-   3. **Workstream list** — a **single flat list sorted by completion %
-      descending**, columns **Workstream · Leader · Completion %** only. No
-      pillar grouping, no mini health bars, no color legend (all removed in the
-      evening Jul 16 work). Clicking a workstream name opens its tasks; leader
-      is inline-editable; the 100-Day goal shows on hover.
+   3. **Workstream list** — a **single flat list**, columns **Workstream ·
+      Leader · Completion %** only. No pillar grouping, no mini health bars, no
+      color legend (all removed in the evening Jul 16 work). Clicking a
+      workstream name opens its tasks; leader is inline-editable; the 100-Day
+      goal shows on hover. **The Leader and Completion % headers are sortable**
+      (click to toggle asc/desc, active column shows ↑/↓); the default —
+      completion % descending — is what loads. State: `ovSort` in
+      `HundredDayDashboard`. New-column clicks pick a natural default
+      (completion→desc, leader→asc A–Z); ties fall back to completion desc
+      (leader sort) or name A–Z (completion sort); blank leaders always sink
+      to the bottom.
    4. **Live-sync / cached-data banner at the BOTTOM** (moved down from the top).
 
    The full per-workstream task table lives in the Workstream Tasks tab.
@@ -205,3 +211,6 @@ Still open (not blocking): rotate the plaintext GitHub PAT in `.git/config`.
   anchors on each card. Browser back button deliberately left unwired.
 - **Workstream Tasks legend** centered and put in a bordered white box for
   legibility.
+- **Overview workstream list — sortable Leader & Completion % columns.** Both
+  headers toggle asc/desc with an ↑/↓ indicator on the active column; default
+  remains completion % descending. See Tabs → Overview item 3.

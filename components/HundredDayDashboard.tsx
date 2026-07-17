@@ -37,6 +37,9 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
   const [review, setReview] = useState<{ queue: { wsId: string; taskId: string }[]; index: number } | null>(null);
   // Task to scroll back to when returning to the Needs Action tab.
   const [naReturnTaskId, setNaReturnTaskId] = useState<string | null>(null);
+  // Overview workstream-list sort. Default (and the sort that prevails on load)
+  // is completion % descending.
+  const [ovSort, setOvSort] = useState<{ col: "leader" | "completion"; dir: "asc" | "desc" }>({ col: "completion", dir: "desc" });
   const allTasks   = workstreams.flatMap((ws) => ws.tasks);
   const total      = allTasks.length;
   const complete   = allTasks.filter((t) => t.status === "Complete").length;
@@ -255,7 +258,9 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
             { label: "Off track",          value: `${pctOf(tc.offTrack)}%`,   sub: `${tc.offTrack} of ${totalTasks} tasks`,   color: tc.offTrack > 0 ? "#b91c1c" : "#9ca3af" },
           ];
 
-          // One flat list of workstreams, sorted by completion % descending.
+          // One flat list of workstreams. Default sort is completion % desc;
+          // the Leader and Completion headers toggle the sort (see ovSort).
+          const mul = ovSort.dir === "asc" ? 1 : -1;
           const rows = workstreams
             .map((ws) => {
               const total = ws.tasks.length;
@@ -263,7 +268,32 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
               const pct   = total > 0 ? Math.round((done / total) * 100) : 0;
               return { ws, total, pct };
             })
-            .sort((a, b) => b.pct - a.pct);
+            .sort((a, b) => {
+              if (ovSort.col === "leader") {
+                const la = (leaders[a.ws.id] || "").trim();
+                const lb = (leaders[b.ws.id] || "").trim();
+                // Blank leaders always sink to the bottom, regardless of dir.
+                if (!la && lb) return 1;
+                if (la && !lb) return -1;
+                const cmp = la.localeCompare(lb, undefined, { sensitivity: "base" });
+                return cmp !== 0 ? cmp * mul : b.pct - a.pct; // tie → completion desc
+              }
+              // completion
+              const cmp = a.pct - b.pct;
+              return cmp !== 0 ? cmp * mul : a.ws.name.localeCompare(b.ws.name); // tie → name A→Z
+            });
+
+          // Header click: toggle direction on the active column, otherwise
+          // switch to the column at its natural default (completion→desc,
+          // leader→asc).
+          const sortBy = (col: "leader" | "completion") =>
+            setOvSort((prev) =>
+              prev.col === col
+                ? { col, dir: prev.dir === "asc" ? "desc" : "asc" }
+                : { col, dir: col === "completion" ? "desc" : "asc" }
+            );
+          const arrow = (col: "leader" | "completion") =>
+            ovSort.col === col ? (ovSort.dir === "asc" ? " ↑" : " ↓") : "";
 
           // Shared column template so the header row and data rows line up.
           const COLS = "minmax(0, 1fr) 220px 100px";
@@ -284,12 +314,24 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
             ))}
           </div>
 
-          {/* Column headers — align to the row grid */}
+          {/* Column headers — align to the row grid; Leader + Completion sort */}
           <div className="grid px-5 mb-1.5 text-xs uppercase tracking-widest font-semibold"
             style={{ gridTemplateColumns: COLS, gap: "16px", color: "#9ca3af", fontFamily: "var(--font-geist-mono)", letterSpacing: "0.05em" }}>
             <span>Workstream</span>
-            <span>Leader</span>
-            <span className="text-right">Completion %</span>
+            <button
+              onClick={() => sortBy("leader")}
+              className="text-left uppercase tracking-widest font-semibold transition-colors hover:text-stone-700"
+              style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: ovSort.col === "leader" ? "#57534e" : "#9ca3af", fontFamily: "var(--font-geist-mono)", letterSpacing: "0.05em" }}
+              title="Sort by leader">
+              Leader{arrow("leader")}
+            </button>
+            <button
+              onClick={() => sortBy("completion")}
+              className="text-right uppercase tracking-widest font-semibold transition-colors hover:text-stone-700"
+              style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: ovSort.col === "completion" ? "#57534e" : "#9ca3af", fontFamily: "var(--font-geist-mono)", letterSpacing: "0.05em" }}
+              title="Sort by completion">
+              Completion %{arrow("completion")}
+            </button>
           </div>
 
           {/* Workstream list — one row each: name · leader · completion %, sorted by completion desc */}
