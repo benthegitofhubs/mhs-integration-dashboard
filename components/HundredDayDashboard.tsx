@@ -740,6 +740,22 @@ type AutomationStatus = "Parked" | "In Review" | "Active";
 
 const AUTOMATION_IDEAS: { category: string; title: string; description: string; trigger: string; channel: string; status: AutomationStatus }[] = [
   {
+    category: "Team Digest",
+    title: "Daily integration digest",
+    description: "Posts overall task health (complete / on track / not started / at risk / blocked / off track) plus a needs-attention rundown to the Integration Team channel each morning.",
+    trigger: "Daily 9:00 AM ET",
+    channel: "Roam — Integration Team",
+    status: "Active",
+  },
+  {
+    category: "Reminders",
+    title: "Weekly not-started & no-due-date reminder",
+    description: "Gentle weekly reminder listing, by workstream + leader, how many tasks haven't started and how many lack a due date. Self-sunsets with a congrats once each metric hits zero.",
+    trigger: "Fridays 12:00 PM ET",
+    channel: "Roam — Integration Team",
+    status: "Active",
+  },
+  {
     category: "Due Date Alerts",
     title: "Task due in 3 days",
     description: "Warn the task owner when a non-complete task is 3 days from its due date.",
@@ -900,7 +916,7 @@ function AIAutomationsView() {
   return (
     <div className="pb-20">
       <p className="text-xs leading-relaxed mb-6" style={{ color: "#78716c", fontFamily: "var(--font-geist-mono)" }}>
-        Claude-managed automations for this dashboard. <strong>Active</strong> ones are live; the <strong>Parking Lot</strong> holds ideas we haven&apos;t built yet. Change a status to move an item between the two. Status persists in your browser.
+        Claude-managed automations for this dashboard. <strong>Active</strong>{" "}ones are live; the <strong>Parking Lot</strong>{" "}holds ideas we haven&apos;t built yet. Change a status to move an item between the two. Status persists in your browser.
       </p>
 
       {/* Active */}
