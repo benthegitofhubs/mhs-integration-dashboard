@@ -175,6 +175,23 @@ Top nav is sticky ("frozen"). Location count = 20.
   resume automatically. `--dry-run` computes without writing state;
   `--test-ns=N` / `--test-md=M` override totals to exercise the sunset states.
 
+## Daily two-way sync check
+
+- Scheduled task `mhs-integration-sync-check`, **8:30 AM ET daily** (`30 8 * * *`),
+  posts a **Roam DM to Ben** (userId `db650bb4-137b-4035-a199-361794b4e15d`).
+- Runs `scripts/sync-check.mjs`, which verifies the app ↔ Sheet two-way flow using
+  the **same Google service account the deployed app uses**, and prints a
+  Roam-ready status (exit 0 healthy, 1 on any failure). The scheduled prompt
+  posts stdout verbatim either way.
+- Checks: (1) **live site reachable** — HEAD `…/hundredday`; `200` or `401`
+  (Netlify access-protection) both count as up; (2) **read** — pulls real task
+  rows from a workstream tab (the app's read source); (3) **write** — a canary
+  `write → read-back` in a dedicated **"Sync Canary"** tab (zero risk to task
+  data; proves the write credential/permission works). Note the deployed app is
+  behind Netlify auth (401), so the check can't hit the app's HTTP endpoints — it
+  validates the shared Sheet + the app's service-account read/write path, which is
+  what the two-way sync depends on.
+
 ---
 
 ## This session's changes (Jul 16, 2026)
