@@ -131,6 +131,28 @@ Top nav is sticky ("frozen"). Location count = 20.
   ⬜ not started · 🟡 at risk · 🟠 blocked · 🔴 off track) → **Needs attention**
   (only workstreams with flagged tasks, by count) → tracker link.
 
+## Weekly Roam reminder (self-sunsetting)
+
+- Scheduled task `mhs-integration-weekly-reminder`, **Fridays 12:00 PM ET**
+  (`0 12 * * 5`), posts to the same Roam **Integration Team** channel.
+- Runs `scripts/weekly-reminder.mjs` (reads the live Sheet directly via the
+  service account, like `blocked-alert.ts`), which **prints the exact message
+  to post, or the literal token `SILENT`**. The scheduled prompt just relays
+  stdout verbatim (markdown) and posts nothing on `SILENT`.
+- Tracks two independent housekeeping metrics across all workstreams: **tasks
+  Not Started** and **tasks with no Due Date**. Each metric's section shows
+  only while its count > 0, with per-workstream **counts** (Name · Leader — N,
+  sorted by count desc). "Owner" is not usable — Responsible is blank sheet-wide
+  and Accountable is compound free-text — so the reminder deliberately reports
+  at the **workstream + leader** level only.
+- **Self-sunsetting.** State in `~/.mhs_weekly_reminder_state.json` remembers
+  last run's counts. When a metric first crosses to 0 it posts a one-time
+  🎉 congrats ("every task is now started" / "…now has a due date"); when BOTH
+  reach 0 it posts a final "signing off" message and then stays `SILENT` every
+  week after. If a metric regresses above 0, its section (and future congrats)
+  resume automatically. `--dry-run` computes without writing state;
+  `--test-ns=N` / `--test-md=M` override totals to exercise the sunset states.
+
 ---
 
 ## This session's changes (Jul 16, 2026)
