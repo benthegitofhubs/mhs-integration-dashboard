@@ -240,9 +240,10 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
           const tiles = [
             { label: "Overall completion", value: `${overallPct}%`,           sub: `${doneTasks} of ${totalTasks} tasks`,     color: "#1a1a1a" },
             { label: "On track",           value: `${pctOf(tc.onTrack)}%`,    sub: `${tc.onTrack} of ${totalTasks} tasks`,    color: "#15803d" },
-            { label: "Need attention",     value: `${pctOf(needAttention)}%`, sub: `${needAttention} of ${totalTasks} tasks`, color: needAttention > 0 ? "#b45309" : "#9ca3af" },
-            { label: "Off track",          value: `${pctOf(tc.offTrack)}%`,   sub: `${tc.offTrack} of ${totalTasks} tasks`,   color: tc.offTrack > 0 ? "#b91c1c" : "#9ca3af" },
+            { label: "Need attention",     value: `${pctOf(needAttention)}%`, sub: `${needAttention} of ${totalTasks} tasks`, color: needAttention > 0 ? "#b45309" : "#9ca3af", linksToNeedsAction: true },
+            { label: "Off track",          value: `${pctOf(tc.offTrack)}%`,   sub: `${tc.offTrack} of ${totalTasks} tasks`,   color: tc.offTrack > 0 ? "#b91c1c" : "#9ca3af", linksToNeedsAction: true },
           ];
+          const openNeedsAction = () => { setActiveTab("needs-action"); setNaFilter(null); setReview(null); };
 
           // One flat list of workstreams. Default sort is completion % desc;
           // the Leader and Completion headers toggle the sort (see ovSort).
@@ -288,8 +289,17 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
           <>
           {/* KPI tiles */}
           <div className="grid gap-3 mb-8" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))" }}>
-            {tiles.map((t) => (
-              <div key={t.label} style={{ backgroundColor: "white", border: "1px solid #e5e3de", borderRadius: "6px", padding: "14px 16px" }}>
+            {tiles.map((t) => {
+              const clickable = "linksToNeedsAction" in t && t.linksToNeedsAction;
+              return (
+              <div key={t.label}
+                onClick={clickable ? openNeedsAction : undefined}
+                role={clickable ? "button" : undefined}
+                tabIndex={clickable ? 0 : undefined}
+                onKeyDown={clickable ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openNeedsAction(); } } : undefined}
+                className={clickable ? "transition-shadow hover:shadow-md" : undefined}
+                title={clickable ? "View in Needs Action" : undefined}
+                style={{ backgroundColor: "white", border: "1px solid #e5e3de", borderRadius: "6px", padding: "14px 16px", cursor: clickable ? "pointer" : undefined }}>
                 <div className="text-xs uppercase tracking-widest" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)", letterSpacing: "0.05em" }}>{t.label}</div>
                 {t.label === "On track" && (
                   <div className="text-xs" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>(In Progress/Not Started)</div>
@@ -297,7 +307,8 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
                 <div className="mt-1.5" style={{ fontSize: "24px", fontWeight: 700, color: t.color, lineHeight: 1.1 }}>{t.value}</div>
                 <div className="text-xs mt-1" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>{t.sub}</div>
               </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Column headers — align to the row grid; Leader + Completion sort */}

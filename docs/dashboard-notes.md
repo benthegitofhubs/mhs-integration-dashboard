@@ -74,6 +74,10 @@ task-status-driven. (Leftover `Status:` rows in tab headers are ignored.)
       **percentage** with "X of N **tasks**" beneath, and the four partition
       cleanly to 100%. These count **tasks, not workstreams**
       (`rollupWorkstreamHealth` is no longer what drives the tiles).
+      The **Need attention** and **Off track** tiles are **clickable** (pointer
+      cursor + hover shadow, keyboard-accessible) and jump straight to the Needs
+      Action tab via `openNeedsAction` (resets `naFilter` and `review`). Overall
+      completion and On track are non-interactive.
    3. **Workstream list** — a **single flat list**, columns **Workstream ·
       Leader · Completion %** only. No pillar grouping, no mini health bars, no
       color legend (all removed in the evening Jul 16 work). Clicking a
