@@ -63,6 +63,9 @@ export default function HundredDayCard({ workstream, index, search = "" }: Props
   // Which subtask is being renamed (task id + index) and its in-progress text.
   const [editingSubtask, setEditingSubtask] = useState<{ taskId: string; idx: number } | null>(null);
   const [subtaskEditDraft, setSubtaskEditDraft] = useState("");
+  // Which task's Work Item text is being edited, and its in-progress text.
+  const [editingDesc, setEditingDesc] = useState<string | null>(null);
+  const [descDraft, setDescDraft] = useState("");
   const [leader, setLeader] = useState(workstream.leader);
   const [editingLeader, setEditingLeader] = useState(false);
   const [leaderDraft, setLeaderDraft] = useState(workstream.leader);
@@ -217,6 +220,24 @@ export default function HundredDayCard({ workstream, index, search = "" }: Props
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ taskId, taskDescription: task.description, workstreamId: workstream.id, subtasks: updated }),
+    });
+  };
+
+  // Save an edited task Work Item (column B). Empty or unchanged text is a
+  // no-op. The row is located by the OLD description, so we send that as
+  // taskDescription and the new text as the value.
+  const saveDescription = async (taskId: string) => {
+    const next = descDraft.trim();
+    setEditingDesc(null);
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+    const oldDescription = task.description;
+    if (!next || next === oldDescription) return;
+    setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, description: next } : t));
+    await fetch("/api/update-field", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ taskId, taskDescription: oldDescription, workstreamId: workstream.id, field: "description", value: next }),
     });
   };
 
@@ -458,7 +479,30 @@ export default function HundredDayCard({ workstream, index, search = "" }: Props
 
               <div>
                 <div className="flex items-start gap-2">
-                  <p className="text-sm leading-relaxed flex-1" style={{ color: "#1a1a1a" }}>{task.description}</p>
+                  {editingDesc === task.id ? (
+                    <textarea
+                      autoFocus
+                      value={descDraft}
+                      onChange={(e) => setDescDraft(e.target.value)}
+                      onBlur={() => saveDescription(task.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); saveDescription(task.id); }
+                        if (e.key === "Escape") setEditingDesc(null);
+                      }}
+                      rows={2}
+                      className="text-sm leading-relaxed flex-1 rounded px-1.5 py-1 resize-none focus:outline-none"
+                      style={{ border: "1px solid #1a5c3a", backgroundColor: "white", color: "#1a1a1a" }}
+                    />
+                  ) : (
+                    <p
+                      onClick={() => { setEditingDesc(task.id); setDescDraft(task.description); }}
+                      className="text-sm leading-relaxed flex-1 cursor-text rounded px-1 -mx-1 hover:bg-stone-100 transition-colors"
+                      style={{ color: "#1a1a1a" }}
+                      title="Click to edit"
+                    >
+                      {task.description}
+                    </p>
+                  )}
                   <button
                     onClick={() => setSubtasksOpen((prev) => ({ ...prev, [task.id]: !prev[task.id] }))}
                     className="flex-shrink-0 flex items-center gap-1 text-xs rounded px-1.5 py-0.5 mt-0.5 transition-colors"

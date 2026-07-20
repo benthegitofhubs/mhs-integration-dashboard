@@ -231,7 +231,7 @@ export async function writeField(
   workstreamId: string,
   taskId: string,
   taskDescription: string,
-  field: "status" | "dueDate" | "accountable" | "responsible" | "consulted" | "informed" | "ranking" | "reason",
+  field: "status" | "dueDate" | "accountable" | "responsible" | "consulted" | "informed" | "ranking" | "reason" | "description",
   value: string
 ): Promise<void> {
   const fieldHeader: Record<string, string> = {
@@ -243,6 +243,7 @@ export async function writeField(
     informed:    "informed",
     ranking:     "ranking",
     reason:      "reason",
+    description: "work item",
   };
 
   const tab = WS_TAB_MAP[workstreamId];

@@ -397,3 +397,13 @@ Still open (not blocking): rotate the plaintext GitHub PAT in `.git/config`.
   `/api/update-subtasks` (whole `subtasks[]` rewritten to sheet column C). New
   state `editingSubtask` (`{taskId, idx}`) + `subtaskEditDraft`; handler
   `saveSubtaskText`.
+- **Task Work Item text is now editable in place** (Workstream Tasks tab). Click
+  a task's description → inline textarea; Enter (no Shift) or blur saves, Escape
+  cancels, empty/unchanged is a no-op. Persists to **sheet column B** via
+  `/api/update-field` with a new field `"description"` (added to `writeField`'s
+  union + `fieldHeader` → header "work item"). The row is located by the **old**
+  description (passed as `taskDescription`), so the edit lands on the right row
+  even as the text changes. State `editingDesc` + `descDraft`; handler
+  `saveDescription`. (Note: since task IDs are description-derived when there's no
+  Task ID column, editing a description can change that task's derived id on the
+  next reload — see the deep-linking blockers above.)
