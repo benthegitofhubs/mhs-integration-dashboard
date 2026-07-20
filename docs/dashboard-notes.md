@@ -407,3 +407,13 @@ Still open (not blocking): rotate the plaintext GitHub PAT in `.git/config`.
   `saveDescription`. (Note: since task IDs are description-derived when there's no
   Task ID column, editing a description can change that task's derived id on the
   next reload — see the deep-linking blockers above.)
+- **Verifying UI changes / "it's not working" triage.** Production `/hundredday`
+  is behind **Netlify access-protection (401)** and the claude-in-chrome
+  extension is often disconnected, so a session usually **cannot see the live
+  site directly**. Local `preview` runs on the **cached-data fallback** (no
+  creds), which still exercises all client-side behavior — but writes 500 (that's
+  expected, not a bug) and edits don't persist to the Sheet locally. When a
+  just-shipped UI change "isn't showing," the first suspect is a **stale Netlify
+  bundle in the user's browser → hard-refresh (Cmd+Shift+R)**, then confirm the
+  right tab/affordance, before touching code. `npm run build` locally is the
+  quickest way to rule out a deploy-blocking build error.
