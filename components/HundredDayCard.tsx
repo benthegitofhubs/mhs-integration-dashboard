@@ -60,6 +60,9 @@ export default function HundredDayCard({ workstream, index, search = "" }: Props
   const [highlightTaskId, setHighlightTaskId] = useState<string | null>(null);
   const [subtasksOpen, setSubtasksOpen] = useState<Record<string, boolean>>({});
   const [newSubtaskDraft, setNewSubtaskDraft] = useState<Record<string, string>>({});
+  // Which subtask is being renamed (task id + index) and its in-progress text.
+  const [editingSubtask, setEditingSubtask] = useState<{ taskId: string; idx: number } | null>(null);
+  const [subtaskEditDraft, setSubtaskEditDraft] = useState("");
   const [leader, setLeader] = useState(workstream.leader);
   const [editingLeader, setEditingLeader] = useState(false);
   const [leaderDraft, setLeaderDraft] = useState(workstream.leader);
@@ -192,6 +195,24 @@ export default function HundredDayCard({ workstream, index, search = "" }: Props
     const updated: Subtask[] = [...task.subtasks, { text, done: false }];
     setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, subtasks: updated } : t));
     setNewSubtaskDraft((prev) => ({ ...prev, [taskId]: "" }));
+    await fetch("/api/update-subtasks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ taskId, taskDescription: task.description, workstreamId: workstream.id, subtasks: updated }),
+    });
+  };
+
+  // Save an edited subtask's text. Empty text is ignored (use delete instead);
+  // unchanged text just exits edit mode without a write.
+  const saveSubtaskText = async (taskId: string, subtaskIdx: number) => {
+    const text = subtaskEditDraft.trim();
+    setEditingSubtask(null);
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+    const current = task.subtasks[subtaskIdx];
+    if (!current || !text || text === current.text) return;
+    const updated = task.subtasks.map((s, i) => (i === subtaskIdx ? { ...s, text } : s));
+    setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, subtasks: updated } : t));
     await fetch("/api/update-subtasks", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -576,12 +597,33 @@ export default function HundredDayCard({ workstream, index, search = "" }: Props
                         className="rounded"
                         style={{ accentColor: "#1a5c3a", width: "14px", height: "14px", flexShrink: 0, cursor: "pointer" }}
                       />
-                      <span className="text-xs leading-relaxed flex-1" style={{
-                        color: sub.done ? "#c0bdb8" : "#57534e",
-                        textDecoration: sub.done ? "line-through" : "none",
-                      }}>
-                        {sub.text}
-                      </span>
+                      {editingSubtask?.taskId === task.id && editingSubtask?.idx === si ? (
+                        <input
+                          type="text"
+                          autoFocus
+                          value={subtaskEditDraft}
+                          onChange={(e) => setSubtaskEditDraft(e.target.value)}
+                          onBlur={() => saveSubtaskText(task.id, si)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") { e.preventDefault(); saveSubtaskText(task.id, si); }
+                            if (e.key === "Escape") setEditingSubtask(null);
+                          }}
+                          className="text-xs leading-relaxed flex-1 rounded px-1 py-0.5 focus:outline-none"
+                          style={{ border: "1px solid #1a5c3a", backgroundColor: "white", color: "#374151" }}
+                        />
+                      ) : (
+                        <span
+                          onClick={() => { setEditingSubtask({ taskId: task.id, idx: si }); setSubtaskEditDraft(sub.text); }}
+                          className="text-xs leading-relaxed flex-1 cursor-text rounded px-1 -mx-1 hover:bg-stone-100 transition-colors"
+                          style={{
+                            color: sub.done ? "#c0bdb8" : "#57534e",
+                            textDecoration: sub.done ? "line-through" : "none",
+                          }}
+                          title="Click to edit"
+                        >
+                          {sub.text}
+                        </span>
+                      )}
                       <button
                         onClick={async () => {
                           const t = tasks.find((t) => t.id === task.id);

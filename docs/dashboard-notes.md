@@ -383,3 +383,17 @@ Still open (not blocking): rotate the plaintext GitHub PAT in `.git/config`.
   Reason field with an append-only, ET-dated log; click an entry to toggle
   resolved (strike-through) while keeping history. Stored as readable lines in
   column K (sync untouched). See Tabs → Needs Action → "Reason log".
+  - **Dates only stamp on creation** (`todayET()`); there's no in-UI way to edit
+    an entry's date. To backdate/bulk-fix, edit column K directly in the Sheet
+    (format `[ ] Mon DD, YYYY — text`) or use the one-off
+    `scripts/backdate-reasons.mjs` (untracked): it stamps every **undated** entry
+    with a fixed `STAMP` date, preserves resolved state, and skips already-dated
+    entries; `--dry-run` previews. Used Jul 20 to backdate the 7 pre-existing
+    reasons to "Jul 17, 2026" (the Friday they were written).
+- **Subtasks are now editable in place** (Workstream Tasks tab, `HundredDayCard`).
+  Subtasks already supported add / check / delete; added **click-the-text-to-rename**:
+  click a subtask → inline input; Enter (or blur) saves, Escape cancels, empty or
+  unchanged text is a no-op (no write). Persists via the existing
+  `/api/update-subtasks` (whole `subtasks[]` rewritten to sheet column C). New
+  state `editingSubtask` (`{taskId, idx}`) + `subtaskEditDraft`; handler
+  `saveSubtaskText`.
