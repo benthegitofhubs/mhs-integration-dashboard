@@ -937,6 +937,42 @@ function AIAutomationsView() {
   );
 }
 
+// ---- Reason log: dated, strike-through-able entries stored in sheet column K ----
+// One entry per line, human-readable in the Sheet:
+//   [ ] Jul 20, 2026 — John is actively following up   (open)
+//   [x] Jul 18, 2026 — Waiting on vendor quote          (resolved / struck)
+// Legacy plain-text reasons (no [ ]/[x] marker) parse as a single undated,
+// open entry, so nothing already in column K is lost.
+type ReasonEntry = { date: string; text: string; resolved: boolean };
+
+function parseReasonLog(raw: string): ReasonEntry[] {
+  if (!raw || !raw.trim()) return [];
+  return raw.split(/\r?\n/).map((l) => l.trim()).filter(Boolean).map((line) => {
+    const m = line.match(/^\[([ xX])\]\s?(.*)$/);
+    if (!m) return { date: "", text: line, resolved: false }; // legacy plain text
+    const resolved = m[1].toLowerCase() === "x";
+    const rest = m[2];
+    const sep = rest.indexOf(" — ");
+    return sep !== -1
+      ? { date: rest.slice(0, sep).trim(), text: rest.slice(sep + 3).trim(), resolved }
+      : { date: "", text: rest.trim(), resolved };
+  });
+}
+
+function serializeReasonLog(entries: ReasonEntry[]): string {
+  return entries
+    .map((e) => `[${e.resolved ? "x" : " "}] ${e.date ? `${e.date} — ` : ""}${e.text}`)
+    .join("\n");
+}
+
+// Today's date in ET, e.g. "Jul 20, 2026". Only ever called from event
+// handlers (never during render), so no hydration concern.
+function todayET(): string {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York", month: "short", day: "numeric", year: "numeric",
+  }).format(new Date());
+}
+
 function NeedsActionView({ workstreams, onOpenTask, filterWsId, onClearFilter, joinDates = {}, scrollToTaskId, onScrolled }: { workstreams: Workstream100[]; onOpenTask: (wsId: string, taskId: string, queue: { wsId: string; taskId: string }[]) => void; filterWsId?: string | null; onClearFilter?: () => void; joinDates?: Record<string, string>; scrollToTaskId?: string | null; onScrolled?: () => void }) {
   const ORDER: TaskHealth[] = ["At Risk", "Blocked", "Off Track"];
   // Sort by join date; newest on top by default.
@@ -964,15 +1000,35 @@ function NeedsActionView({ workstreams, onOpenTask, filterWsId, onClearFilter, j
     workstreams.forEach((ws) => ws.tasks.forEach((t) => { m[t.id] = t.reason || ""; }));
     return m;
   });
-  const [editingReason, setEditingReason] = useState<string | null>(null);
+  // Draft text for the "add a note" input, per task.
+  const [reasonDraft, setReasonDraft] = useState<Record<string, string>>({});
 
-  const saveReason = async (wsId: string, taskId: string, description: string) => {
-    setEditingReason(null);
+  // Persist the serialized reason log to the sheet (column K) + local state.
+  const persistReason = async (wsId: string, taskId: string, description: string, serialized: string) => {
+    setReasons((prev) => ({ ...prev, [taskId]: serialized }));
     await fetch("/api/update-field", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ taskId, taskDescription: description, workstreamId: wsId, field: "reason", value: reasons[taskId] ?? "" }),
+      body: JSON.stringify({ taskId, taskDescription: description, workstreamId: wsId, field: "reason", value: serialized }),
     });
+  };
+
+  // Append a new dated entry from the draft input.
+  const addReasonEntry = (wsId: string, taskId: string, description: string) => {
+    const text = (reasonDraft[taskId] ?? "").trim();
+    if (!text) return;
+    const entries = parseReasonLog(reasons[taskId] ?? "");
+    entries.push({ date: todayET(), text, resolved: false });
+    setReasonDraft((prev) => ({ ...prev, [taskId]: "" }));
+    persistReason(wsId, taskId, description, serializeReasonLog(entries));
+  };
+
+  // Toggle an entry's resolved (strike-through) state — never deletes it.
+  const toggleReasonEntry = (wsId: string, taskId: string, description: string, index: number) => {
+    const entries = parseReasonLog(reasons[taskId] ?? "");
+    if (!entries[index]) return;
+    entries[index] = { ...entries[index], resolved: !entries[index].resolved };
+    persistReason(wsId, taskId, description, serializeReasonLog(entries));
   };
 
   // Flatten to individual flagged tasks with their health + join date, then
@@ -1088,33 +1144,48 @@ function NeedsActionView({ workstreams, onOpenTask, filterWsId, onClearFilter, j
                     </div>
                   </div>
 
-                  {/* Reason field — persists to the sheet */}
+                  {/* Reason log — dated entries, click to strike resolved; persists to sheet col K */}
+                  {(() => {
+                    const entries = parseReasonLog(reasons[t.id] ?? "");
+                    return (
                   <div style={{ marginTop: "10px", borderTop: "1px solid #f0efe9", paddingTop: "8px" }}>
-                    <div className="text-xs uppercase tracking-widest mb-1" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+                    <div className="text-xs uppercase tracking-widest mb-1.5" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
                       Reason for Risk / Off Track / Block
                     </div>
-                    {editingReason === t.id ? (
-                      <textarea
-                        autoFocus
-                        value={reasons[t.id] ?? ""}
-                        onChange={(e) => setReasons((prev) => ({ ...prev, [t.id]: e.target.value }))}
-                        onBlur={() => saveReason(ws.id, t.id, t.description)}
-                        onKeyDown={(e) => { if (e.key === "Escape") setEditingReason(null); }}
-                        rows={2}
-                        placeholder="Add the reason…"
-                        className="w-full text-xs leading-relaxed rounded px-2 py-1.5 resize-none focus:outline-none"
-                        style={{ border: "1px solid #d1cfc9", backgroundColor: "#fafaf8", color: "#57534e" }}
-                      />
-                    ) : (
-                      <p
-                        onClick={() => setEditingReason(t.id)}
-                        className="text-xs leading-relaxed cursor-pointer rounded px-1 -mx-1 hover:bg-stone-100 transition-colors"
-                        style={{ color: reasons[t.id] ? "#57534e" : "#c0bdb8", fontStyle: "italic" }}
-                      >
-                        {reasons[t.id] || "Add the reason…"}
-                      </p>
+                    {entries.length > 0 && (
+                      <div className="mb-2" style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+                        {entries.map((e, idx) => (
+                          <div
+                            key={idx}
+                            onClick={() => toggleReasonEntry(ws.id, t.id, t.description, idx)}
+                            className="flex items-start gap-2 text-xs leading-relaxed cursor-pointer rounded px-1 -mx-1 hover:bg-stone-100 transition-colors"
+                            title={e.resolved ? "Mark as still an issue" : "Mark resolved"}
+                          >
+                            <span aria-hidden style={{ fontFamily: "var(--font-geist-mono)", color: e.resolved ? "#9ca3af" : "#1a5c3a", lineHeight: "1.4" }}>
+                              {e.resolved ? "☑" : "☐"}
+                            </span>
+                            <span style={{ flex: 1, color: e.resolved ? "#c0bdb8" : "#57534e", textDecoration: e.resolved ? "line-through" : "none" }}>
+                              {e.date && (
+                                <span style={{ fontFamily: "var(--font-geist-mono)", color: "#c0bdb8", marginRight: "6px" }}>{e.date}</span>
+                              )}
+                              {e.text}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     )}
+                    <input
+                      type="text"
+                      value={reasonDraft[t.id] ?? ""}
+                      onChange={(ev) => setReasonDraft((prev) => ({ ...prev, [t.id]: ev.target.value }))}
+                      onKeyDown={(ev) => { if (ev.key === "Enter") { ev.preventDefault(); addReasonEntry(ws.id, t.id, t.description); } }}
+                      placeholder={entries.length ? "Add another note…" : "Add the reason…"}
+                      className="w-full text-xs leading-relaxed rounded px-2 py-1.5 focus:outline-none"
+                      style={{ border: "1px solid #d1cfc9", backgroundColor: "#fafaf8", color: "#57534e" }}
+                    />
                   </div>
+                    );
+                  })()}
                 </div>
               </div>
             </div>

@@ -102,10 +102,25 @@ task-status-driven. (Leftover `Status:` rows in tab headers are ignored.)
 3. **Needs Action** — a **single flat list** of flagged tasks (no more At Risk /
    Blocked / Off Track grouping; health shows as a colored pill + left border per
    row). Each row: a left **"Flagged" (date-joined) column**, then health pill ·
-   workstream · description · due date · owner · Open task, then an editable
-   **Reason** (persists to sheet column K). Click a row → opens that task in the
+   workstream · description · due date · owner · Open task, then a **Reason log**
+   (persists to sheet column K). Click a row → opens that task in the
    Workstream Tasks tab (expanded, scrolled, highlighted). Can be filtered to one
    workstream.
+   - **Reason log (dated, strike-through history).** The Reason is an
+     **append-only log of dated entries**, not a single blob. Type in the
+     "Add the reason… / Add another note…" input + Enter → a new entry stamped
+     with **today's ET date** (`todayET()`, e.g. "Jul 20, 2026"). Each entry
+     renders as a checklist row (☐/☑); **click to toggle resolved**
+     (strike-through + muted) — entries are never edited or deleted, so the risk
+     history stays visible. Stored **in column K as human-readable lines**, one
+     per entry, so the two-way Sheet sync is untouched and the cell stays legible
+     in the Sheet: `[ ] Jul 20, 2026 — text` (open) / `[x] … — text` (resolved).
+     Helpers `parseReasonLog` / `serializeReasonLog` (module scope); legacy
+     plain-text reasons parse as one undated open entry (nothing lost). Handlers
+     in `NeedsActionView`: `addReasonEntry`, `toggleReasonEntry`, `persistReason`
+     (POST `/api/update-field`, field `reason`); draft state `reasonDraft`.
+     Striking an entry is annotation only — it does **not** un-flag the task
+     (flagged status is Status-driven via `calcTaskHealth`).
    - **Date joined the list.** Tracked in a dedicated **"Needs Action Log"** sheet
      tab (`Task ID · Workstream · Description · First Flagged`), reconciled on
      every page load by `reconcileNeedsActionLog()` in `lib/sheets.ts` (called
@@ -296,3 +311,75 @@ Still open (not blocking): rotate the plaintext GitHub PAT in `.git/config`.
   (`reconcileNeedsActionLog`, stamped on page load). Health grouping replaced by
   an inline pill. Stepper now follows the tab's live display order. See Tabs
   item 3.
+
+## Jul 20, 2026 session
+
+- **Duplicate scheduled-task DMs fixed (once-per-day guard).** Ben was getting
+  the daily sync-check DM twice (e.g. 8:12 AM + 8:33 AM ET). Root cause: the
+  task is registered exactly once, but multiple concurrent Claude Code sessions
+  each run their own scheduler with no cross-session lock, so more than one
+  session fires the same task on a given day (erratic times, not clean cron).
+  Added the same idempotency guard `weekly-reminder.mjs` already uses to the two
+  scripts that lacked it:
+  - `scripts/sync-check.mjs` → state file `~/.mhs_sync_check_state.json`
+  - `scripts/digest.ts` → state file `~/.mhs_daily_digest_state.json`
+  Updated both SKILL.md files (`mhs-integration-sync-check`,
+  `mhs-integration-daily-digest`) to treat `SILENT` as "already posted today —
+  do nothing." `--force` bypasses (manual testing).
+  - **Upgraded to an atomic per-day claim** (same session) after the digest
+    still double-posted once. Timing data showed two *different* sessions
+    spawning ~1s apart, so a date-marker written at the *end* of the run (after
+    the multi-second sheet fetch) leaves a real race window. Now each script
+    claims today's slot up front with `writeFileSync(CLAIM, ..., {flag:"wx"})`
+    (O_EXCL): the winner proceeds, any same-day loser gets `EEXIST` → `SILENT`.
+    Claim files are `~/.mhs_sync_check.<YYYY-MM-DD>.claim` and
+    `~/.mhs_daily_digest.<YYYY-MM-DD>.claim`; the winning run sweeps older-dated
+    claims. `digest.ts` releases its claim in `main().catch` so a failed fetch
+    can retry instead of eating the day. Verified: two processes launched
+    simultaneously → exactly one emits, one `SILENT`.
+  - `weekly-reminder.mjs` upgraded to the same atomic claim
+    (`~/.mhs_weekly_reminder.<date>.claim`, skipped on `--dry-run`); its
+    existing state file still drives the sunset/congrats logic. All three
+    scheduled scripts now use the atomic per-day claim.
+  - Deleted the duplicate 9:06 AM digest post from the Roam Integration Team
+    channel; kept the 8:12 AM copy.
+  - Note: today's two double-sends were transient, not the guard failing — the
+    8:12 fires predated the guard, and the 9:06 digest re-posted because the
+    marker had been manually cleared mid-test. The atomic claim is the durable
+    fix going forward.
+- **Overview: Need attention & Off track tiles are clickable → Needs Action**
+  (commit `394339f`). Pointer cursor + hover shadow + keyboard-accessible;
+  `openNeedsAction()` resets `naFilter`/`review`. Overall completion and On
+  track stay non-interactive. See Tabs → Overview item 2.
+- **"Not Started" report generator** — `scripts/not-started-report.mjs` (one-off,
+  untracked in repo). Reuses the app's exact read logic (Dashboard-tab canonical
+  names + per-tab header-detected columns; **Owner = Accountable/col E**, since
+  Responsible is blank sheet-wide) so output is 1:1 with live `/hundredday`.
+  Modes: `--dry-run` (JSON), `--csv` (CSV to stdout), `--by-person` (splits the
+  compound Accountable on `/ , & and` → per-person counts; shared tasks count for
+  each named owner so totals exceed the task count). As of Jul 20: 54 Not-Started
+  tasks across 10 workstreams.
+- **Gotcha — service account can't create Drive files.** `sheets.spreadsheets.create`
+  with the `radial-mhs-integration@…` SA returns 403 PERMISSION_DENIED (SAs have
+  no Drive storage quota). To produce a real Google Sheet deliverable, generate
+  CSV and create it via the **Google Drive connector (Ben's OAuth)** —
+  `create_file` with `contentMimeType: text/csv` converts to a native
+  `application/vnd.google-apps.spreadsheet` owned by ben@meetradial.com. (The SA
+  can still read/write the *existing* shared source Sheet fine.)
+- **Deep-linking to a task is currently unreliable — two blockers** (surfaced
+  while scoping Sheet→tracker hyperlinks; work NOT done, Ben declined):
+  1. **No stable Task ID.** Workstream tabs have no "Task ID" column, so the app
+     derives `task.id` by matching `desc.slice(0,40)` to bundled static data
+     (`lib/hundredday.ts`), else falls back to positional `<wsId>-row<i>`. Live
+     sheet text has drifted from the static snapshot, so many tasks resolve to
+     the positional id — which shifts when rows are added/reordered. The app
+     already *prefers* a "Task ID" column (`idCol`) if one is added.
+  2. **Cold-load deep links don't fire.** The `#ws-<id>~<taskId>` handler lives
+     in `HundredDayCard`, which only mounts on the Workstream Tasks tab. A link
+     opened fresh lands on the default Overview tab, so nothing scrolls/expands.
+     Any linking feature needs a top-level mount effect that reads the hash and
+     switches to `workstreams` when it starts with `#ws-`.
+- **Needs Action Reason → dated strike-through log.** Replaced the single-blob
+  Reason field with an append-only, ET-dated log; click an entry to toggle
+  resolved (strike-through) while keeping history. Stored as readable lines in
+  column K (sync untouched). See Tabs → Needs Action → "Reason log".
