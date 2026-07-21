@@ -453,7 +453,7 @@ Still open (not blocking): rotate the plaintext GitHub PAT in `.git/config`.
 - **Tab color.** The tab switcher's old `red: boolean` flag was generalized to a
   `tone` ("red" | "yellow"); Needs Action = red (active `#b91c1c` / inactive
   `#e06060`), Not Started = amber (active `#a16207` / inactive `#ca8a04`), all
-  others default green-active / gray-inactive. Committed `<hash>` (see git log).
+  others default green-active / gray-inactive. Committed `3deba03`.
 - **Gotcha — this repo had no git identity set.** `git commit` failed with
   "Author identity unknown"; set it locally (not `--global`):
   `git config user.name "Benjamin Greenzweig"` + `git config user.email
