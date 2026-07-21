@@ -1,5 +1,5 @@
 import { google } from "googleapis";
-import { readFileSync, writeFileSync, existsSync } from "fs";
+import { readFileSync, writeFileSync, existsSync, readdirSync, unlinkSync } from "fs";
 import { homedir } from "os";
 
 // Weekly "gentle reminder" for the MHS integration tracker. Posts to the Roam
@@ -23,6 +23,30 @@ const DRY_RUN = process.argv.includes("--dry-run");
 const STATE_FILE = `${homedir()}/.mhs_weekly_reminder_state.json`;
 const TRACKER_URL = "https://mhsintegration.netlify.app/hundredday";
 const GROUP_HINT = "Roam Integration Team channel";
+
+const todayISO = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" }); // YYYY-MM-DD ET
+
+// Idempotency: atomic per-day claim so concurrent Claude Code sessions can't
+// each post this reminder. First session to run wins; a same-day loser gets
+// EEXIST and prints SILENT. Claiming up front (before the sheet fetch below)
+// closes the race two sessions spawning ~1s apart would otherwise open. The
+// STATE_FILE below still drives the sunset/congrats logic. Skipped on
+// --dry-run. Mirrors sync-check.mjs / digest.ts.
+const CLAIM_FILE = `${homedir()}/.mhs_weekly_reminder.${todayISO}.claim`;
+const CLAIM_RE = /^\.mhs_weekly_reminder\.\d{4}-\d{2}-\d{2}\.claim$/;
+if (!DRY_RUN) {
+  try {
+    writeFileSync(CLAIM_FILE, new Date().toISOString() + "\n", { flag: "wx" });
+  } catch (e) {
+    if (e?.code === "EEXIST") { process.stdout.write("SILENT\n"); process.exit(0); }
+    // any other fs error: fail open and continue rather than go dark
+  }
+  try {
+    for (const f of readdirSync(homedir()))
+      if (CLAIM_RE.test(f) && f !== `.mhs_weekly_reminder.${todayISO}.claim`)
+        try { unlinkSync(`${homedir()}/${f}`); } catch {}
+  } catch {}
+}
 
 const sa = JSON.parse(readFileSync(`${homedir()}/.mhs_service_account.json`, "utf8"));
 const auth = new google.auth.GoogleAuth({
@@ -111,7 +135,6 @@ const crossedToZero = (key) => prev && prev[key] > 0 && cur[key] === 0;
 const congratsStarted = crossedToZero("notStarted");
 const congratsDated   = crossedToZero("missingDue");
 
-const todayISO = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" }); // YYYY-MM-DD ET
 // Persist current counts (+ the date we posted, when we actually post). No-op on dry-run.
 const persist = (lastPosted) => {
   if (!DRY_RUN) writeFileSync(STATE_FILE, JSON.stringify({ notStarted: cur.notStarted, missingDue: cur.missingDue, lastPosted }));

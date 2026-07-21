@@ -1,4 +1,4 @@
-import { readFileSync } from "fs";
+import { readFileSync, writeFileSync, readdirSync, unlinkSync } from "fs";
 import { homedir } from "os";
 
 // fetchWorkstreams reads the service account from this env var
@@ -7,7 +7,34 @@ process.env.GOOGLE_SERVICE_ACCOUNT_JSON = readFileSync(`${homedir()}/.mhs_servic
 import { fetchWorkstreams } from "../lib/sheets";
 import { calcTaskHealth } from "../lib/taskHealth";
 
+// Idempotency: only emit the digest once per ET day, even when several Claude
+// Code sessions are open and each fires this scheduled task independently. We
+// claim today's slot ATOMICALLY up front (O_EXCL create) — the first session to
+// run wins and emits the JSON; any other session the same day gets EEXIST and
+// prints the literal "SILENT" token so the scheduled task posts nothing.
+// Claiming BEFORE the slow sheet fetch closes the race where two sessions spawn
+// ~1s apart. Old claim files are swept; a failed run releases its claim (see
+// main().catch) so it can retry. Pass --force to bypass (e.g. manual testing).
+const FORCE = process.argv.includes("--force");
+const todayISO = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" }); // YYYY-MM-DD ET
+const CLAIM_FILE = `${homedir()}/.mhs_daily_digest.${todayISO}.claim`;
+const CLAIM_RE = /^\.mhs_daily_digest\.\d{4}-\d{2}-\d{2}\.claim$/;
+
 async function main() {
+  if (!FORCE) {
+    try {
+      writeFileSync(CLAIM_FILE, new Date().toISOString() + "\n", { flag: "wx" });
+    } catch (e: any) {
+      if (e?.code === "EEXIST") { process.stdout.write("SILENT\n"); return; }
+      // any other fs error: fail open and post rather than go dark
+    }
+    try {
+      for (const f of readdirSync(homedir()))
+        if (CLAIM_RE.test(f) && f !== `.mhs_daily_digest.${todayISO}.claim`)
+          try { unlinkSync(`${homedir()}/${f}`); } catch {}
+    } catch {}
+  }
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const start = new Date("2026-06-23");
@@ -54,4 +81,10 @@ async function main() {
   process.stdout.write(JSON.stringify(out) + "\n");
 }
 
-main().catch((e) => { process.stderr.write(String(e) + "\n"); process.exit(1); });
+main().catch((e) => {
+  // We claimed today's slot but never emitted — release it so a later run can
+  // retry, rather than eating the whole day on a transient sheet error.
+  if (!FORCE) { try { unlinkSync(CLAIM_FILE); } catch {} }
+  process.stderr.write(String(e) + "\n");
+  process.exit(1);
+});

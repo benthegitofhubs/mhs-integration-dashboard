@@ -1,5 +1,5 @@
 import { google } from "googleapis";
-import { readFileSync } from "fs";
+import { readFileSync, writeFileSync, readdirSync, unlinkSync } from "fs";
 import { homedir } from "os";
 
 // Daily two-way sync health check for the Integration app <-> Google Sheet.
@@ -22,6 +22,31 @@ const nowET = new Date().toLocaleString("en-US", {
   timeZone: "America/New_York", month: "short", day: "numeric",
   hour: "numeric", minute: "2-digit", hour12: true,
 }) + " ET";
+
+// Idempotency: only post once per ET day, even when several Claude Code
+// sessions are open and each fires this scheduled task independently. We claim
+// today's slot ATOMICALLY up front (O_EXCL create) — the first session to run
+// wins and proceeds; any other session the same day gets EEXIST and prints the
+// literal "SILENT" token so the scheduled task relays nothing. Claiming BEFORE
+// the slow sheet round-trip closes the race where two sessions spawn ~1s apart.
+// Old claim files are swept. Pass --force to bypass (e.g. manual testing).
+const FORCE = process.argv.includes("--force");
+const todayISO = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" }); // YYYY-MM-DD ET
+const CLAIM_FILE = `${homedir()}/.mhs_sync_check.${todayISO}.claim`;
+const CLAIM_RE = /^\.mhs_sync_check\.\d{4}-\d{2}-\d{2}\.claim$/;
+if (!FORCE) {
+  try {
+    writeFileSync(CLAIM_FILE, new Date().toISOString() + "\n", { flag: "wx" });
+  } catch (e) {
+    if (e?.code === "EEXIST") { process.stdout.write("SILENT\n"); process.exit(0); }
+    // any other fs error: fail open and post rather than go dark
+  }
+  try {
+    for (const f of readdirSync(homedir()))
+      if (CLAIM_RE.test(f) && f !== `.mhs_sync_check.${todayISO}.claim`)
+        try { unlinkSync(`${homedir()}/${f}`); } catch {}
+  } catch {}
+}
 
 const checks = { site: "", read: "", write: "" };
 let healthy = true;
