@@ -84,20 +84,23 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
         {/* Tab switcher */}
         <div className="flex gap-1 mb-8 p-1 rounded-lg" style={{ backgroundColor: "#eeede9", width: "fit-content" }}>
           {([
-            { id: "overview",       label: "Overview",        red: false },
-            { id: "workstreams",    label: "Workstream Tasks", red: false },
-            { id: "needs-action",   label: "Needs Action",    red: true  },
-            { id: "not-started",    label: "Not Started",     red: false },
-            { id: "by-owner",       label: "By Accountable",  red: false },
-            { id: "ai-automations", label: "AI Automations",  red: false },
+            { id: "overview",       label: "Overview" },
+            { id: "workstreams",    label: "Workstream Tasks" },
+            { id: "needs-action",   label: "Needs Action",  tone: "red"    },
+            { id: "not-started",    label: "Not Started",   tone: "yellow" },
+            { id: "by-owner",       label: "By Accountable" },
+            { id: "ai-automations", label: "AI Automations" },
           ] as const).map((tab) => {
             const isActive = activeTab === tab.id;
+            const tone = "tone" in tab ? tab.tone : undefined;
+            const activeColor   = tone === "red" ? "#b91c1c" : tone === "yellow" ? "#a16207" : "#1a5c3a";
+            const inactiveColor = tone === "red" ? "#e06060" : tone === "yellow" ? "#ca8a04" : "#9ca3af";
             return (
               <button key={tab.id} onClick={() => { setActiveTab(tab.id); setNaFilter(null); setReview(null); }}
                 className="text-xs font-semibold uppercase tracking-widest px-4 py-2 rounded-md transition-all"
                 style={{
                   fontFamily: "var(--font-geist-mono)",
-                  color: isActive ? (tab.red ? "#b91c1c" : "#1a5c3a") : (tab.red ? "#e06060" : "#9ca3af"),
+                  color: isActive ? activeColor : inactiveColor,
                   backgroundColor: isActive ? "white" : "transparent",
                   boxShadow: isActive ? "0 1px 3px rgba(0,0,0,0.10)" : "none",
                   border: "none", cursor: "pointer", letterSpacing: "0.07em", whiteSpace: "nowrap",

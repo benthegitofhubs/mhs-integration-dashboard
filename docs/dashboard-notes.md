@@ -444,5 +444,28 @@ Still open (not blocking): rotate the plaintext GitHub PAT in `.git/config`.
   Action, `nsSearch` state, a cards block that pre-filters `nsWorkstreams`).
   Verified locally on the cached-data fallback: 13 workstream cards render, all
   83 shown task rows are Not Started (0 others), and bumping a task off Not
-  Started live-removes it. `npm run build` clean. Not yet committed/deployed as
-  of writing.
+  Started live-removes it. `npm run build` clean. **Shipped to `main`** in two
+  commits: `1c5bf5d` (the tab) and `ec67811` (an unrelated follow-up committing
+  the Jul 20 atomic per-day-claim changes to `digest.ts`/`sync-check.mjs`/
+  `weekly-reminder.mjs`, which had been sitting uncommitted). The two one-off
+  scripts (`backdate-reasons.mjs`, `not-started-report.mjs`) remain intentionally
+  untracked.
+- **Tab color.** The tab switcher's old `red: boolean` flag was generalized to a
+  `tone` ("red" | "yellow"); Needs Action = red (active `#b91c1c` / inactive
+  `#e06060`), Not Started = amber (active `#a16207` / inactive `#ca8a04`), all
+  others default green-active / gray-inactive. Committed `<hash>` (see git log).
+- **Gotcha — this repo had no git identity set.** `git commit` failed with
+  "Author identity unknown"; set it locally (not `--global`):
+  `git config user.name "Benjamin Greenzweig"` + `git config user.email
+  "ben@meetradial.com"`.
+- **Gotcha — can't confirm a live Netlify deploy from a Claude Code session.**
+  After pushing, none of the usual checks work here: `curl` the site → **401**
+  (Netlify access-protection), no `netlify` or `gh` CLI installed, the
+  `claude-in-chrome` connector reported **no connected browser**, and the
+  `Control_Chrome` connector could `reload_tab`/`list_tabs`/`switch_to_tab` but
+  its page-read/eval bridge (`get_page_content`, `execute_javascript`) failed
+  every time with "Google Chrome is not running." So the honest verification is:
+  (1) confirm the commit is on `origin/main` (that's what triggers the build),
+  and (2) ask Ben to eyeball the reloaded `/hundredday` tab or the Netlify
+  dashboard (`app.netlify.com/projects/mhsintegration`). Don't claim a deploy is
+  live from this session without one of those.
