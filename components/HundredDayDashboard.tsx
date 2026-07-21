@@ -23,13 +23,14 @@ export const STATUS_COLOR: Record<Status100, string> = {
 };
 
 export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live = true, joinDates = {} }: { workstreams: Workstream100[]; loadedAt?: string; nowMs: number; live?: boolean; joinDates?: Record<string, string> }) {
-  const [activeTab, setActiveTab] = useState<"overview" | "workstreams" | "by-owner" | "ai-automations" | "needs-action">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "workstreams" | "by-owner" | "ai-automations" | "needs-action" | "not-started">("overview");
   const [leaders, setLeaders] = useState<Record<string, string>>(
     Object.fromEntries(workstreams.map((ws) => [ws.id, ws.leader]))
   );
   const [editingLeader, setEditingLeader] = useState<string | null>(null);
   const [leaderDraft, setLeaderDraft] = useState("");
   const [taskSearch, setTaskSearch] = useState("");
+  const [nsSearch, setNsSearch] = useState("");
   const [naFilter, setNaFilter] = useState<string | null>(null);
   // Needs Action "review mode": ordered queue of flagged tasks + current
   // position, set when a task is opened from Needs Action. Drives the
@@ -86,6 +87,7 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
             { id: "overview",       label: "Overview",        red: false },
             { id: "workstreams",    label: "Workstream Tasks", red: false },
             { id: "needs-action",   label: "Needs Action",    red: true  },
+            { id: "not-started",    label: "Not Started",     red: false },
             { id: "by-owner",       label: "By Accountable",  red: false },
             { id: "ai-automations", label: "AI Automations",  red: false },
           ] as const).map((tab) => {
@@ -450,6 +452,31 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
 
         </>
         )}
+
+        {/* TAB: Not Started — intro + search (grouped cards render below) */}
+        {activeTab === "not-started" && (
+        <>
+        <p className="text-xs leading-relaxed mb-4" style={{ color: "#78716c", fontFamily: "var(--font-geist-mono)" }}>
+          Every task still <strong>Not Started</strong>, grouped by workstream. Edit any field inline — changes save to the sheet immediately.
+        </p>
+        <div className="relative mb-6">
+          <input
+            type="text"
+            value={nsSearch}
+            onChange={(e) => setNsSearch(e.target.value)}
+            placeholder="Search not-started tasks by keyword…"
+            className="w-full text-sm rounded-lg focus:outline-none"
+            style={{ border: "1px solid #e5e3de", backgroundColor: "white", color: "#1a1a1a", padding: "10px 32px 10px 12px" }}
+          />
+          {nsSearch && (
+            <button onClick={() => setNsSearch("")} aria-label="Clear search"
+              style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#9ca3af", fontSize: "14px", lineHeight: 1 }}>
+              ✕
+            </button>
+          )}
+        </div>
+        </>
+        )}
       </div>
 
       {/* Workstream cards — only on workstreams tab */}
@@ -520,6 +547,65 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
           )}
         </div>
       )}
+
+      {/* Not Started cards — grouped by workstream, fully editable, filtered to Not Started */}
+      {activeTab === "not-started" && (() => {
+        const nsWorkstreams = workstreams.filter((ws) => ws.tasks.some((t) => t.status === "Not Started"));
+        if (nsWorkstreams.length === 0) {
+          return (
+            <div className="max-w-6xl mx-auto px-8 pb-20">
+              <div className="flex flex-col items-center justify-center py-20">
+                <p className="text-2xl mb-2">✓</p>
+                <p className="text-sm font-semibold" style={{ color: "#15803d" }}>Every task has been started.</p>
+                <p className="text-xs mt-1" style={{ color: "#9ca3af" }}>Nothing is sitting in Not Started right now.</p>
+              </div>
+            </div>
+          );
+        }
+        return (
+          <div className="max-w-6xl mx-auto px-8 pb-20 space-y-2">
+            {/* Column headers — mirror the Workstream Tasks tab */}
+            <div className="grid text-xs uppercase tracking-widest font-semibold px-5 py-2 items-center"
+              style={{
+                gridTemplateColumns: "28px 1fr 120px 150px 52px 90px 1.6fr",
+                gap: "8px",
+                border: "1px solid transparent",
+                color: "#9ca3af",
+                fontFamily: "var(--font-geist-mono)",
+              }}>
+              <span>#</span>
+              <span>Workstream</span>
+              <span>Flagship Goal</span>
+              <span>Leader</span>
+              <span>Tasks</span>
+              <span>Completion</span>
+              <span>Task Health</span>
+            </div>
+
+            {nsWorkstreams.map((ws, i) => (
+              <HundredDayCard
+                key={ws.id}
+                workstream={ws}
+                index={i + 1}
+                search={nsSearch}
+                filterStatus="Not Started"
+              />
+            ))}
+
+            {nsSearch.trim() && !nsWorkstreams.some((ws) =>
+              ws.tasks.some((t) =>
+                t.status === "Not Started" &&
+                [t.description, t.accountable, t.responsible, t.consulted, t.informed, t.notes, t.reason, ...t.subtasks.map((s) => s.text)]
+                  .some((v) => (v || "").toLowerCase().includes(nsSearch.trim().toLowerCase()))
+              )
+            ) && (
+              <p className="text-sm text-center py-10" style={{ color: "#9ca3af" }}>
+                No not-started tasks match “{nsSearch}”.
+              </p>
+            )}
+          </div>
+        );
+      })()}
     </main>
 
     {/* Needs Action review stepper — floats while working the flagged queue */}

@@ -158,6 +158,22 @@ task-status-driven. (Leftover `Status:` rows in tab headers are ignored.)
    "AI Automation Ideas" sheet tab were all removed to avoid dead surface;
    re-add when revisited.)
 
+6. **Not Started** — the same grouped, fully-editable card layout as Workstream
+   Tasks, but filtered to tasks whose current status is **Not Started**. Only
+   workstreams that have ≥1 Not Started task render (cards auto-expand); grouped
+   by workstream is the sort. Has its own keyword search (`nsSearch`). Every
+   field is editable inline exactly as in Workstream Tasks (ranking, work item,
+   subtasks, due date, RACI, status, notes) because it **reuses `HundredDayCard`**
+   via a new `filterStatus?: Status100` prop — no duplicated edit handlers, and
+   all writes go through the existing `/api/update-*` routes, so the two-way sync
+   is untouched. Changing a task's status off "Not Started" live-removes it from
+   the list (the card re-filters; empty cards return `null`), mirroring how
+   resolving a flag drops a row from Needs Action. Empty state: "Every task has
+   been started." Implementation: `filterStatus` on `HundredDayCard` (also seeds
+   `expanded=true` and filters `sortedTasks`); tab wired in `HundredDayDashboard`
+   (`activeTab` union + tab button after Needs Action + a cards block that
+   pre-filters `nsWorkstreams`).
+
 Top nav is sticky ("frozen"). Location count = 20.
 
 ---
@@ -417,3 +433,16 @@ Still open (not blocking): rotate the plaintext GitHub PAT in `.git/config`.
   bundle in the user's browser → hard-refresh (Cmd+Shift+R)**, then confirm the
   right tab/affordance, before touching code. `npm run build` locally is the
   quickest way to rule out a deploy-blocking build error.
+
+## Jul 21, 2026 session
+
+- **New "Not Started" tab** (see Tabs → item 6). Grouped by workstream, fully
+  editable, filtered to current-status = Not Started. Built by adding a
+  `filterStatus?: Status100` prop to `HundredDayCard` (reuse — no duplicated edit
+  logic; all writes still go through `/api/update-*`, sync untouched) and wiring
+  a new tab in `HundredDayDashboard` (`activeTab` union, tab button after Needs
+  Action, `nsSearch` state, a cards block that pre-filters `nsWorkstreams`).
+  Verified locally on the cached-data fallback: 13 workstream cards render, all
+  83 shown task rows are Not Started (0 others), and bumping a task off Not
+  Started live-removes it. `npm run build` clean. Not yet committed/deployed as
+  of writing.

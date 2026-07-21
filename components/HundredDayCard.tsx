@@ -41,11 +41,14 @@ interface Props {
   workstream: Workstream100;
   index: number;
   search?: string;
+  // When set, the card shows only tasks with this status and starts expanded.
+  // Used by the Not Started tab to reuse the full inline-editing task rows.
+  filterStatus?: Status100;
 }
 
-export default function HundredDayCard({ workstream, index, search = "" }: Props) {
+export default function HundredDayCard({ workstream, index, search = "", filterStatus }: Props) {
   const [tasks, setTasks] = useState<Task100[]>(workstream.tasks);
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(!!filterStatus);
   const [saving, setSaving] = useState<string | null>(null);
   const [sortByDate, setSortByDate] = useState<"asc" | "desc" | null>(null);
   const [sortByRank, setSortByRank] = useState(false);
@@ -248,7 +251,8 @@ export default function HundredDayCard({ workstream, index, search = "" }: Props
       .some((v) => (v || "").toLowerCase().includes(q));
 
   const sortedTasks = (() => {
-    const base = q ? tasks.filter(matchesQuery) : tasks;
+    const searched = q ? tasks.filter(matchesQuery) : tasks;
+    const base = filterStatus ? searched.filter((t) => t.status === filterStatus) : searched;
     if (sortByRank) {
       return [...base].sort((a, b) => {
         if (a.ranking == null && b.ranking == null) return 0;
@@ -282,8 +286,9 @@ export default function HundredDayCard({ workstream, index, search = "" }: Props
     }
   };
 
-  // While searching, hide workstreams with no matching tasks and force-expand the rest
-  if (q && sortedTasks.length === 0) return null;
+  // While searching (or filtering by status), hide workstreams with no matching
+  // tasks and force-expand the rest.
+  if ((q || filterStatus) && sortedTasks.length === 0) return null;
   const open = expanded || !!q;
 
   return (
