@@ -530,3 +530,9 @@ Still open (not blocking): rotate the plaintext GitHub PAT in `.git/config`.
   "83 of 139" (→ Not Started tab); both clickable with correct titles, no new
   console errors, `npm run build` clean. Trade-off (intentional): tiles no longer
   sum to 100% since Not Started overlaps On Track. See Tabs → Overview item 2.
+- **KPI tile %-alignment fix.** Only On track has a subtitle
+  ("(In Progress/Not Started)"), which pushed its % down a line vs. the other
+  three. Now that subtitle `<div>` renders on **every** tile — real text for On
+  track, a non-breaking space (`" "`) spacer for the rest — so all four %
+  values sit on the same baseline. Verified at 1440px: all four % values share
+  `getBoundingClientRect().top`.

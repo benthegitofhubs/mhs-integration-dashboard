@@ -318,9 +318,11 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
                 title={clickable ? (t.tab === "needs-action" ? "View in Needs Action" : "View in Not Started") : undefined}
                 style={{ backgroundColor: "white", border: "1px solid #e5e3de", borderRadius: "6px", padding: "14px 16px", cursor: clickable ? "pointer" : undefined }}>
                 <div className="text-xs uppercase tracking-widest" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)", letterSpacing: "0.05em" }}>{t.label}</div>
-                {t.label === "On track" && (
-                  <div className="text-xs" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>(In Progress/Not Started)</div>
-                )}
+                {/* Always render this line so the % values align across all
+                    tiles; only On track has real text, the rest get a spacer. */}
+                <div className="text-xs" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+                  {t.label === "On track" ? "(In Progress/Not Started)" : " "}
+                </div>
                 <div className="mt-1.5" style={{ fontSize: "24px", fontWeight: 700, color: t.color, lineHeight: 1.1 }}>{t.value}</div>
                 <div className="text-xs mt-1" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>{t.sub}</div>
               </div>
