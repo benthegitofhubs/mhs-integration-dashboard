@@ -70,14 +70,23 @@ task-status-driven. (Leftover `Status:` rows in tab headers are ignored.)
       Jul 16 work restored this rich top; the earlier single day-line + slim
       progress bar was reverted.)
    2. **Four task-level KPI tiles** — Overall Completion · **On Track
-      (In Progress/Not Started)** · Need Attention · Off Track. Each shows a
-      **percentage** with "X of N **tasks**" beneath, and the four partition
-      cleanly to 100%. These count **tasks, not workstreams**
-      (`rollupWorkstreamHealth` is no longer what drives the tiles).
-      The **Need attention** and **Off track** tiles are **clickable** (pointer
-      cursor + hover shadow, keyboard-accessible) and jump straight to the Needs
-      Action tab via `openNeedsAction` (resets `naFilter` and `review`). Overall
-      completion and On track are non-interactive.
+      (In Progress/Not Started)** · **Needs Action** · **Not Started**. Each shows
+      a **percentage** with "X of N **tasks**" beneath, counting **tasks, not
+      workstreams**. The two clickable tiles each **mirror the exact contents of
+      the tab they open**: **Needs Action** = all flagged (At Risk + Blocked +
+      Off Track, = the Needs Action tab); **Not Started** = status Not Started
+      (= the Not Started tab). Both are **clickable** (pointer + hover shadow,
+      keyboard-accessible) via a generic `openTab(tab)` (`setActiveTab`, clears
+      `review`; also clears `naFilter` for needs-action); tile type carries an
+      optional `tab: "needs-action" | "not-started"`. Overall completion and On
+      track are non-interactive.
+      **Note:** the tiles **no longer sum to 100%** — Not Started overlaps On
+      Track (the green bucket includes Not Started), and an overdue Not-Started
+      task is also Off Track (so it's in both Needs Action and Not Started). This
+      is intentional: each tile's number matches its destination tab, chosen over
+      a clean partition. (Replaced the earlier Need Attention [At Risk+Blocked]
+      and Off Track tiles, which both linked to Needs Action unfiltered — the old
+      `openNeedsAction` and `linksToNeedsAction` are gone.)
    3. **Workstream list** — a **single flat list**, columns **Workstream ·
       Leader · Completion %** only. No pillar grouping, no mini health bars, no
       color legend (all removed in the evening Jul 16 work). Clicking a
@@ -510,3 +519,14 @@ Still open (not blocking): rotate the plaintext GitHub PAT in `.git/config`.
   fallback (snapshot has 0 At Risk/Blocked), not a code bug. `npm run build`
   clean; local verify limited to the single Off Track group (cached snapshot has
   no At Risk/Blocked).
+- **Overview KPI tiles reworked (Needs Action + Not Started).** Renamed the
+  "Need attention" tile to **Needs Action** and made its count all flagged
+  (At Risk + Blocked + Off Track) so it matches the Needs Action tab; replaced
+  the "Off track" tile with **Not Started** (count = status Not Started, matches
+  the Not Started tab). Both tiles now link to their **respective tabs** via a
+  generic `openTab()` (the old `openNeedsAction` / `linksToNeedsAction`, where
+  both tiles went to Needs Action unfiltered, are removed). Verified on the cached
+  fallback: Needs Action 9% "12 of 139" (→ Needs Action tab), Not Started 60%
+  "83 of 139" (→ Not Started tab); both clickable with correct titles, no new
+  console errors, `npm run build` clean. Trade-off (intentional): tiles no longer
+  sum to 100% since Not Started overlaps On Track. See Tabs → Overview item 2.

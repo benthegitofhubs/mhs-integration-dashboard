@@ -239,16 +239,28 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
             else if (h === "Off Track") tc.offTrack++;
             else tc.onTrack++;
           });
-          const needAttention = tc.atRisk + tc.blocked;
+          // Each clickable tile mirrors the exact contents of the tab it opens:
+          // "Needs Action" = all flagged (At Risk + Blocked + Off Track), which is
+          // what the Needs Action tab shows; "Not Started" = status Not Started,
+          // which is what the Not Started tab shows. (These two overlap — an
+          // overdue Not Started task is Off Track — so the tiles no longer sum to
+          // 100%; that's intentional, so each number matches its destination.)
+          const flagged    = tc.atRisk + tc.blocked + tc.offTrack;
+          const notStarted = allTasks.filter((t) => t.status === "Not Started").length;
           const pctOf = (n: number) => (totalTasks > 0 ? Math.round((n / totalTasks) * 100) : 0);
 
-          const tiles = [
-            { label: "Overall completion", value: `${overallPct}%`,           sub: `${doneTasks} of ${totalTasks} tasks`,     color: "#1a1a1a" },
-            { label: "On track",           value: `${pctOf(tc.onTrack)}%`,    sub: `${tc.onTrack} of ${totalTasks} tasks`,    color: "#15803d" },
-            { label: "Need attention",     value: `${pctOf(needAttention)}%`, sub: `${needAttention} of ${totalTasks} tasks`, color: needAttention > 0 ? "#b45309" : "#9ca3af", linksToNeedsAction: true },
-            { label: "Off track",          value: `${pctOf(tc.offTrack)}%`,   sub: `${tc.offTrack} of ${totalTasks} tasks`,   color: tc.offTrack > 0 ? "#b91c1c" : "#9ca3af", linksToNeedsAction: true },
+          type Tile = { label: string; value: string; sub: string; color: string; tab?: "needs-action" | "not-started" };
+          const tiles: Tile[] = [
+            { label: "Overall completion", value: `${overallPct}%`,        sub: `${doneTasks} of ${totalTasks} tasks`,   color: "#1a1a1a" },
+            { label: "On track",           value: `${pctOf(tc.onTrack)}%`, sub: `${tc.onTrack} of ${totalTasks} tasks`,  color: "#15803d" },
+            { label: "Needs Action",       value: `${pctOf(flagged)}%`,    sub: `${flagged} of ${totalTasks} tasks`,     color: flagged > 0 ? "#b45309" : "#9ca3af", tab: "needs-action" },
+            { label: "Not Started",        value: `${pctOf(notStarted)}%`, sub: `${notStarted} of ${totalTasks} tasks`,  color: notStarted > 0 ? "#a16207" : "#9ca3af", tab: "not-started" },
           ];
-          const openNeedsAction = () => { setActiveTab("needs-action"); setNaFilter(null); setReview(null); };
+          const openTab = (tab: "needs-action" | "not-started") => {
+            setActiveTab(tab);
+            setReview(null);
+            if (tab === "needs-action") setNaFilter(null);
+          };
 
           // One flat list of workstreams. Default sort is completion % desc;
           // the Leader and Completion headers toggle the sort (see ovSort).
@@ -295,15 +307,15 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
           {/* KPI tiles */}
           <div className="grid gap-3 mb-8" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))" }}>
             {tiles.map((t) => {
-              const clickable = "linksToNeedsAction" in t && t.linksToNeedsAction;
+              const clickable = !!t.tab;
               return (
               <div key={t.label}
-                onClick={clickable ? openNeedsAction : undefined}
+                onClick={clickable ? () => openTab(t.tab!) : undefined}
                 role={clickable ? "button" : undefined}
                 tabIndex={clickable ? 0 : undefined}
-                onKeyDown={clickable ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openNeedsAction(); } } : undefined}
+                onKeyDown={clickable ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openTab(t.tab!); } } : undefined}
                 className={clickable ? "transition-shadow hover:shadow-md" : undefined}
-                title={clickable ? "View in Needs Action" : undefined}
+                title={clickable ? (t.tab === "needs-action" ? "View in Needs Action" : "View in Not Started") : undefined}
                 style={{ backgroundColor: "white", border: "1px solid #e5e3de", borderRadius: "6px", padding: "14px 16px", cursor: clickable ? "pointer" : undefined }}>
                 <div className="text-xs uppercase tracking-widest" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)", letterSpacing: "0.05em" }}>{t.label}</div>
                 {t.label === "On track" && (
