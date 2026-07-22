@@ -99,17 +99,23 @@ task-status-driven. (Leftover `Status:` rows in tab headers are ignored.)
    drops down to the task table (Ranking · Task · Due Date · Status, with RACI
    + subtasks + notes under each task). Ranking is editable, unique per
    workstream, and sortable; tasks also sort by due date.
-3. **Needs Action** — a **single flat list** of flagged tasks (no more At Risk /
-   Blocked / Off Track grouping; health shows as a colored pill + left border per
-   row). Above the list (below the shared headline, before the sortable header) is
-   a **quick-count row**: one colored pill per non-zero health bucket in ORDER
-   (`{n} At Risk`/`Blocked`/`Off Track`, pills styled from `HEALTH_META`), then
+3. **Needs Action** — a list of flagged tasks **grouped by health in ORDER**
+   (At Risk → Blocked → Off Track), each group preceded by a **small labeled
+   separator** (`{HEALTH} {count}` + thin rule). `items` sorts by
+   `ORDER.indexOf(health)` first, then by join date within each group (the
+   "Flagged ↑/↓" header still toggles the within-group date sort). Health also
+   shows as a colored pill + left border per row. Above the list (below the shared
+   headline) is a **quick-count row**: one colored pill per non-zero health bucket
+   in ORDER (`{n} At Risk`/`Blocked`/`Off Track`, styled from `HEALTH_META`), then
    `· {N} flagged item(s)`. Counts derive from `items`, so they respect the active
-   workstream filter. Each row: a left **"Flagged" (date-joined) column**, then
+   workstream filter. **Each pill is a button that scrolls to its group**
+   (`scrollToGroup` → `groupAnchor(h)`; anchors carry `scrollMarginTop:90px` for
+   the sticky nav). Each row: a left **"Flagged" (date-joined) column**, then
    health pill · workstream · description · due date · owner · Open task, then a
    **Reason log** (persists to sheet column K). Click a row → opens that task in the
    Workstream Tasks tab (expanded, scrolled, highlighted). Can be filtered to one
-   workstream.
+   workstream. Because the review stepper's queue is built from `items`, Prev/Next
+   walks the grouped order too.
    - **Reason log (dated, strike-through history).** The Reason is an
      **append-only log of dated entries**, not a single blob. Type in the
      "Add the reason… / Add another note…" input + Enter → a new entry stamped
@@ -491,3 +497,16 @@ Still open (not blocking): rotate the plaintext GitHub PAT in `.git/config`.
   - Verified locally on the cached-data fallback: Needs Action shows
     "12 Off Track · 12 flagged items" (0 At Risk / 0 Blocked correctly omitted);
     Not Started shows "83 items not started". `tsc --noEmit` clean.
+- **Needs Action grouped by health + clickable count pills.** The flat list is
+  now **grouped At Risk → Blocked → Off Track** with a small labeled separator
+  (`{HEALTH} {count}` + thin rule) before each group; the top count pills are
+  buttons that scroll to their group. Sort groups by `ORDER.indexOf(health)` then
+  join date within group; separators keyed by `firstOfGroup`; anchors via
+  `groupAnchor(h)` with `scrollMarginTop:90px`. Stepper queue (built from `items`)
+  follows the grouped order. Diagnostic `scripts/status-audit.mjs` (untracked)
+  confirmed the live sheet has 3 At Risk (all future-dated → compute to At Risk)
+  + 2 Blocked, and that `toStatus` was NOT dropping them — the At Risk path was
+  already correct; the earlier "not appearing" report was traced to the cached
+  fallback (snapshot has 0 At Risk/Blocked), not a code bug. `npm run build`
+  clean; local verify limited to the single Off Track group (cached snapshot has
+  no At Risk/Blocked).

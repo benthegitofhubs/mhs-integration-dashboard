@@ -1132,8 +1132,9 @@ function NeedsActionView({ workstreams, onOpenTask, filterWsId, onClearFilter, j
   };
 
   // Flatten to individual flagged tasks with their health + join date, then
-  // sort by join date (newest first by default). Tasks with no recorded join
-  // date sort to the bottom regardless of direction.
+  // group by health in ORDER (At Risk → Blocked → Off Track); within each
+  // group, sort by join date (newest first by default). Tasks with no recorded
+  // join date sort to the bottom of their group regardless of direction.
   const items = filtered
     .flatMap((ws) =>
       ws.tasks
@@ -1141,6 +1142,8 @@ function NeedsActionView({ workstreams, onOpenTask, filterWsId, onClearFilter, j
         .filter((x) => ORDER.includes(x.health))
     )
     .sort((a, b) => {
+      const ga = ORDER.indexOf(a.health), gb = ORDER.indexOf(b.health);
+      if (ga !== gb) return ga - gb; // health group takes precedence
       if (a.joined && !b.joined) return -1;
       if (!a.joined && b.joined) return 1;
       if (a.joined === b.joined) return a.ws.name.localeCompare(b.ws.name);
@@ -1156,6 +1159,13 @@ function NeedsActionView({ workstreams, onOpenTask, filterWsId, onClearFilter, j
     const [y, m, d] = iso.split("-").map(Number);
     if (!y || !m || !d) return iso;
     return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-US", { timeZone: "UTC", month: "short", day: "numeric" });
+  };
+
+  // Health-group helpers: how many in a bucket, its anchor id, and a scroll-to.
+  const healthCount = (h: TaskHealth) => items.filter((x) => x.health === h).length;
+  const groupAnchor = (h: TaskHealth) => `na-group-${h.replace(/\s+/g, "-").toLowerCase()}`;
+  const scrollToGroup = (h: TaskHealth) => {
+    document.getElementById(groupAnchor(h))?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const filterBanner = filterName ? (
@@ -1188,18 +1198,20 @@ function NeedsActionView({ workstreams, onOpenTask, filterWsId, onClearFilter, j
     <div className="pb-20 max-w-4xl mx-auto">
       {filterBanner}
 
-      {/* Quick count of flagged items by health, then the total */}
+      {/* Quick count by health (click a pill to jump to its group), then total */}
       <div className="flex flex-wrap items-center gap-2 mb-4">
         {ORDER.map((h) => {
-          const n = items.filter((x) => x.health === h).length;
+          const n = healthCount(h);
           if (n === 0) return null;
           const meta = HEALTH_META[h];
           return (
-            <span key={h} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
-              style={{ backgroundColor: meta.bg, color: meta.color, fontFamily: "var(--font-geist-mono)" }}>
+            <button key={h} onClick={() => scrollToGroup(h)}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition-shadow hover:shadow-sm"
+              style={{ backgroundColor: meta.bg, color: meta.color, fontFamily: "var(--font-geist-mono)", border: "none", cursor: "pointer" }}
+              title={`Jump to ${h}`}>
               <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: meta.dot, display: "inline-block" }} />
               {n} {h}
-            </span>
+            </button>
           );
         })}
         <span className="text-xs" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
@@ -1221,12 +1233,24 @@ function NeedsActionView({ workstreams, onOpenTask, filterWsId, onClearFilter, j
       </div>
 
       <div className="space-y-2">
-        {items.map(({ ws, t, health, joined }) => {
+        {items.map(({ ws, t, health, joined }, i) => {
           const meta = HEALTH_META[health];
           const overdue = t.status !== "Complete" && t.dueDate && new Date(t.dueDate) < new Date();
+          const firstOfGroup = i === 0 || items[i - 1].health !== health;
           return (
+            <Fragment key={t.id}>
+            {firstOfGroup && (
+              <div id={groupAnchor(health)} className="flex items-center gap-2 pt-3 pb-0.5" style={{ scrollMarginTop: "90px" }}>
+                <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: meta.color, fontFamily: "var(--font-geist-mono)" }}>
+                  {health}
+                </span>
+                <span className="text-xs" style={{ color: "#c0bdb8", fontFamily: "var(--font-geist-mono)" }}>
+                  {healthCount(health)}
+                </span>
+                <span style={{ flex: 1, height: "1px", backgroundColor: "#e5e3de" }} />
+              </div>
+            )}
             <div
-              key={t.id}
               id={`na-${t.id}`}
               style={{
                 backgroundColor: flash === t.id ? "#fffbe6" : "white",
@@ -1308,6 +1332,7 @@ function NeedsActionView({ workstreams, onOpenTask, filterWsId, onClearFilter, j
                 </div>
               </div>
             </div>
+            </Fragment>
           );
         })}
       </div>
