@@ -462,6 +462,17 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
         <p className="text-xs leading-relaxed mb-4" style={{ color: "#78716c", fontFamily: "var(--font-geist-mono)" }}>
           Every task still <strong>Not Started</strong>, grouped by workstream. Edit any field inline — changes save to the sheet immediately.
         </p>
+        {(() => {
+          const nsCount = workstreams.reduce((n, ws) => n + ws.tasks.filter((t) => t.status === "Not Started").length, 0);
+          return (
+            <div className="mb-4">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
+                style={{ backgroundColor: STATUS_BG["Not Started"], color: STATUS_COLOR["Not Started"], fontFamily: "var(--font-geist-mono)" }}>
+                {nsCount} {nsCount === 1 ? "item" : "items"} not started
+              </span>
+            </div>
+          );
+        })()}
         <div className="relative mb-6">
           <input
             type="text"
@@ -1176,6 +1187,25 @@ function NeedsActionView({ workstreams, onOpenTask, filterWsId, onClearFilter, j
   return (
     <div className="pb-20 max-w-4xl mx-auto">
       {filterBanner}
+
+      {/* Quick count of flagged items by health, then the total */}
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        {ORDER.map((h) => {
+          const n = items.filter((x) => x.health === h).length;
+          if (n === 0) return null;
+          const meta = HEALTH_META[h];
+          return (
+            <span key={h} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
+              style={{ backgroundColor: meta.bg, color: meta.color, fontFamily: "var(--font-geist-mono)" }}>
+              <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: meta.dot, display: "inline-block" }} />
+              {n} {h}
+            </span>
+          );
+        })}
+        <span className="text-xs" style={{ color: "#9ca3af", fontFamily: "var(--font-geist-mono)" }}>
+          · {items.length} flagged {items.length === 1 ? "item" : "items"}
+        </span>
+      </div>
 
       {/* Sortable header — Flagged (join date) + Item */}
       <div className="grid px-1 mb-2 text-xs uppercase tracking-widest font-semibold"

@@ -101,9 +101,13 @@ task-status-driven. (Leftover `Status:` rows in tab headers are ignored.)
    workstream, and sortable; tasks also sort by due date.
 3. **Needs Action** — a **single flat list** of flagged tasks (no more At Risk /
    Blocked / Off Track grouping; health shows as a colored pill + left border per
-   row). Each row: a left **"Flagged" (date-joined) column**, then health pill ·
-   workstream · description · due date · owner · Open task, then a **Reason log**
-   (persists to sheet column K). Click a row → opens that task in the
+   row). Above the list (below the shared headline, before the sortable header) is
+   a **quick-count row**: one colored pill per non-zero health bucket in ORDER
+   (`{n} At Risk`/`Blocked`/`Off Track`, pills styled from `HEALTH_META`), then
+   `· {N} flagged item(s)`. Counts derive from `items`, so they respect the active
+   workstream filter. Each row: a left **"Flagged" (date-joined) column**, then
+   health pill · workstream · description · due date · owner · Open task, then a
+   **Reason log** (persists to sheet column K). Click a row → opens that task in the
    Workstream Tasks tab (expanded, scrolled, highlighted). Can be filtered to one
    workstream.
    - **Reason log (dated, strike-through history).** The Reason is an
@@ -172,7 +176,10 @@ task-status-driven. (Leftover `Status:` rows in tab headers are ignored.)
    been started." Implementation: `filterStatus` on `HundredDayCard` (also seeds
    `expanded=true` and filters `sortedTasks`); tab wired in `HundredDayDashboard`
    (`activeTab` union + tab button after Needs Action + a cards block that
-   pre-filters `nsWorkstreams`).
+   pre-filters `nsWorkstreams`). Below the intro paragraph (before the search box)
+   is a **quick count** pill — `{N} item(s) not started`, styled with
+   `STATUS_BG["Not Started"]` / `STATUS_COLOR["Not Started"]` — computed as the
+   overall total (not affected by the keyword search).
 
 Top nav is sticky ("frozen"). Location count = 20.
 
@@ -469,3 +476,18 @@ Still open (not blocking): rotate the plaintext GitHub PAT in `.git/config`.
   and (2) ask Ben to eyeball the reloaded `/hundredday` tab or the Netlify
   dashboard (`app.netlify.com/projects/mhsintegration`). Don't claim a deploy is
   live from this session without one of those.
+
+## Jul 22, 2026 session
+
+- **Quick-count summaries at the top of Needs Action and Not Started.**
+  - Needs Action: a pill row (below the shared "…one team, one mission." headline,
+    before the sortable header) showing counts per non-zero health bucket in ORDER
+    — `{n} At Risk` / `Blocked` / `Off Track`, each styled from `HEALTH_META` —
+    then `· {N} flagged item(s)`. Derived from `items`, so it respects the active
+    workstream filter. See Tabs → Needs Action.
+  - Not Started: a single pill under the intro paragraph, `{N} item(s) not
+    started` (`STATUS_BG`/`STATUS_COLOR["Not Started"]`), the overall total,
+    unaffected by the keyword search. See Tabs → item 6.
+  - Verified locally on the cached-data fallback: Needs Action shows
+    "12 Off Track · 12 flagged items" (0 At Risk / 0 Blocked correctly omitted);
+    Not Started shows "83 items not started". `tsc --noEmit` clean.
