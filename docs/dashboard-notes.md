@@ -196,6 +196,26 @@ task-status-driven. (Leftover `Status:` rows in tab headers are ignored.)
    `STATUS_BG["Not Started"]` / `STATUS_COLOR["Not Started"]` — computed as the
    overall total (not affected by the keyword search).
 
+7. **Workstream Goals** — sits **second in the nav, right after Overview**. One
+   row per workstream: **Workstream · Leader · 100-Day Goal · Status**, where
+   Status is a **leader-set Red / Yellow / Green** self-report on the goal, for
+   the weekly meeting. Minimal table styled like the Overview flat list; the
+   Status control is a colored dropdown (dot + label; Green `#15803d` / Yellow
+   `#854d0e` / Red `#b91c1c`, "— Not set —" gray by default). This RYG is a
+   **manual leader judgement, fully independent of the task-status-driven health
+   model** — it is not derived from task Status. Component
+   `WorkstreamGoalsView` in `HundredDayDashboard.tsx`; `activeTab` union gained
+   `"goals"`; tab button inserted after Overview.
+   - **Persistence.** RYG is shared (server-side), not per-browser. Stored in a
+     dedicated **"Workstream Goal Status"** sheet tab (`Workstream ID ·
+     Workstream · RYG · Updated`), so it never touches the 15 source tabs or the
+     Dashboard formulas — same safe pattern as the Needs Action Log. Read by
+     `fetchGoalStatus()` (→ `goalStatus` prop, `{}` on any error/no creds),
+     upserted by `writeGoalStatus(wsId, name, ryg)` (keyed by workstream id,
+     stamps today's ET date; creates the tab + header on first use; empty `ryg`
+     clears). Client saves via **POST `/api/update-goal-status`**. Goal text is
+     `ws.goal` (already sourced from Dashboard column E) — no new goal fetch.
+
 Top nav is sticky ("frozen"). Location count = 20.
 
 ---

@@ -14,6 +14,11 @@ export const STATUS_BG: Record<Status100, string> = {
   "Complete":    "#dcfce7",
 };
 
+// Leader-attested Red/Yellow/Green self-report on a workstream's 100-day goal
+// (Workstream Goals tab). Kept local so this client component doesn't import
+// from lib/sheets (which pulls in googleapis).
+type GoalRYG = "Red" | "Yellow" | "Green";
+
 export const STATUS_COLOR: Record<Status100, string> = {
   "Not Started": "#374151",
   "In Progress": "#1d4ed8",
@@ -22,8 +27,8 @@ export const STATUS_COLOR: Record<Status100, string> = {
   "Complete":    "#15803d",
 };
 
-export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live = true, joinDates = {} }: { workstreams: Workstream100[]; loadedAt?: string; nowMs: number; live?: boolean; joinDates?: Record<string, string> }) {
-  const [activeTab, setActiveTab] = useState<"overview" | "workstreams" | "by-owner" | "ai-automations" | "needs-action" | "not-started">("overview");
+export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live = true, joinDates = {}, goalStatus = {} }: { workstreams: Workstream100[]; loadedAt?: string; nowMs: number; live?: boolean; joinDates?: Record<string, string>; goalStatus?: Record<string, GoalRYG> }) {
+  const [activeTab, setActiveTab] = useState<"overview" | "goals" | "workstreams" | "by-owner" | "ai-automations" | "needs-action" | "not-started">("overview");
   const [leaders, setLeaders] = useState<Record<string, string>>(
     Object.fromEntries(workstreams.map((ws) => [ws.id, ws.leader]))
   );
@@ -85,6 +90,7 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
         <div className="flex gap-1 mb-8 p-1 rounded-lg" style={{ backgroundColor: "#eeede9", width: "fit-content" }}>
           {([
             { id: "overview",       label: "Overview" },
+            { id: "goals",          label: "Workstream Goals" },
             { id: "workstreams",    label: "Workstream Tasks" },
             { id: "needs-action",   label: "Needs Action",  tone: "red"    },
             { id: "not-started",    label: "Not Started",   tone: "yellow" },
@@ -202,6 +208,10 @@ export default function HundredDayDashboard({ workstreams, loadedAt, nowMs, live
 
 
         </>
+        )}
+
+        {activeTab === "goals" && (
+          <WorkstreamGoalsView workstreams={workstreams} goalStatus={goalStatus} />
         )}
 
         {activeTab === "ai-automations" && <AIAutomationsView />}
@@ -843,6 +853,88 @@ function ByOwnerView({ workstreams }: { workstreams: Workstream100[] }) {
           ))}
         </div>
       ))}
+    </div>
+  );
+}
+
+// ---- Workstream Goals tab -------------------------------------------------
+// One row per workstream: name · leader · 100-day goal · a leader-set RYG the
+// leader reports on in the weekly meeting. RYG persists to the sheet (shared),
+// independent of the task-status-driven health elsewhere in the app.
+const RYG_META: Record<GoalRYG, { bg: string; color: string; dot: string }> = {
+  Green:  { bg: "#dcfce7", color: "#15803d", dot: "#22c55e" },
+  Yellow: { bg: "#fef9c3", color: "#854d0e", dot: "#eab308" },
+  Red:    { bg: "#fee2e2", color: "#b91c1c", dot: "#ef4444" },
+};
+
+const RYG_OPTIONS: { value: GoalRYG | ""; label: string }[] = [
+  { value: "",       label: "— Not set —" },
+  { value: "Green",  label: "Green" },
+  { value: "Yellow", label: "Yellow" },
+  { value: "Red",    label: "Red" },
+];
+
+function WorkstreamGoalsView({ workstreams, goalStatus }: { workstreams: Workstream100[]; goalStatus: Record<string, GoalRYG> }) {
+  const [ryg, setRyg] = useState<Record<string, GoalRYG | "">>(
+    Object.fromEntries(workstreams.map((ws) => [ws.id, goalStatus[ws.id] ?? ""]))
+  );
+
+  const setStatus = async (ws: Workstream100, value: GoalRYG | "") => {
+    setRyg((prev) => ({ ...prev, [ws.id]: value }));
+    await fetch("/api/update-goal-status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ workstreamId: ws.id, workstream: ws.name, ryg: value }),
+    });
+  };
+
+  const COLS = "minmax(0, 1.1fr) 170px minmax(0, 2.2fr) 150px";
+
+  return (
+    <div className="pb-20">
+      <p className="text-xs leading-relaxed mb-6" style={{ color: "#78716c", fontFamily: "var(--font-geist-mono)" }}>
+        Each leader sets a <strong>Red / Yellow / Green</strong> on their workstream&apos;s 100-day goal to report in the weekly meeting. Selections save to the sheet immediately and are shared with everyone.
+      </p>
+
+      {/* Column headers */}
+      <div className="grid px-5 mb-1.5 text-xs uppercase tracking-widest font-semibold"
+        style={{ gridTemplateColumns: COLS, gap: "16px", color: "#9ca3af", fontFamily: "var(--font-geist-mono)", letterSpacing: "0.05em" }}>
+        <span>Workstream</span>
+        <span>Leader</span>
+        <span>100-Day Goal</span>
+        <span className="text-right">Status</span>
+      </div>
+
+      <div style={{ border: "1px solid #e5e3de", borderRadius: "6px", backgroundColor: "white", overflow: "hidden" }}>
+        {workstreams.map((ws, i) => {
+          const current = ryg[ws.id] ?? "";
+          const meta = current ? RYG_META[current] : null;
+          return (
+            <div key={ws.id} className="grid px-5 py-3 hover:bg-stone-50 transition-colors"
+              style={{ gridTemplateColumns: COLS, gap: "16px", alignItems: "center", borderTop: i > 0 ? "1px solid #f0efe9" : "none" }}>
+              <span className="text-xs font-semibold" style={{ color: "#1a1a1a" }}>{ws.name}</span>
+              <span className="text-xs" style={{ color: "#6b7280", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {ws.leader || "—"}
+              </span>
+              <span className="text-xs leading-relaxed" style={{ color: "#57534e" }}>{ws.goal || "—"}</span>
+              <div className="flex justify-end">
+                <div className="inline-flex items-center gap-1.5 rounded px-2.5 py-1"
+                  style={{ backgroundColor: meta?.bg ?? "#f3f4f6" }}>
+                  <span style={{ width: "9px", height: "9px", borderRadius: "50%", backgroundColor: meta?.dot ?? "#d1d5db", flexShrink: 0 }} />
+                  <select
+                    value={current}
+                    onChange={(e) => setStatus(ws, e.target.value as GoalRYG | "")}
+                    className="text-xs font-semibold cursor-pointer focus:outline-none"
+                    style={{ backgroundColor: "transparent", color: meta?.color ?? "#9ca3af", border: "none", fontFamily: "var(--font-geist-mono)" }}
+                    title="Set Red / Yellow / Green">
+                    {RYG_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

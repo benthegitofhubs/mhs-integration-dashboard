@@ -546,3 +546,99 @@ export async function reconcileNeedsActionLog(
     return {};
   }
 }
+
+// ---- Workstream Goal RYG status --------------------------------------------
+// Leader-attested Red / Yellow / Green self-report on each workstream's 100-day
+// goal, shown on the Workstream Goals tab and reported in the weekly meeting.
+// Stored in a dedicated sheet tab so it's shared across everyone (not
+// per-browser) and never touches the 15 source tabs or the Dashboard formulas.
+// This is a manual leader judgement, independent of the task-status-driven
+// health model in taskHealth.ts.
+const GOAL_STATUS_TAB = "Workstream Goal Status";
+export type GoalRYG = "Red" | "Yellow" | "Green";
+
+// Read the RYG map: workstream id -> "Red" | "Yellow" | "Green".
+// Best-effort — returns {} if the tab is missing or unreadable (e.g. no creds
+// locally), so the page still renders with everything "Not set".
+export async function fetchGoalStatus(): Promise<Record<string, GoalRYG>> {
+  try {
+    const auth = getAuth();
+    const sheets = google.sheets({ version: "v4", auth });
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `'${GOAL_STATUS_TAB}'!A:D`,
+    });
+    const rows = (res.data.values ?? []) as string[][];
+    const start = rows.length && rows[0][0]?.toLowerCase().includes("workstream id") ? 1 : 0;
+    const map: Record<string, GoalRYG> = {};
+    for (let i = start; i < rows.length; i++) {
+      const id = rows[i][0]?.trim();
+      const ryg = rows[i][2]?.trim();
+      if (id && (ryg === "Red" || ryg === "Yellow" || ryg === "Green")) map[id] = ryg;
+    }
+    return map;
+  } catch {
+    return {};
+  }
+}
+
+// Upsert the RYG for one workstream (keyed by workstream id), stamping today's
+// ET date in the Updated column. Creates the tab + header row on first use.
+// An empty `ryg` clears the selection back to "Not set".
+export async function writeGoalStatus(
+  workstreamId: string,
+  workstreamName: string,
+  ryg: GoalRYG | ""
+): Promise<void> {
+  const auth = getAuth();
+  const sheets = google.sheets({ version: "v4", auth });
+  const today = new Date().toLocaleDateString("en-US", {
+    timeZone: "America/New_York", month: "short", day: "numeric", year: "numeric",
+  });
+
+  let rows: string[][] = [];
+  try {
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `'${GOAL_STATUS_TAB}'!A:D`,
+    });
+    rows = (res.data.values ?? []) as string[][];
+  } catch {
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      requestBody: { requests: [{ addSheet: { properties: { title: GOAL_STATUS_TAB } } }] },
+    });
+    rows = [];
+  }
+
+  const header = ["Workstream ID", "Workstream", "RYG", "Updated"];
+  const hasHeader = rows.length > 0 && rows[0][0]?.toLowerCase().includes("workstream id");
+  if (!hasHeader) {
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `'${GOAL_STATUS_TAB}'!A1:D1`,
+      valueInputOption: "RAW",
+      requestBody: { values: [header] },
+    });
+    rows = [header];
+  }
+
+  const rowValues = [workstreamId, workstreamName, ryg, ryg ? today : ""];
+  const rowIdx = rows.findIndex((r, i) => i > 0 && r[0]?.trim() === workstreamId);
+  if (rowIdx === -1) {
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `'${GOAL_STATUS_TAB}'!A:D`,
+      valueInputOption: "RAW",
+      insertDataOption: "INSERT_ROWS",
+      requestBody: { values: [rowValues] },
+    });
+  } else {
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `'${GOAL_STATUS_TAB}'!A${rowIdx + 1}:D${rowIdx + 1}`,
+      valueInputOption: "RAW",
+      requestBody: { values: [rowValues] },
+    });
+  }
+}

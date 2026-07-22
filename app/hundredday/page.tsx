@@ -1,4 +1,4 @@
-import { fetchWorkstreamsResult, reconcileNeedsActionLog } from "@/lib/sheets";
+import { fetchWorkstreamsResult, reconcileNeedsActionLog, fetchGoalStatus } from "@/lib/sheets";
 import { calcTaskHealth } from "@/lib/taskHealth";
 import HundredDayDashboard from "@/components/HundredDayDashboard";
 
@@ -23,5 +23,8 @@ export default async function HundredDayPage() {
   );
   const joinDates = await reconcileNeedsActionLog(flagged);
 
-  return <HundredDayDashboard workstreams={workstreams} loadedAt={loadedAt} nowMs={nowMs} live={live} joinDates={joinDates} />;
+  // Leader-attested Red/Yellow/Green on each workstream's 100-day goal.
+  const goalStatus = await fetchGoalStatus();
+
+  return <HundredDayDashboard workstreams={workstreams} loadedAt={loadedAt} nowMs={nowMs} live={live} joinDates={joinDates} goalStatus={goalStatus} />;
 }
