@@ -893,7 +893,7 @@ function WorkstreamGoalsView({ workstreams, goalStatus }: { workstreams: Workstr
   return (
     <div className="pb-20">
       <p className="text-xs leading-relaxed mb-6" style={{ color: "#78716c", fontFamily: "var(--font-geist-mono)" }}>
-        Each leader sets a <strong>Red / Yellow / Green</strong> on their workstream&apos;s 100-day goal to report in the weekly meeting. Selections save to the sheet immediately and are shared with everyone.
+        Each leader sets a <strong>Red / Yellow / Green</strong>{" "}on their workstream&apos;s 100-day goal to report in the weekly meeting. Selections save to the sheet immediately and are shared with everyone.
       </p>
 
       {/* Column headers */}
